@@ -1,16 +1,246 @@
-/* Global App Styles */
+/* Hero Header Styles */
 
 /* Disable Scroll on Loading */
 main:has(.hero-header.is--loading) {
   height: 100dvh;
 }
 
-@font-face {
-  font-family: 'PP Neue Montreal';
-  src: url('https://cdn.prod.website-files.com/6819ed8312518f61b84824df/6819ed8312518f61b84825ba_PPNeueMontreal-Medium.woff2') format('woff2');
+.hero-header {
+  color: #f4f4f4;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Loading: Hidden */
+.hero-header.is--loading.is--hidden {
+  display: none;
+}
+
+.hero-loader {
+  color: #201d1d;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.hero__h1 {
+  white-space: nowrap;
+  justify-content: center;
+  font-size: 12.5em;
   font-weight: 500;
-  font-style: normal;
-  font-display: swap;
+  line-height: .75;
+  display: flex;
+  position: relative;
+}
+
+.hero__h1-start {
+  justify-content: flex-end;
+  width: 1.5256em;
+  display: flex;
+  overflow: hidden;
+}
+
+.hero__h1-end {
+  justify-content: flex-start;
+  width: 1.525em;
+  display: flex;
+  overflow: hidden;
+}
+
+.hero__letter {
+  display: block;
+  position: relative;
+}
+
+.hero__letter-white.is--space {
+  margin-left: .25em;
+}
+
+.hero-loader__box {
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  width: 0;
+  display: flex;
+  position: relative;
+}
+
+.hero-loader__box-inner {
+  justify-content: center;
+  align-items: center;
+  min-width: 1em;
+  height: 95%;
+  display: flex;
+  position: relative;
+}
+
+.hero__growing-image {
+  justify-content: center;
+  align-items: center;
+  width: 0%;
+  height: 100%;
+  display: flex;
+  position: absolute;
+  overflow: hidden;
+}
+
+.hero__growing-image-wrap {
+  width: 100%;
+  min-width: 1em;
+  height: 100%;
+  position: absolute;
+}
+
+.hero__cover-image {
+  pointer-events: none;
+  object-fit: cover;
+  -webkit-user-select: none;
+  user-select: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.hero__cover-image-extra {
+  pointer-events: none;
+  object-fit: cover;
+  -webkit-user-select: none;
+  user-select: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.hero__cover-image-extra.is--1 {
+  z-index: 3;
+}
+
+.hero__cover-image-extra.is--2 {
+  z-index: 2;
+}
+
+.hero__cover-image-extra.is--3 {
+  z-index: 1;
+}
+
+.hero-header__content {
+  flex-flow: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 100dvh;
+  padding: 3em;
+  display: flex;
+  position: relative;
+}
+
+.hero-header__top {
+  width: 100%;
+  position: relative;
+}
+
+.hero-header__bottom {
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-nav__center {
+  display: flex;
+  grid-column-gap: .5em;
+  grid-row-gap: .5em;
+}
+
+.hero-nav__link {
+  color: inherit;
+  font-size: 1.3125em;
+  line-height: 1.3;
+  text-decoration: none;
+  position: relative;
+}
+
+.hero-nav__logo {
+  height: 2em;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 4px;
+}
+
+.hero__letter-white {
+  display: block;
+  position: relative;
+}
+
+@media screen and (max-width: 991px) {
+  .hero__h1 {
+    font-size: 9em;
+  }
+
+  .hero-nav__center {
+    grid-column-gap: 0em;
+    grid-row-gap: 0em;
+    flex-flow: column;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .hero__h1 {
+    font-size: 5.5em;
+  }
+
+  .hero-nav {
+    flex-flow: column;
+    grid-column-gap: 1.5em;
+    grid-row-gap: 1.5em;
+  }
+
+  .hero-nav__center {
+    flex-flow: column;
+  }
+}
+
+.hero-credits__p {
+  pointer-events: auto;
+  text-align: center;
+  margin: 0;
+  font-family: PP Neue Montreal, Arial, sans-serif;
+  font-size: 1.125em;
+  font-weight: 500;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hero-credits__p-a {
+  color: #f4f4f4;
+}
+
+@media screen and (max-width: 991px) {
+  .hero-credits__p {
+    display: none;
+  }
 }
 
 @font-face {
