@@ -8,16 +8,16 @@ function App() {
   useEffect(() => {
     // Wait a bit to ensure DOM is fully ready
     const timer = setTimeout(() => {
-      initWillemLoadingAnimation()
+      initHeroLoadingAnimation()
     }, 100)
 
     return () => clearTimeout(timer)
   }, [])
 
-  function initWillemLoadingAnimation() {
-    const container = containerRef.current || document.querySelector(".willem-header");
+  function initHeroLoadingAnimation() {
+    const container = containerRef.current || document.querySelector(".hero-header");
     if (!container) {
-      console.error("Willem header container not found");
+      console.error("Hero header container not found");
       return;
     }
 
@@ -27,14 +27,14 @@ function App() {
     // Force a reflow to ensure display change takes effect
     container.offsetHeight;
 
-    const loadingLetter = container.querySelectorAll(".willem__letter");
-    const box = container.querySelectorAll(".willem-loader__box");
-    const growingImage = container.querySelectorAll(".willem__growing-image");
-    const headingStart = container.querySelectorAll(".willem__h1-start");
-    const headingEnd = container.querySelectorAll(".willem__h1-end");
-    const coverImageExtra = container.querySelectorAll(".willem__cover-image-extra");
-    const headerLetter = container.querySelectorAll(".willem__letter-white");
-    const navLinks = container.querySelectorAll(".willen-nav a, .osmo-credits__p");
+    const loadingLetter = container.querySelectorAll(".hero__letter");
+    const box = container.querySelectorAll(".hero-loader__box");
+    const growingImage = container.querySelectorAll(".hero__growing-image");
+    const headingStart = container.querySelectorAll(".hero__h1-start");
+    const headingEnd = container.querySelectorAll(".hero__h1-end");
+    const coverImageExtra = container.querySelectorAll(".hero__cover-image-extra");
+    const headerLetter = container.querySelectorAll(".hero__letter-white");
+    const navLinks = container.querySelectorAll(".hero-nav a, .hero-credits__p");
     
     console.log("Animation elements found:", {
       loadingLetter: loadingLetter.length,
@@ -153,60 +153,53 @@ function App() {
   }
 
   return (
-    <section ref={containerRef} className="willem-header is--loading is--hidden">
-      <div className="willem-loader">
-        <div className="willem__h1">
-          <div className="willem__h1-start">
-            <span className="willem__letter">D</span>
-            <span className="willem__letter">o</span>
+    <section ref={containerRef} className="hero-header is--loading is--hidden">
+      <div className="hero-loader">
+        <div className="hero__h1">
+          <div className="hero__h1-start">
+            <span className="hero__letter">D</span>
+            <span className="hero__letter">o</span>
           </div>
-          <div className="willem-loader__box">
-            <div className="willem-loader__box-inner">
-              <div className="willem__growing-image">
-                <div className="willem__growing-image-wrap">
-                  <img className="willem__cover-image-extra is--1" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724bc_minimalist-architecture-2.avif" loading="lazy" alt="" />
-                  <img className="willem__cover-image-extra is--2" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724cf_minimalist-architecture-4.avif" loading="lazy" alt="" />
-                  <img className="willem__cover-image-extra is--3" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724c5_minimalist-architecture-3.avif" loading="lazy" alt="" />
-                  <img className="willem__cover-image" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724b0_minimalist-architecture-1.avif" loading="lazy" alt="" />
+          <div className="hero-loader__box">
+            <div className="hero-loader__box-inner">
+              <div className="hero__growing-image">
+                <div className="hero__growing-image-wrap">
+                  <img className="hero__cover-image-extra is--1" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724bc_minimalist-architecture-2.avif" loading="lazy" alt="" />
+                  <img className="hero__cover-image-extra is--2" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724cf_minimalist-architecture-4.avif" loading="lazy" alt="" />
+                  <img className="hero__cover-image-extra is--3" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724c5_minimalist-architecture-3.avif" loading="lazy" alt="" />
+                  <img className="hero__cover-image" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724b0_minimalist-architecture-1.avif" loading="lazy" alt="" />
                 </div>
               </div>
             </div>
           </div>
-          <div className="willem__h1-end">
-            <span className="willem__letter">r</span>
-            <span className="willem__letter">u</span>
-            <span className="willem__letter">k</span>
+          <div className="hero__h1-end">
+            <span className="hero__letter">r</span>
+            <span className="hero__letter">u</span>
+            <span className="hero__letter">k</span>
           </div>
         </div>
       </div>
-      <div className="willem-header__content">
-        <div className="willem-header__top">
-          <nav className="willen-nav">
-            <div className="willem-nav__start">
-              <a href="https://www.osmo.supply?utm_source=codepen&utm_medium=pen&utm_campaign=willem-loading-animation" target="_blank" className="willem-nav__link">Osmo ©</a>
+      <div className="hero-header__content">
+        <div className="hero-header__top">
+          <nav className="hero-nav">
+            <a href="#" target="_blank" className="hero-nav__link">Home</a>
+            <div className="hero-nav__center">
+              <a href="#" target="_blank" className="hero-nav__link">Projects,</a>
+              <a href="#" target="_blank" className="hero-nav__link">Education,</a>
+              <a href="#" target="_blank" className="hero-nav__link">Resume</a>
             </div>
-            <div className="willem-nav__end">
-              <div className="willem-nav__links">
-                <a href="https://www.osmo.supply?utm_source=codepen&utm_medium=pen&utm_campaign=willem-loading-animation" target="_blank" className="willem-nav__link">Projects,</a>
-                <a href="https://www.osmo.supply?utm_source=codepen&utm_medium=pen&utm_campaign=willem-loading-animation" target="_blank" className="willem-nav__link">Services,</a>
-                <a href="https://www.osmo.supply?utm_source=codepen&utm_medium=pen&utm_campaign=willem-loading-animation" target="_blank" className="willem-nav__link">Blog (13)</a>
-              </div>
-              <div className="willem-nav__cta">
-                <a href="https://www.osmo.supply?utm_source=codepen&utm_medium=pen&utm_campaign=willem-loading-animation" target="_blank" className="willem-nav__link">Get in touch</a>
-              </div>
-            </div>
+            <a href="#" target="_blank" className="hero-nav__link">Get in touch</a>
           </nav>
         </div>
-        <div className="willem-header__bottom">
-          <div className="willem__h1">
-            <span className="willem__letter-white">D</span>
-            <span className="willem__letter-white">o</span>
-            <span className="willem__letter-white">r</span>
-            <span className="willem__letter-white">u</span>
-            <span className="willem__letter-white">k </span>
-            <span className="willem__letter-white is--space">©</span>
+        <div className="hero-header__bottom">
+          <div className="hero__h1">
+            <span className="hero__letter-white">D</span>
+            <span className="hero__letter-white">o</span>
+            <span className="hero__letter-white">r</span>
+            <span className="hero__letter-white">u</span>
+            <span className="hero__letter-white">k</span>
           </div>
-          <p className="osmo-credits__p">Resource by <a href="https://www.osmo.supply?utm_source=codepen&utm_medium=pen&utm_campaign=willem-loading-animation" target="_blank" className="osmo-credits__p-a">Osmo</a></p>
+          <p className="hero-credits__p">Made by <a href="https://github.com/blazittx" target="_blank" rel="noreferrer" className="hero-credits__p-a">blazitt</a></p>
         </div>
       </div>
     </section>

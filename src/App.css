@@ -1,23 +1,22 @@
-/* ------- Osmo [https://osmo.supply/] ------- */
-/* Osmo UI: https://slater.app/10324/23333.css */
+/* Hero Header Styles */
 
 /* Disable Scroll on Loading */
-main:has(.willem-header.is--loading) {
+main:has(.hero-header.is--loading) {
   height: 100dvh;
 }
 
-.willem-header {
+.hero-header {
   color: #f4f4f4;
   position: relative;
   overflow: hidden;
 }
 
 /* Loading: Hidden */
-.willem-header.is--loading.is--hidden {
+.hero-header.is--loading.is--hidden {
   display: none;
 }
 
-.willem-loader {
+.hero-loader {
   color: #201d1d;
   justify-content: center;
   align-items: center;
@@ -30,7 +29,7 @@ main:has(.willem-header.is--loading) {
   overflow: hidden;
 }
 
-.willem__h1 {
+.hero__h1 {
   white-space: nowrap;
   justify-content: center;
   font-size: 12.5em;
@@ -40,30 +39,30 @@ main:has(.willem-header.is--loading) {
   position: relative;
 }
 
-.willem__h1-start {
+.hero__h1-start {
   justify-content: flex-end;
   width: 1.5256em;
   display: flex;
   overflow: hidden;
 }
 
-.willem__h1-end {
+.hero__h1-end {
   justify-content: flex-start;
   width: 1.525em;
   display: flex;
   overflow: hidden;
 }
 
-.willem__letter {
+.hero__letter {
   display: block;
   position: relative;
 }
 
-.willem__letter-white.is--space {
+.hero__letter-white.is--space {
   margin-left: .25em;
 }
 
-.willem-loader__box {
+.hero-loader__box {
   flex-flow: column;
   justify-content: center;
   align-items: center;
@@ -72,7 +71,7 @@ main:has(.willem-header.is--loading) {
   position: relative;
 }
 
-.willem-loader__box-inner {
+.hero-loader__box-inner {
   justify-content: center;
   align-items: center;
   min-width: 1em;
@@ -81,7 +80,7 @@ main:has(.willem-header.is--loading) {
   position: relative;
 }
 
-.willem__growing-image {
+.hero__growing-image {
   justify-content: center;
   align-items: center;
   width: 0%;
@@ -91,14 +90,14 @@ main:has(.willem-header.is--loading) {
   overflow: hidden;
 }
 
-.willem__growing-image-wrap {
+.hero__growing-image-wrap {
   width: 100%;
   min-width: 1em;
   height: 100%;
   position: absolute;
 }
 
-.willem__cover-image {
+.hero__cover-image {
   pointer-events: none;
   object-fit: cover;
   -webkit-user-select: none;
@@ -110,7 +109,7 @@ main:has(.willem-header.is--loading) {
   left: 0;
 }
 
-.willem__cover-image-extra {
+.hero__cover-image-extra {
   pointer-events: none;
   object-fit: cover;
   -webkit-user-select: none;
@@ -122,19 +121,19 @@ main:has(.willem-header.is--loading) {
   left: 0;
 }
 
-.willem__cover-image-extra.is--1 {
+.hero__cover-image-extra.is--1 {
   z-index: 3;
 }
 
-.willem__cover-image-extra.is--2 {
+.hero__cover-image-extra.is--2 {
   z-index: 2;
 }
 
-.willem__cover-image-extra.is--3 {
+.hero__cover-image-extra.is--3 {
   z-index: 1;
 }
 
-.willem-header__content {
+.hero-header__content {
   flex-flow: column;
   justify-content: space-between;
   align-items: center;
@@ -145,12 +144,12 @@ main:has(.willem-header.is--loading) {
   position: relative;
 }
 
-.willem-header__top {
+.hero-header__top {
   width: 100%;
   position: relative;
 }
 
-.willem-header__bottom {
+.hero-header__bottom {
   justify-content: space-between;
   align-items: flex-end;
   width: 100%;
@@ -159,37 +158,22 @@ main:has(.willem-header.is--loading) {
   overflow: hidden;
 }
 
-.willen-nav {
+.hero-nav {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
   position: relative;
   overflow: hidden;
 }
 
-.willem-nav__start {
-  justify-content: flex-start;
-  align-items: flex-start;
-  width: 50%;
+.hero-nav__center {
   display: flex;
-}
-
-.willem-nav__end {
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 50%;
-  display: flex;
-}
-
-.willem-nav__cta {
-  display: flex;
-}
-
-.willem-nav__links {
   grid-column-gap: .5em;
   grid-row-gap: .5em;
-  display: flex;
 }
 
-.willem-nav__link {
+.hero-nav__link {
   color: inherit;
   font-size: 1.3125em;
   line-height: 1.3;
@@ -197,17 +181,17 @@ main:has(.willem-header.is--loading) {
   position: relative;
 }
 
-.willem__letter-white {
+.hero__letter-white {
   display: block;
   position: relative;
 }
 
 @media screen and (max-width: 991px) {
-  .willem__h1 {
+  .hero__h1 {
     font-size: 9em;
   }
 
-  .willem-nav__links {
+  .hero-nav__center {
     grid-column-gap: 0em;
     grid-row-gap: 0em;
     flex-flow: column;
@@ -215,23 +199,22 @@ main:has(.willem-header.is--loading) {
 }
 
 @media screen and (max-width: 767px) {
-  .willem__h1 {
+  .hero__h1 {
     font-size: 5.5em;
   }
 
-  .willem-nav__start {
-    width: 65%;
-  }
-
-  .willem-nav__end {
+  .hero-nav {
+    flex-flow: column;
     grid-column-gap: 1.5em;
     grid-row-gap: 1.5em;
+  }
+
+  .hero-nav__center {
     flex-flow: column;
-    width: 45%;
   }
 }
 
-.osmo-credits__p {
+.hero-credits__p {
   pointer-events: auto;
   text-align: center;
   margin: 0;
@@ -242,12 +225,12 @@ main:has(.willem-header.is--loading) {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.osmo-credits__p-a {
+.hero-credits__p-a {
   color: #f4f4f4;
 }
 
 @media screen and (max-width: 991px) {
-  .osmo-credits__p {
+  .hero-credits__p {
     display: none;
   }
 }
