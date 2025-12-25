@@ -1,212 +1,291 @@
-import { useEffect, useRef } from 'react'
-import { gsap } from 'gsap'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import './App.css'
 
+const GRID_SIZE = 45
+const GRID_OFFSET_X = GRID_SIZE * 0.36  // 16.2px
+const GRID_OFFSET_Y = GRID_SIZE * 0.32  // 14.4px
+
+// Snap a coordinate to the nearest grid line
+const snapToGrid = (coord, offset) => {
+  const adjusted = coord - offset
+  const snapped = Math.round(adjusted / GRID_SIZE) * GRID_SIZE
+  return snapped + offset
+}
+
+// Snap a size to the nearest grid unit (multiples of GRID_SIZE)
+const snapSizeToGrid = (size) => {
+  return Math.round(size / GRID_SIZE) * GRID_SIZE
+}
+
 function App() {
-  const containerRef = useRef(null)
 
-  useEffect(() => {
-    // Wait a bit to ensure DOM is fully ready
-    const timer = setTimeout(() => {
-      initHeroLoadingAnimation()
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  function initHeroLoadingAnimation() {
-    const container = containerRef.current || document.querySelector(".hero-header");
-    if (!container) {
-      console.error("Hero header container not found");
-      return;
-    }
-
-    // Remove hidden class immediately so animation can start
-    container.classList.remove('is--hidden');
-    
-    // Force a reflow to ensure display change takes effect
-    container.offsetHeight;
-
-    const loadingLetter = container.querySelectorAll(".hero__letter");
-    const box = container.querySelectorAll(".hero-loader__box");
-    const growingImage = container.querySelectorAll(".hero__growing-image");
-    const headingStart = container.querySelectorAll(".hero__h1-start");
-    const headingEnd = container.querySelectorAll(".hero__h1-end");
-    const coverImageExtra = container.querySelectorAll(".hero__cover-image-extra");
-    const headerLetter = container.querySelectorAll(".hero__letter-white");
-    const navLinks = container.querySelectorAll(".hero-nav a, .hero-credits__p");
-    
-    console.log("Animation elements found:", {
-      loadingLetter: loadingLetter.length,
-      box: box.length,
-      growingImage: growingImage.length,
-      headerLetter: headerLetter.length,
-      navLinks: navLinks.length
-    });
-    
-    /* GSAP Timeline */
-    const tl = gsap.timeline({
-      defaults: {
-        ease: "expo.inOut",
-      },
-      onStart: () => {
-        console.log("GSAP timeline started");
+  // Initialize widget positions snapped to grid
+  const [widgets, setWidgets] = useState(() => {
+    const initialX = snapToGrid(100, GRID_OFFSET_X)
+    const initialY = snapToGrid(100, GRID_OFFSET_Y)
+    const initialWidth = snapSizeToGrid(300)  // 315px (7 grid units)
+    const initialHeight = snapSizeToGrid(200)  // 180px (4 grid units)
+    return [
+      {
+        id: 'profile',
+        x: initialX,
+        y: initialY,
+        width: initialWidth,
+        height: initialHeight,
+        content: (
+          <>
+            <h2>Profile</h2>
+            <p>Your profile content goes here</p>
+          </>
+        )
       }
-    });
+    ]
+  })
+
+  const [isDragging, setIsDragging] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
+  const dragStateRef = useRef({
+    activeId: null,
+    startX: 0,
+    startY: 0,
+    widgetStartX: 0,
+    widgetStartY: 0
+  })
+  const resizeStateRef = useRef({
+    activeId: null,
+    handle: null, // 'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'
+    startX: 0,
+    startY: 0,
+    widgetStartX: 0,
+    widgetStartY: 0,
+    widgetStartWidth: 0,
+    widgetStartHeight: 0
+  })
+
+  const handleMouseDown = (e, id) => {
+    if (e.button !== 0) return
     
-    /* Start of Timeline */
-    if (loadingLetter.length) {
-      tl.from(loadingLetter, {
-        yPercent: 100,
-        stagger: 0.025,
-        duration: 1.25
-      });
-    }
-    
-    if (box.length) {
-      tl.fromTo(box, {
-        width: "0em",
-      },{
-        width: "1em",
-        duration: 1.25
-      }, "< 1.25");
+    const widget = widgets.find(w => w.id === id)
+    if (!widget) return
+
+    // Check if clicking on a resize handle
+    const handle = e.target.dataset.handle
+    if (handle) {
+      resizeStateRef.current = {
+        activeId: id,
+        handle: handle,
+        startX: e.clientX,
+        startY: e.clientY,
+        widgetStartX: widget.x,
+        widgetStartY: widget.y,
+        widgetStartWidth: widget.width,
+        widgetStartHeight: widget.height
+      }
+      setIsResizing(true)
+    } else {
+      dragStateRef.current = {
+        activeId: id,
+        startX: e.clientX,
+        startY: e.clientY,
+        widgetStartX: widget.x,
+        widgetStartY: widget.y
+      }
+      setIsDragging(true)
     }
 
-    if (box.length) {
-      // Set initial max-height constraint
-      gsap.set(growingImage, { maxHeight: "1em" });
-      
-      tl.fromTo(growingImage, {
-        width: "0%",
-      },{
-        width: "100%",
-        duration: 1.25
-      }, "<");
-    }
-    
-    if (headingStart.length) {
-      tl.fromTo(headingStart, {
-        x: "0em",
-      },{
-        x: "-0.05em",
-        duration: 1.25
-      }, "<");
-    }
-    
-    if (headingEnd.length) {
-      tl.fromTo(headingEnd, {
-        x: "0em",
-      },{
-        x: "0.05em",
-        duration: 1.25
-      }, "<");
-    }
-
-    if (coverImageExtra.length) {
-      tl.fromTo(coverImageExtra, {
-        opacity: 1,
-      },{
-        opacity: 0,
-        duration: 0.05,
-        ease: "none",
-        stagger: 0.5
-      }, "-=0.05");
-    }
-      
-    if (growingImage.length) {
-      tl.to(growingImage, {
-        width: "100vw",
-        height: "100dvh",
-        maxHeight: "none",
-        duration: 2
-      }, "< 1.25");
-    }
-    
-    if (box.length) {
-      tl.to(box, {
-        width: "110vw",
-        duration: 2
-      }, "<");
-    }
-    
-    if (headerLetter.length) {
-      tl.from(headerLetter, {
-        yPercent: 100,
-        duration: 1.25,
-        ease: "expo.out",
-        stagger: 0.025
-      }, "< 1.2");
-    }
-
-    if (navLinks.length) {
-      tl.from(navLinks, {
-        yPercent: 100,
-        duration: 1.25,
-        ease: "expo.out",
-        stagger: 0.1
-      }, "<");
-    }
-    
-    // Ensure timeline plays
-    tl.play();
-    console.log("GSAP timeline created and playing");
+    e.preventDefault()
+    e.stopPropagation()
   }
 
+  const handleMouseMove = (e) => {
+    // Handle resizing
+    if (resizeStateRef.current.activeId) {
+      const { handle, startX, startY, widgetStartX, widgetStartY, widgetStartWidth, widgetStartHeight } = resizeStateRef.current
+      const deltaX = e.clientX - startX
+      const deltaY = e.clientY - startY
+
+      setWidgets(prev => prev.map(w => {
+        if (w.id === resizeStateRef.current.activeId) {
+          let newX = widgetStartX
+          let newY = widgetStartY
+          let newWidth = widgetStartWidth
+          let newHeight = widgetStartHeight
+
+          // Handle horizontal resizing
+          if (handle.includes('e')) {
+            newWidth = widgetStartWidth + deltaX
+          } else if (handle.includes('w')) {
+            newWidth = widgetStartWidth - deltaX
+            newX = widgetStartX + deltaX
+          }
+
+          // Handle vertical resizing
+          if (handle.includes('s')) {
+            newHeight = widgetStartHeight + deltaY
+          } else if (handle.includes('n')) {
+            newHeight = widgetStartHeight - deltaY
+            newY = widgetStartY + deltaY
+          }
+
+          // Ensure minimum size
+          newWidth = Math.max(GRID_SIZE, newWidth)
+          newHeight = Math.max(GRID_SIZE, newHeight)
+
+          return { ...w, x: newX, y: newY, width: newWidth, height: newHeight }
+        }
+        return w
+      }))
+      return
+    }
+
+    // Handle dragging
+    if (dragStateRef.current.activeId) {
+      const { startX, startY, widgetStartX, widgetStartY } = dragStateRef.current
+      const deltaX = e.clientX - startX
+      const deltaY = e.clientY - startY
+
+      setWidgets(prev => prev.map(w => 
+        w.id === dragStateRef.current.activeId
+          ? { ...w, x: widgetStartX + deltaX, y: widgetStartY + deltaY }
+          : w
+      ))
+    }
+  }
+
+  const handleMouseUp = useCallback(() => {
+    // Handle resize end
+    if (resizeStateRef.current.activeId) {
+      const activeId = resizeStateRef.current.activeId
+      setIsResizing(false)
+      
+      // Snap widget position and size to grid
+      setWidgets(prev => {
+        const widget = prev.find(w => w.id === activeId)
+        if (widget) {
+          const { handle, widgetStartX, widgetStartY, widgetStartWidth, widgetStartHeight } = resizeStateRef.current
+          const snappedWidth = snapSizeToGrid(widget.width)
+          const snappedHeight = snapSizeToGrid(widget.height)
+          
+          // Calculate final position based on which handle was used
+          let finalX = widget.x
+          let finalY = widget.y
+          
+          if (handle.includes('w')) {
+            // Resizing from left: adjust x position
+            const widthChange = snappedWidth - widgetStartWidth
+            finalX = widgetStartX - widthChange
+          } else {
+            // Resizing from right: keep x as is
+            finalX = widget.x
+          }
+          
+          if (handle.includes('n')) {
+            // Resizing from top: adjust y position
+            const heightChange = snappedHeight - widgetStartHeight
+            finalY = widgetStartY - heightChange
+          } else {
+            // Resizing from bottom: keep y as is
+            finalY = widget.y
+          }
+          
+          // Snap final position to grid
+          finalX = snapToGrid(finalX, GRID_OFFSET_X)
+          finalY = snapToGrid(finalY, GRID_OFFSET_Y)
+          
+          return prev.map(w => {
+            if (w.id === activeId) {
+              return {
+                ...w,
+                x: finalX,
+                y: finalY,
+                width: snappedWidth,
+                height: snappedHeight
+              }
+            }
+            return w
+          })
+        }
+        return prev
+      })
+      resizeStateRef.current.activeId = null
+    }
+
+    // Handle drag end
+    if (dragStateRef.current.activeId) {
+      const activeId = dragStateRef.current.activeId
+      setIsDragging(false)
+      
+      // Snap the widget to the grid when dragging ends
+      setWidgets(prev => {
+        const widget = prev.find(w => w.id === activeId)
+        if (widget) {
+          const snappedX = snapToGrid(widget.x, GRID_OFFSET_X)
+          const snappedY = snapToGrid(widget.y, GRID_OFFSET_Y)
+          return prev.map(w => {
+            if (w.id === activeId) {
+              return {
+                ...w,
+                x: snappedX,
+                y: snappedY
+              }
+            }
+            return w
+          })
+        }
+        return prev
+      })
+      dragStateRef.current.activeId = null
+    }
+  }, [])
+
+  // Attach global mouse events
+  useEffect(() => {
+    const handleGlobalMove = (e) => handleMouseMove(e)
+    const handleGlobalUp = () => handleMouseUp()
+
+    document.addEventListener('mousemove', handleGlobalMove)
+    document.addEventListener('mouseup', handleGlobalUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMove)
+      document.removeEventListener('mouseup', handleGlobalUp)
+    }
+  }, [handleMouseUp])
+
   return (
-    <section ref={containerRef} className="hero-header is--loading is--hidden">
-      <div className="hero-loader">
-        <div className="hero__h1">
-          <div className="hero__h1-start">
-            <span className="hero__letter">D</span>
-            <span className="hero__letter">o</span>
-          </div>
-          <div className="hero-loader__box">
-            <div className="hero-loader__box-inner">
-              <div className="hero__growing-image">
-                <div className="hero__growing-image-wrap">
-                  <img className="hero__cover-image-extra is--1" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724bc_minimalist-architecture-2.avif" loading="lazy" alt="" />
-                  <img className="hero__cover-image-extra is--2" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724cf_minimalist-architecture-4.avif" loading="lazy" alt="" />
-                  <img className="hero__cover-image-extra is--3" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724c5_minimalist-architecture-3.avif" loading="lazy" alt="" />
-                  <img className="hero__cover-image" src="https://cdn.prod.website-files.com/6915bbf51d482439010ee790/6915bc3ac9fe346a924724b0_minimalist-architecture-1.avif" loading="lazy" alt="" />
-                </div>
-              </div>
+    <div className="app">
+      <div className="widget-container">
+        {widgets.map(widget => {
+          const isDraggingWidget = isDragging && dragStateRef.current.activeId === widget.id
+          const isResizingWidget = isResizing && resizeStateRef.current.activeId === widget.id
+          return (
+            <div
+              key={widget.id}
+              className={`widget ${isDraggingWidget ? 'dragging' : ''} ${isResizingWidget ? 'resizing' : ''}`}
+              style={{
+                left: `${widget.x}px`,
+                top: `${widget.y}px`,
+                width: `${widget.width}px`,
+                height: `${widget.height}px`
+              }}
+              onMouseDown={(e) => handleMouseDown(e, widget.id)}
+            >
+              {widget.content}
+              {/* Resize handles */}
+              <div className="resize-handle resize-handle-n" data-handle="n"></div>
+              <div className="resize-handle resize-handle-s" data-handle="s"></div>
+              <div className="resize-handle resize-handle-e" data-handle="e"></div>
+              <div className="resize-handle resize-handle-w" data-handle="w"></div>
+              <div className="resize-handle resize-handle-ne" data-handle="ne"></div>
+              <div className="resize-handle resize-handle-nw" data-handle="nw"></div>
+              <div className="resize-handle resize-handle-se" data-handle="se"></div>
+              <div className="resize-handle resize-handle-sw" data-handle="sw"></div>
             </div>
-          </div>
-          <div className="hero__h1-end">
-            <span className="hero__letter">r</span>
-            <span className="hero__letter">u</span>
-            <span className="hero__letter">k</span>
-          </div>
-        </div>
+          )
+        })}
       </div>
-      <div className="hero-header__content">
-        <div className="hero-header__top">
-          <nav className="hero-nav">
-            <a href="#" target="_blank" className="hero-nav__link">
-              <img src="/image.png" alt="BLAZITx Logo" className="hero-nav__logo" />
-            </a>
-            <div className="hero-nav__center">
-              <a href="#" target="_blank" className="hero-nav__link">Projects,</a>
-              <a href="#" target="_blank" className="hero-nav__link">Education,</a>
-              <a href="#" target="_blank" className="hero-nav__link">Resume</a>
-            </div>
-            <a href="#" target="_blank" className="hero-nav__link">Get in touch</a>
-          </nav>
-        </div>
-        <div className="hero-header__bottom">
-          <div className="hero__h1">
-            <span className="hero__letter-white">D</span>
-            <span className="hero__letter-white">o</span>
-            <span className="hero__letter-white">r</span>
-            <span className="hero__letter-white">u</span>
-            <span className="hero__letter-white">k</span>
-          </div>
-          <p className="hero-credits__p">Made by <a href="https://github.com/blazittx" target="_blank" rel="noreferrer" className="hero-credits__p-a">blazitt</a></p>
-        </div>
-      </div>
-    </section>
+    </div>
   )
 }
 
 export default App
-
