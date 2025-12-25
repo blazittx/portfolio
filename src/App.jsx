@@ -10,6 +10,31 @@ const GRID_SIZE = 45
 const GRID_OFFSET_X = GRID_SIZE * 0.36  // 16.2px
 const GRID_OFFSET_Y = GRID_SIZE * 0.32  // 14.4px
 const WIDGET_PADDING = 12  // Padding from grid lines - increase this value for more distance
+const COOKIE_NAME = 'widgetLayout'
+
+// Cookie helper functions
+const setCookie = (name, value, days = 365) => {
+  const expires = new Date()
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+  document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))};expires=${expires.toUTCString()};path=/`
+}
+
+const getCookie = (name) => {
+  const nameEQ = name + '='
+  const ca = document.cookie.split(';')
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i]
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length)
+    if (c.indexOf(nameEQ) === 0) {
+      try {
+        return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)))
+      } catch (e) {
+        return null
+      }
+    }
+  }
+  return null
+}
 
 // Snap a coordinate to the nearest grid line with padding (inside the grid cell)
 const snapToGrid = (coord, offset) => {
@@ -32,9 +57,29 @@ const snapSizeToGrid = (size) => {
 }
 
 function App() {
+  // Component mapping
+  const componentMap = {
+    profile: ProfileWidget,
+    about: AboutWidget,
+    projects: ProjectsWidget,
+    skills: SkillsWidget,
+    contact: ContactWidget
+  }
 
-  // Initialize widget positions snapped to grid
+  // Initialize widget positions - load from cookie or use defaults
   const [widgets, setWidgets] = useState(() => {
+    // Try to load from cookie
+    const savedLayout = getCookie(COOKIE_NAME)
+    
+    if (savedLayout && Array.isArray(savedLayout)) {
+      // Restore from cookie, ensuring components are mapped correctly
+      return savedLayout.map(widget => ({
+        ...widget,
+        component: componentMap[widget.type] || componentMap[widget.id]
+      }))
+    }
+    
+    // Default layout
     const baseX = snapToGrid(100, GRID_OFFSET_X)
     const baseY = snapToGrid(100, GRID_OFFSET_Y)
     
@@ -310,6 +355,20 @@ function App() {
       dragStateRef.current.activeId = null
     }
   }, [])
+
+  // Save to cookie whenever widgets change
+  useEffect(() => {
+    // Only save position and size data, not component references
+    const layoutToSave = widgets.map(({ id, type, x, y, width, height }) => ({
+      id,
+      type,
+      x,
+      y,
+      width,
+      height
+    }))
+    setCookie(COOKIE_NAME, layoutToSave)
+  }, [widgets])
 
   // Attach global mouse events
   useEffect(() => {
