@@ -5,35 +5,83 @@
   position: relative;
 }
 
+.grid-background {
+  --size: 45px;
+  --line: color-mix(in hsl, #ffffff, transparent 85%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(
+        90deg,
+        var(--line) 1px,
+        transparent 1px var(--size)
+      )
+      calc(var(--size) * 0.36) 50% / var(--size) var(--size),
+    linear-gradient(var(--line) 1px, transparent 1px var(--size)) 0%
+      calc(var(--size) * 0.32) / var(--size) var(--size);
+  mask: linear-gradient(-20deg, transparent 50%, white);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.grid-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  --line: color-mix(in hsl, #808080, transparent 90%);
+  background: linear-gradient(
+        90deg,
+        var(--line) 1px,
+        transparent 1px var(--size)
+      )
+      calc(var(--size) * 0.36) 50% / var(--size) var(--size),
+    linear-gradient(var(--line) 1px, transparent 1px var(--size)) 0%
+      calc(var(--size) * 0.32) / var(--size) var(--size);
+  mask: linear-gradient(-20deg, transparent 50%, white);
+}
+
+.grid-mask {
+  position: fixed;
+  background: hsl(0 0% 4%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .widget-container {
   position: relative;
   width: 100%;
   height: 100%;
+  z-index: 1;
 }
 
 .widget {
   position: absolute;
-  background: linear-gradient(
-    135deg,
-    color-mix(in hsl, canvas, transparent 88%) 0%,
-    color-mix(in hsl, canvas, transparent 92%) 100%
-  );
-  border: 1px solid color-mix(in hsl, canvasText, transparent 85%);
-  border-radius: 8px;
-  padding: 1rem;
-  backdrop-filter: blur(20px) saturate(180%);
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+  background: hsl(0 0% 4%);
+  border: 1px solid #777777;
+  border-radius: 4px;
+  padding: 1.5rem;
+  overflow: visible;
+  transition: border-color 0.2s ease,
+              box-shadow 0.2s ease,
               left 0.2s cubic-bezier(0.4, 0, 0.2, 1),
               top 0.2s cubic-bezier(0.4, 0, 0.2, 1),
               width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
               height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: move;
   user-select: none;
-  box-shadow: 
-    0 2px 8px color-mix(in hsl, canvasText, transparent 95%),
-    0 1px 2px color-mix(in hsl, canvasText, transparent 90%);
+  box-shadow: none;
+}
+
+.widget-content {
+  overflow: hidden;
+  border-radius: 8px;
+  height: 100%;
+  position: relative;
 }
 
 .widget.dragging {
@@ -45,61 +93,39 @@
 }
 
 .widget:hover {
-  background: linear-gradient(
-    135deg,
-    color-mix(in hsl, canvas, transparent 82%) 0%,
-    color-mix(in hsl, canvas, transparent 88%) 100%
-  );
-  border-color: color-mix(in hsl, canvasText, transparent 70%);
-  box-shadow: 
-    0 8px 24px color-mix(in hsl, canvasText, transparent 92%),
-    0 4px 8px color-mix(in hsl, canvasText, transparent 88%);
-  transform: translateY(-2px);
+  border-color: color-mix(in hsl, canvasText, transparent 10%);
 }
 
 .widget:active {
   cursor: grabbing;
-  opacity: 0.9;
-  box-shadow: 
-    0 12px 32px color-mix(in hsl, canvasText, transparent 85%),
-    0 8px 16px color-mix(in hsl, canvasText, transparent 80%);
 }
 
-.widget h2 {
-  font-size: 1.5rem;
-  margin: 0 0 0.75rem 0;
-  font-weight: 700;
-  color: canvasText;
-}
-
-.widget p {
-  font-size: 1rem;
-  opacity: 0.75;
-  line-height: 1.6;
-  color: canvasText;
-}
 
 /* Resize handles */
 .resize-handle {
   position: absolute;
-  background: color-mix(in hsl, canvasText, transparent 90%);
-  border: 1px solid color-mix(in hsl, canvasText, transparent 60%);
-  border-radius: 2px;
+  background: color-mix(in hsl, canvasText, transparent 97%);
+  border: 1px solid color-mix(in hsl, canvasText, transparent 8%);
   z-index: 10;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
 .widget:hover .resize-handle {
   opacity: 1;
 }
 
+.resize-handle:hover {
+  background: color-mix(in hsl, canvasText, transparent 92%);
+}
+
 .resize-handle-n,
 .resize-handle-s {
   left: 50%;
   transform: translateX(-50%);
-  width: 60px;
-  height: 8px;
+  width: 50px;
+  height: 6px;
+  border-radius: 3px;
   cursor: ns-resize;
 }
 
@@ -115,8 +141,9 @@
 .resize-handle-w {
   top: 50%;
   transform: translateY(-50%);
-  width: 8px;
-  height: 60px;
+  width: 6px;
+  height: 50px;
+  border-radius: 3px;
   cursor: ew-resize;
 }
 
@@ -132,8 +159,8 @@
 .resize-handle-nw,
 .resize-handle-se,
 .resize-handle-sw {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
 }
 
@@ -163,6 +190,6 @@
 
 .resize-handle:active {
   opacity: 1;
-  background: color-mix(in hsl, canvasText, transparent 70%);
-  border-color: color-mix(in hsl, canvasText, transparent 40%);
+  background: color-mix(in hsl, canvasText, transparent 90%);
+  border-color: color-mix(in hsl, canvasText, transparent 5%);
 }

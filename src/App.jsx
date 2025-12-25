@@ -1,43 +1,115 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import './App.css'
+import ProfileWidget from './components/ProfileWidget'
+import AboutWidget from './components/AboutWidget'
+import ProjectsWidget from './components/ProjectsWidget'
+import ContactWidget from './components/ContactWidget'
+import SkillsWidget from './components/SkillsWidget'
 
 const GRID_SIZE = 45
 const GRID_OFFSET_X = GRID_SIZE * 0.36  // 16.2px
 const GRID_OFFSET_Y = GRID_SIZE * 0.32  // 14.4px
+const WIDGET_PADDING = 12  // Padding from grid lines - increase this value for more distance
 
-// Snap a coordinate to the nearest grid line
+// Snap a coordinate to the nearest grid line with padding (inside the grid cell)
 const snapToGrid = (coord, offset) => {
   const adjusted = coord - offset
   const snapped = Math.round(adjusted / GRID_SIZE) * GRID_SIZE
-  return snapped + offset
+  return snapped + offset + WIDGET_PADDING
 }
 
-// Snap a size to the nearest grid unit (multiples of GRID_SIZE)
+// Snap a size to fit within grid cells (accounting for padding on both sides)
+// Size should be: (grid_units * GRID_SIZE) - (padding * 2)
+// Minimum size is 2x2 grid units
+const MIN_GRID_UNITS = 2
 const snapSizeToGrid = (size) => {
-  return Math.round(size / GRID_SIZE) * GRID_SIZE
+  // Add padding to both sides to get the total space needed
+  const sizeWithPadding = size + (WIDGET_PADDING * 2)
+  // Snap to grid units, with minimum of 2 units
+  const gridUnits = Math.max(MIN_GRID_UNITS, Math.round(sizeWithPadding / GRID_SIZE))
+  // Return size minus padding on both sides
+  return (gridUnits * GRID_SIZE) - (WIDGET_PADDING * 2)
 }
 
 function App() {
 
   // Initialize widget positions snapped to grid
   const [widgets, setWidgets] = useState(() => {
-    const initialX = snapToGrid(100, GRID_OFFSET_X)
-    const initialY = snapToGrid(100, GRID_OFFSET_Y)
-    const initialWidth = snapSizeToGrid(300)  // 315px (7 grid units)
-    const initialHeight = snapSizeToGrid(200)  // 180px (4 grid units)
+    const baseX = snapToGrid(100, GRID_OFFSET_X)
+    const baseY = snapToGrid(100, GRID_OFFSET_Y)
+    
+    // Calculate widget sizes first
+    const profileWidth = snapSizeToGrid(270) // 6 grid units
+    const profileHeight = snapSizeToGrid(180) // 4 grid units
+    const aboutWidth = snapSizeToGrid(225) // 5 grid units
+    const aboutHeight = snapSizeToGrid(180) // 4 grid units
+    const projectsWidth = snapSizeToGrid(270) // 6 grid units
+    const projectsHeight = snapSizeToGrid(225) // 5 grid units
+    const skillsWidth = snapSizeToGrid(225) // 5 grid units
+    const skillsHeight = snapSizeToGrid(135) // 3 grid units
+    const contactWidth = snapSizeToGrid(225) // 5 grid units
+    const contactHeight = snapSizeToGrid(90) // 2 grid units
+    
+    // Calculate positions, ensuring they snap to grid
+    const aboutX = baseX + profileWidth + GRID_SIZE
+    const aboutXSnapped = snapToGrid(aboutX, GRID_OFFSET_X)
+    
+    const projectsY = baseY + profileHeight + GRID_SIZE
+    const projectsYSnapped = snapToGrid(projectsY, GRID_OFFSET_Y)
+    
+    const skillsX = aboutXSnapped
+    const skillsY = projectsYSnapped
+    const skillsYSnapped = snapToGrid(skillsY, GRID_OFFSET_Y)
+    
+    const contactX = skillsX
+    const contactY = skillsYSnapped + skillsHeight + GRID_SIZE
+    const contactYSnapped = snapToGrid(contactY, GRID_OFFSET_Y)
+    
     return [
       {
         id: 'profile',
-        x: initialX,
-        y: initialY,
-        width: initialWidth,
-        height: initialHeight,
-        content: (
-          <>
-            <h2>Profile</h2>
-            <p>Your profile content goes here</p>
-          </>
-        )
+        type: 'profile',
+        x: baseX,
+        y: baseY,
+        width: profileWidth,
+        height: profileHeight,
+        component: ProfileWidget
+      },
+      {
+        id: 'about',
+        type: 'about',
+        x: aboutXSnapped,
+        y: baseY,
+        width: aboutWidth,
+        height: aboutHeight,
+        component: AboutWidget
+      },
+      {
+        id: 'projects',
+        type: 'projects',
+        x: baseX,
+        y: projectsYSnapped,
+        width: projectsWidth,
+        height: projectsHeight,
+        component: ProjectsWidget
+      },
+      {
+        id: 'skills',
+        type: 'skills',
+        x: skillsX,
+        y: skillsYSnapped,
+        width: skillsWidth,
+        height: skillsHeight,
+        component: SkillsWidget
+      },
+      {
+        id: 'contact',
+        type: 'contact',
+        x: contactX,
+        y: contactYSnapped,
+        width: contactWidth,
+        height: contactHeight,
+        component: ContactWidget
       }
     ]
   })
@@ -127,9 +199,10 @@ function App() {
             newY = widgetStartY + deltaY
           }
 
-          // Ensure minimum size
-          newWidth = Math.max(GRID_SIZE, newWidth)
-          newHeight = Math.max(GRID_SIZE, newHeight)
+          // Ensure minimum size (at least 2x2 grid units minus padding on both sides)
+          const minSize = (MIN_GRID_UNITS * GRID_SIZE) - (WIDGET_PADDING * 2)
+          newWidth = Math.max(minSize, newWidth)
+          newHeight = Math.max(minSize, newHeight)
 
           return { ...w, x: newX, y: newY, width: newWidth, height: newHeight }
         }
@@ -254,6 +327,20 @@ function App() {
 
   return (
     <div className="app">
+      <div className="grid-background"></div>
+      {/* Overlay elements to hide grid lines behind widgets */}
+      {widgets.map(widget => (
+        <div
+          key={`grid-mask-${widget.id}`}
+          className="grid-mask"
+          style={{
+            left: `${widget.x}px`,
+            top: `${widget.y}px`,
+            width: `${widget.width}px`,
+            height: `${widget.height}px`
+          }}
+        />
+      ))}
       <div className="widget-container">
         {widgets.map(widget => {
           const isDraggingWidget = isDragging && dragStateRef.current.activeId === widget.id
@@ -270,7 +357,12 @@ function App() {
               }}
               onMouseDown={(e) => handleMouseDown(e, widget.id)}
             >
-              {widget.content}
+              <div className="widget-content">
+                {(() => {
+                  const Component = widget.component
+                  return <Component />
+                })()}
+              </div>
               {/* Resize handles */}
               <div className="resize-handle resize-handle-n" data-handle="n"></div>
               <div className="resize-handle resize-handle-s" data-handle="s"></div>
