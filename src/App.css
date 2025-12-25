@@ -181,6 +181,14 @@ main:has(.hero-header.is--loading) {
   position: relative;
 }
 
+.hero-nav__logo {
+  height: 2em;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 4px;
+}
+
 .hero__letter-white {
   display: block;
   position: relative;

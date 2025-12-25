@@ -182,7 +182,9 @@ function App() {
       <div className="hero-header__content">
         <div className="hero-header__top">
           <nav className="hero-nav">
-            <a href="#" target="_blank" className="hero-nav__link">Home</a>
+            <a href="#" target="_blank" className="hero-nav__link">
+              <img src="/image.png" alt="BLAZITx Logo" className="hero-nav__logo" />
+            </a>
             <div className="hero-nav__center">
               <a href="#" target="_blank" className="hero-nav__link">Projects,</a>
               <a href="#" target="_blank" className="hero-nav__link">Education,</a>
