@@ -94,17 +94,17 @@ export default function ContactWidget() {
   const contacts = [
     { 
       label: 'Email', 
-      href: 'mailto:hello@example.com',
+      href: 'mailto:info@doruksasmaz.com',
       icon: (props) => <EmailIcon {...props} />
     },
     { 
       label: 'GitHub', 
-      href: 'https://github.com',
+      href: 'https://github.com/blazittx',
       icon: (props) => <GitHubIcon {...props} />
     },
     { 
       label: 'LinkedIn', 
-      href: 'https://linkedin.com',
+      href: 'https://www.linkedin.com/in/doruksasmaz/',
       icon: (props) => <LinkedInIcon {...props} />
     },
   ]
@@ -120,6 +120,8 @@ export default function ContactWidget() {
               <a
                 key={index}
                 href={contact.href}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={buttonStyle}
                 title={contact.label}
                 onMouseEnter={(e) => {
