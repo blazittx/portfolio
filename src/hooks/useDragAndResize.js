@@ -2,18 +2,22 @@ import { useState, useRef, useCallback } from 'react'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, snapToGridConstrained, isWithinUsableArea } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
-import { hasCollisionWithOthers, findNearestValidPosition, findValidSize } from '../utils/collision'
+import { hasCollisionWithOthers, findNearestValidPosition, findValidSize, findCollidingWidget, findWidgetAtPoint } from '../utils/collision'
 
 export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 0 }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [collisionWidgetId, setCollisionWidgetId] = useState(null)
+  const [swapTargetId, setSwapTargetId] = useState(null)
+  const swapTimerRef = useRef(null)
   const dragStateRef = useRef({
     activeId: null,
     startX: 0,
     startY: 0,
     widgetStartX: 0,
     widgetStartY: 0,
+    widgetStartWidth: 0,
+    widgetStartHeight: 0,
     hasMoved: false, // Track if mouse actually moved (drag vs click)
     moveThreshold: 5 // Pixels to move before considering it a drag
   })
@@ -58,6 +62,8 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
         startY: e.clientY,
         widgetStartX: widget.x,
         widgetStartY: widget.y,
+        widgetStartWidth: widget.width,
+        widgetStartHeight: widget.height,
         hasMoved: false,
         moveThreshold: 5
       }
@@ -67,6 +73,81 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
     e.preventDefault()
     e.stopPropagation()
   }
+
+  // Helper function to perform widget swap
+  const performSwap = useCallback((activeId, targetId) => {
+    setWidgets(prev => {
+      const activeWidget = prev.find(w => w.id === activeId)
+      const targetWidget = prev.find(w => w.id === targetId)
+      
+      if (!activeWidget || !targetWidget) return prev
+      if (activeWidget.locked || targetWidget.locked) return prev
+      
+      // Get the dragged widget's original position and size (where it started)
+      const draggedOriginalX = dragStateRef.current.widgetStartX
+      const draggedOriginalY = dragStateRef.current.widgetStartY
+      const draggedOriginalWidth = dragStateRef.current.widgetStartWidth
+      const draggedOriginalHeight = dragStateRef.current.widgetStartHeight
+      
+      // Snap the dragged widget's original position and size
+      const draggedSnappedX = snapToGrid(draggedOriginalX, GRID_OFFSET_X)
+      const draggedSnappedY = snapToGrid(draggedOriginalY, GRID_OFFSET_Y)
+      const draggedSnappedWidth = snapSizeToGrid(draggedOriginalWidth)
+      const draggedSnappedHeight = snapSizeToGrid(draggedOriginalHeight)
+      
+      // Get the target widget's current position and size
+      const targetSnappedX = snapToGrid(targetWidget.x, GRID_OFFSET_X)
+      const targetSnappedY = snapToGrid(targetWidget.y, GRID_OFFSET_Y)
+      const targetSnappedWidth = snapSizeToGrid(targetWidget.width)
+      const targetSnappedHeight = snapSizeToGrid(targetWidget.height)
+      
+      const swappedWidgets = prev.map(w => {
+        if (w.id === activeId) {
+          // Move dragged widget to target widget's position and size
+          return {
+            ...w,
+            x: targetSnappedX,
+            y: targetSnappedY,
+            width: targetSnappedWidth,
+            height: targetSnappedHeight
+          }
+        } else if (w.id === targetId) {
+          // Move target widget to dragged widget's original position and size
+          return {
+            ...w,
+            x: draggedSnappedX,
+            y: draggedSnappedY,
+            width: draggedSnappedWidth,
+            height: draggedSnappedHeight
+          }
+        }
+        return w
+      })
+      
+      // Show collision feedback
+      setCollisionWidgetId(activeId)
+      setTimeout(() => setCollisionWidgetId(null), 300)
+      
+      // Mark both widgets as having been dragged to prevent click events
+      dragStateRef.current.lastWasDrag = true
+      dragStateRef.current.lastWidgetId = activeId
+      // Also mark the target widget to prevent its click handler from firing
+      dragStateRef.current.swappedTargetId = targetId
+      
+      return swappedWidgets
+    })
+    
+    // Clear swap target and stop dragging (only if called from timer)
+    setSwapTargetId(null)
+    setIsDragging(false)
+    dragStateRef.current.activeId = null
+    dragStateRef.current.hasMoved = false
+    
+    // Clear swapped target ID after a short delay to allow click handlers to check it
+    setTimeout(() => {
+      dragStateRef.current.swappedTargetId = null
+    }, 100)
+  }, [setWidgets])
 
   const handleMouseMove = useCallback((e) => {
     // Track if dragging has actually moved (for click vs drag detection)
@@ -145,6 +226,30 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
         let newX = widgetStartX + deltaX
         let newY = widgetStartY + deltaY
         
+        // Check which widget the cursor is over (based on cursor position, not widget bounding box)
+        const hoveredWidget = findWidgetAtPoint(e.clientX, e.clientY, prev, dragStateRef.current.activeId, centerOffset)
+        
+        // Clear existing timer
+        if (swapTimerRef.current) {
+          clearTimeout(swapTimerRef.current)
+          swapTimerRef.current = null
+        }
+        
+        // Update swap target
+        if (hoveredWidget && !hoveredWidget.locked && !activeWidget.locked) {
+          // If hovering over a different widget, start timer
+          if (swapTargetId !== hoveredWidget.id) {
+            setSwapTargetId(hoveredWidget.id)
+            // Start 1 second timer to auto-swap
+            swapTimerRef.current = setTimeout(() => {
+              performSwap(dragStateRef.current.activeId, hoveredWidget.id)
+            }, 1000)
+          }
+        } else {
+          // Not hovering over a swappable widget
+          setSwapTargetId(null)
+        }
+        
         return prev.map(w => 
           w.id === activeWidget.id
             ? { ...w, x: newX, y: newY }
@@ -152,11 +257,21 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
         )
       })
     }
-  }, [setWidgets, centerOffset])
+  }, [setWidgets, centerOffset, swapTargetId, performSwap])
 
   const handleMouseUp = useCallback(() => {
-    // Clear collision state
+    // Clear swap timer
+    if (swapTimerRef.current) {
+      clearTimeout(swapTimerRef.current)
+      swapTimerRef.current = null
+    }
+    
+    // Store swapTargetId before clearing it (we need it for the swap check)
+    const currentSwapTargetId = swapTargetId
+    
+    // Clear collision state and swap target
     setCollisionWidgetId(null)
+    setSwapTargetId(null)
     
     // Check if it was a drag or click (for widgets that need to differentiate)
     let wasDrag = false
@@ -406,7 +521,61 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
               shouldWiggle = true
             }
             
-            // Check for collisions with other widgets
+            // Only swap if swapTargetId was set (cursor was over a widget with overlay showing)
+            if (currentSwapTargetId) {
+              const targetWidget = prev.find(w => w.id === currentSwapTargetId)
+              if (targetWidget && !widget.locked && !targetWidget.locked) {
+                // Perform swap inline (can't use performSwap here as it calls setWidgets)
+                const draggedOriginalX = dragStateRef.current.widgetStartX
+                const draggedOriginalY = dragStateRef.current.widgetStartY
+                const draggedOriginalWidth = dragStateRef.current.widgetStartWidth
+                const draggedOriginalHeight = dragStateRef.current.widgetStartHeight
+                
+                const draggedSnappedX = snapToGrid(draggedOriginalX, GRID_OFFSET_X)
+                const draggedSnappedY = snapToGrid(draggedOriginalY, GRID_OFFSET_Y)
+                const draggedSnappedWidth = snapSizeToGrid(draggedOriginalWidth)
+                const draggedSnappedHeight = snapSizeToGrid(draggedOriginalHeight)
+                
+                const targetSnappedX = snapToGrid(targetWidget.x, GRID_OFFSET_X)
+                const targetSnappedY = snapToGrid(targetWidget.y, GRID_OFFSET_Y)
+                const targetSnappedWidth = snapSizeToGrid(targetWidget.width)
+                const targetSnappedHeight = snapSizeToGrid(targetWidget.height)
+                
+                const swappedWidgets = prev.map(w => {
+                  if (w.id === activeId) {
+                    return {
+                      ...w,
+                      x: targetSnappedX,
+                      y: targetSnappedY,
+                      width: targetSnappedWidth,
+                      height: targetSnappedHeight
+                    }
+                  } else if (w.id === currentSwapTargetId) {
+                    return {
+                      ...w,
+                      x: draggedSnappedX,
+                      y: draggedSnappedY,
+                      width: draggedSnappedWidth,
+                      height: draggedSnappedHeight
+                    }
+                  }
+                  return w
+                })
+                
+                setCollisionWidgetId(activeId)
+                setTimeout(() => setCollisionWidgetId(null), 300)
+                
+                // Mark both widgets as having been dragged to prevent click events
+                dragStateRef.current.lastWasDrag = true
+                dragStateRef.current.lastWidgetId = activeId
+                // Also mark the target widget to prevent its click handler from firing
+                dragStateRef.current.swappedTargetId = currentSwapTargetId
+                
+                return swappedWidgets
+              }
+            }
+            
+            // Check for collisions with other widgets (but don't swap, just find valid position)
             const finalRect = {
               x: finalX,
               y: finalY,
@@ -415,7 +584,8 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
             }
             
             if (hasCollisionWithOthers(finalRect, prev, activeId)) {
-              // Find nearest valid position
+              // No direct collision found but hasCollisionWithOthers returned true
+              // This shouldn't happen, but fallback to nearest valid position
               const validPos = findNearestValidPosition(
                 finalX,
                 finalY,
@@ -462,18 +632,30 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
       // Store result for widgets to check
       dragStateRef.current.lastWasDrag = wasDrag
       dragStateRef.current.lastWidgetId = widgetId
+      
+      // Clear swapped target ID after a short delay to allow click handlers to check it
+      if (dragStateRef.current.swappedTargetId) {
+        setTimeout(() => {
+          dragStateRef.current.swappedTargetId = null
+        }, 100)
+      }
     }
-  }, [setWidgets])
+  }, [setWidgets, swapTargetId])
 
   // Helper to check if the last interaction was a drag
   const wasLastInteractionDrag = useCallback((widgetId) => {
-    return dragStateRef.current.lastWasDrag === true && dragStateRef.current.lastWidgetId === widgetId
+    // Check if this widget was dragged
+    const wasDragged = dragStateRef.current.lastWasDrag === true && dragStateRef.current.lastWidgetId === widgetId
+    // Also check if this widget was the target of a swap (to prevent click events after swap)
+    const wasSwapTarget = dragStateRef.current.swappedTargetId === widgetId
+    return wasDragged || wasSwapTarget
   }, [])
 
   return {
     isDragging,
     isResizing,
     collisionWidgetId,
+    swapTargetId,
     dragStateRef,
     resizeStateRef,
     handleMouseDown,

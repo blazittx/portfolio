@@ -1,6 +1,16 @@
 import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, WIDGET_PADDING, getWidgetMinSize } from '../constants/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from './grid'
 
+// Check if a point is inside a rectangle
+export const isPointInRect = (pointX, pointY, rect) => {
+  return (
+    pointX >= rect.x &&
+    pointX <= rect.x + rect.width &&
+    pointY >= rect.y &&
+    pointY <= rect.y + rect.height
+  )
+}
+
 // Check if two rectangles overlap
 export const checkCollision = (rect1, rect2) => {
   return !(
@@ -26,6 +36,44 @@ export const hasCollisionWithOthers = (rect, widgets, excludeId) => {
     }
   }
   return false
+}
+
+// Find the widget that a rectangle collides with (excluding the active widget)
+export const findCollidingWidget = (rect, widgets, excludeId) => {
+  for (const widget of widgets) {
+    if (widget.id === excludeId) continue
+    const otherRect = {
+      x: widget.x,
+      y: widget.y,
+      width: widget.width,
+      height: widget.height
+    }
+    if (checkCollision(rect, otherRect)) {
+      return widget
+    }
+  }
+  return null
+}
+
+// Find the widget that contains a point (cursor position) - accounting for centerOffset
+export const findWidgetAtPoint = (pointX, pointY, widgets, excludeId, centerOffset = { x: 0, y: 0 }) => {
+  // Adjust point coordinates by centerOffset to match widget coordinates
+  const adjustedX = pointX - centerOffset.x
+  const adjustedY = pointY - centerOffset.y
+  
+  for (const widget of widgets) {
+    if (widget.id === excludeId) continue
+    const widgetRect = {
+      x: widget.x,
+      y: widget.y,
+      width: widget.width,
+      height: widget.height
+    }
+    if (isPointInRect(adjustedX, adjustedY, widgetRect)) {
+      return widget
+    }
+  }
+  return null
 }
 
 // Find nearest valid position for a widget (spiral search from desired position)

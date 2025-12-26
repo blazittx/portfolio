@@ -37,6 +37,7 @@ function App() {
   
   // Calculate center offset to center the layout horizontally and vertically
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+  const [showDebugOutline, setShowDebugOutline] = useState(false)
   
   useEffect(() => {
     const handleResize = () => {
@@ -44,6 +45,19 @@ function App() {
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+  }, [])
+  
+  // Toggle debug outline with F3 key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // F3 key
+      if (e.key === 'F2') {
+        e.preventDefault()
+        setShowDebugOutline(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
   
   const centerOffset = useMemo(() => {
@@ -56,6 +70,7 @@ function App() {
     isDragging,
     isResizing,
     collisionWidgetId,
+    swapTargetId,
     dragStateRef,
     resizeStateRef,
     handleMouseDown,
@@ -520,7 +535,7 @@ function App() {
         onClose={closeContextMenu}
       />
       
-      <GridBackground centerOffset={centerOffset} />
+      <GridBackground centerOffset={centerOffset} showDebugOutline={showDebugOutline} />
       
       <GridMask widgets={widgets} centerOffset={centerOffset} isDragging={isDragging} isResizing={isResizing} dragStateRef={dragStateRef} />
       
@@ -529,6 +544,7 @@ function App() {
         isDragging={isDragging}
         isResizing={isResizing}
         collisionWidgetId={collisionWidgetId}
+        swapTargetId={swapTargetId}
         dragStateRef={dragStateRef}
         resizeStateRef={resizeStateRef}
         onMouseDown={handleMouseDownWithContext}

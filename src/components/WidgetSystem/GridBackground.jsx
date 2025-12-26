@@ -2,7 +2,7 @@ import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, USABLE_GRID_WIDTH, USABLE_GRID
 import { getRawUsableAreaBounds } from '../../utils/grid'
 
 /* eslint-disable react/prop-types */
-export default function GridBackground({ centerOffset = { x: 0, y: 0 } }) {
+export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebugOutline = false }) {
   const size = 45
   const line = 'color-mix(in hsl, #ffffff, transparent 85%)'
   const lineSecondary = 'color-mix(in hsl, #808080, transparent 90%)'
@@ -48,40 +48,42 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 } }) {
           pointerEvents: 'none',
           zIndex: -1
         }}
-      ></div>
-      {/* Visual indicator for 34x19 usable area */}
-      <div
-        style={{
-          position: 'fixed',
-          left: `${rawBounds.minX}px`,
-          top: `${rawBounds.minY}px`,
-          width: `${areaWidth}px`,
-          height: `${areaHeight}px`,
-          border: '2px solid rgba(255, 100, 100, 0.6)',
-          boxShadow: '0 0 10px rgba(255, 100, 100, 0.3), inset 0 0 10px rgba(255, 100, 100, 0.1)',
-          pointerEvents: 'none',
-          zIndex: 0,
-          borderRadius: '2px'
-        }}
-      >
-        {/* Label showing dimensions */}
+      >      </div>
+      {/* Visual indicator for 34x19 usable area - toggled with F3 */}
+      {showDebugOutline && (
         <div
           style={{
-            position: 'absolute',
-            top: '-24px',
-            left: '0',
-            color: 'rgba(255, 100, 100, 0.8)',
-            fontSize: '12px',
-            fontFamily: 'monospace',
-            whiteSpace: 'nowrap',
-            background: 'rgba(0, 0, 0, 0.5)',
-            padding: '2px 6px',
+            position: 'fixed',
+            left: `${rawBounds.minX}px`,
+            top: `${rawBounds.minY}px`,
+            width: `${areaWidth}px`,
+            height: `${areaHeight}px`,
+            border: '2px solid rgba(255, 100, 100, 0.6)',
+            boxShadow: '0 0 10px rgba(255, 100, 100, 0.3), inset 0 0 10px rgba(255, 100, 100, 0.1)',
+            pointerEvents: 'none',
+            zIndex: 0,
             borderRadius: '2px'
           }}
         >
-          {USABLE_GRID_WIDTH}×{USABLE_GRID_HEIGHT} usable area
+          {/* Label showing dimensions */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '-24px',
+              left: '0',
+              color: 'rgba(255, 100, 100, 0.8)',
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              whiteSpace: 'nowrap',
+              background: 'rgba(0, 0, 0, 0.5)',
+              padding: '2px 6px',
+              borderRadius: '2px'
+            }}
+          >
+            {USABLE_GRID_WIDTH}×{USABLE_GRID_HEIGHT} usable area
+          </div>
         </div>
-      </div>
+      )}
     </>
   )
 }

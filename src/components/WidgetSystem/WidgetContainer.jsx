@@ -5,7 +5,8 @@ export default function WidgetContainer({
   widgets, 
   isDragging, 
   isResizing, 
-  collisionWidgetId, 
+  collisionWidgetId,
+  swapTargetId,
   dragStateRef, 
   resizeStateRef, 
   onMouseDown,
@@ -38,6 +39,7 @@ export default function WidgetContainer({
           const isDraggingWidget = isDragging && dragStateRef.current?.activeId === widget.id
           const isResizingWidget = isResizing && resizeStateRef.current?.activeId === widget.id
           const hasCollision = collisionWidgetId === widget.id
+          const isSwapTarget = swapTargetId === widget.id
           
           return (
             <WidgetItem
@@ -46,6 +48,7 @@ export default function WidgetContainer({
               isDragging={isDraggingWidget}
               isResizing={isResizingWidget}
               hasCollision={hasCollision}
+              isSwapTarget={isSwapTarget}
               onMouseDown={onMouseDown}
               wasLastInteractionDrag={wasLastInteractionDrag}
               onGameClick={onGameClick}
