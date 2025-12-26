@@ -35,7 +35,7 @@ function App() {
   // Ensure widgets is always an array
   const validWidgets = useMemo(() => Array.isArray(widgets) ? widgets : [], [widgets])
   
-  // Calculate center offset to center the layout horizontally
+  // Calculate center offset to center the layout horizontally and vertically
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
   
   useEffect(() => {
@@ -47,11 +47,11 @@ function App() {
   }, [])
   
   const centerOffset = useMemo(() => {
-    if (currentView !== 'main' || validWidgets.length === 0) {
-      return 0
+    if (currentView !== 'main') {
+      return { x: 0, y: 0 }
     }
-    return calculateCenterOffset(validWidgets)
-  }, [validWidgets, currentView, windowSize])
+    return calculateCenterOffset()
+  }, [currentView, windowSize])
   const {
     isDragging,
     isResizing,
@@ -62,7 +62,7 @@ function App() {
     handleMouseMove,
     handleMouseUp,
     wasLastInteractionDrag
-  } = useDragAndResize(widgets, setWidgets)
+  } = useDragAndResize(widgets, setWidgets, centerOffset)
   
   const autosortWidgets = useAutosort(widgets, setWidgets)
   const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu()
@@ -130,8 +130,8 @@ function App() {
       const restoredWidgets = defaultLayout
         .map(widget => {
           try {
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, centerOffset)
+            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, centerOffset)
             const component = componentMap[widget.type] || componentMap[widget.id]
             
             if (!component) {
@@ -272,7 +272,7 @@ function App() {
     
     setWidgets(defaultWidgets)
     showToast('Layout reverted to default!')
-  }, [setWidgets, showToast])
+  }, [setWidgets, showToast, centerOffset])
 
   // Add widget at position
   const addWidget = useCallback((widgetType, x, y) => {
@@ -321,7 +321,7 @@ function App() {
         // Snap position to grid and constrain to viewport
         const snappedX = snapToGrid(targetX, GRID_OFFSET_X)
         const snappedY = snapToGrid(targetY, GRID_OFFSET_Y)
-        const constrained = constrainToViewport(snappedX, snappedY, width, height)
+        const constrained = constrainToViewport(snappedX, snappedY, width, height, centerOffset)
 
         // Find nearest valid position that doesn't collide with existing widgets
         const validPosition = findNearestValidPosition(

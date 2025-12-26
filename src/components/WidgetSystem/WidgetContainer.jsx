@@ -11,12 +11,16 @@ export default function WidgetContainer({
   onMouseDown,
   wasLastInteractionDrag,
   onGameClick,
-  centerOffset = 0
+  centerOffset = { x: 0, y: 0 }
 }) {
   // Ensure widgets is an array and filter out invalid widgets
   const validWidgets = Array.isArray(widgets) 
     ? widgets.filter(widget => widget && widget.id)
     : []
+
+  const offsetX = centerOffset.x || 0
+  const offsetY = centerOffset.y || 0
+  const hasOffset = offsetX !== 0 || offsetY !== 0
 
   return (
     <div 
@@ -25,7 +29,7 @@ export default function WidgetContainer({
         width: '100%',
         height: '100%',
         zIndex: 1,
-        transform: centerOffset !== 0 ? `translateX(${centerOffset}px)` : 'none',
+        transform: hasOffset ? `translate(${offsetX}px, ${offsetY}px)` : 'none',
         transition: (isDragging || isResizing) ? 'none' : 'transform 0.3s ease-out'
       }}
     >

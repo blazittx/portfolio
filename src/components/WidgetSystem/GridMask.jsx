@@ -1,7 +1,11 @@
 import { WIDGET_PADDING } from '../../constants/grid'
 
 /* eslint-disable react/prop-types */
-export default function GridMask({ widgets, centerOffset = 0, isDragging = false, isResizing = false }) {
+export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDragging = false, isResizing = false }) {
+  const offsetX = centerOffset.x || 0
+  const offsetY = centerOffset.y || 0
+  const hasOffset = offsetX !== 0 || offsetY !== 0
+  
   return (
     <div
       style={{
@@ -11,7 +15,7 @@ export default function GridMask({ widgets, centerOffset = 0, isDragging = false
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        transform: centerOffset !== 0 ? `translateX(${centerOffset}px)` : 'none',
+        transform: hasOffset ? `translate(${offsetX}px, ${offsetY}px)` : 'none',
         transition: (isDragging || isResizing) ? 'none' : 'transform 0.3s ease-out'
       }}
     >

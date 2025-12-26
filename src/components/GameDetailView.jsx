@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
 import { useWidgets } from '../hooks/useWidgets'
 import { useDragAndResize } from '../hooks/useDragAndResize'
 import { useAutosort } from '../hooks/useAutosort'
@@ -10,7 +10,7 @@ import GridBackground from './WidgetSystem/GridBackground'
 import GridMask from './WidgetSystem/GridMask'
 import WidgetContainer from './WidgetSystem/WidgetContainer'
 import Toaster from './Toaster'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from '../utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from '../utils/grid'
 import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT_GAME_DETAIL } from '../constants/grid'
 import { getCookie, setCookie } from '../utils/cookies'
 import BackButtonWidget from './GameDetailWidgets/BackButtonWidget'
@@ -39,6 +39,21 @@ export default function GameDetailView({ game, onBack }) {
   const previousWidgetsLengthRef = useRef(0)
   const previousWidgetIdsRef = useRef([])
   
+  // Calculate center offset to center the layout horizontally and vertically
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+  
+  const centerOffset = useMemo(() => {
+    return calculateCenterOffset()
+  }, [windowSize])
+  
   const {
     isDragging,
     isResizing,
@@ -48,7 +63,7 @@ export default function GameDetailView({ game, onBack }) {
     handleMouseDown,
     handleMouseMove,
     handleMouseUp
-  } = useDragAndResize(widgets, setWidgets)
+  } = useDragAndResize(widgets, setWidgets, centerOffset)
 
   // Initialize widgets layout on mount, then update game data when game changes
   useEffect(() => {
@@ -97,8 +112,8 @@ export default function GameDetailView({ game, onBack }) {
       // Restore from saved layout
       const restoredWidgets = savedLayout.map(widget => {
         try {
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, centerOffset)
+          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, centerOffset)
           
           // Map widget types to components
           let component = null
@@ -142,7 +157,7 @@ export default function GameDetailView({ game, onBack }) {
         const backButtonHeight = snapSizeToGrid(60)
         const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
         const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight)
+        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, centerOffset)
         
         restoredWidgets.unshift({
           id: 'back-button',
@@ -174,8 +189,8 @@ export default function GameDetailView({ game, onBack }) {
       // Restore from default layout
       const restoredWidgets = defaultLayout.map(widget => {
         try {
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, centerOffset)
+          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, centerOffset)
           
           // Map widget types to components
           let component = null
@@ -219,7 +234,7 @@ export default function GameDetailView({ game, onBack }) {
         const backButtonHeight = snapSizeToGrid(60)
         const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
         const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight)
+        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, centerOffset)
         
         restoredWidgets.unshift({
           id: 'back-button',
@@ -289,7 +304,7 @@ export default function GameDetailView({ game, onBack }) {
 
     setWidgets(gameWidgets)
     initializedRef.current = true
-  }, [game, setWidgets, onBack])
+  }, [game, setWidgets, onBack, centerOffset])
 
   // Initial animation on mount or when widgets are first set
   useEffect(() => {
@@ -379,8 +394,8 @@ export default function GameDetailView({ game, onBack }) {
       // Restore from default layout
       const restoredWidgets = defaultLayout.map(widget => {
         try {
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, centerOffset)
+          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, centerOffset)
           
           // Map widget types to components
           let component = null
@@ -424,7 +439,7 @@ export default function GameDetailView({ game, onBack }) {
         const backButtonHeight = snapSizeToGrid(60)
         const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
         const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight)
+        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, centerOffset)
         
         restoredWidgets.unshift({
           id: 'back-button',
@@ -541,7 +556,7 @@ export default function GameDetailView({ game, onBack }) {
 
     setWidgets(defaultWidgets)
     showToast('Layout reverted to default!')
-  }, [setWidgets, showToast, game, onBack])
+  }, [setWidgets, showToast, game, onBack, centerOffset])
 
   const handleMouseDownWithContext = (e, id) => {
     if (e.button !== 2) {
@@ -596,9 +611,9 @@ export default function GameDetailView({ game, onBack }) {
         onClose={closeContextMenu}
       />
       
-      <GridBackground />
+      <GridBackground centerOffset={centerOffset} />
       
-      <GridMask widgets={widgets} />
+      <GridMask widgets={widgets} centerOffset={centerOffset} isDragging={isDragging} isResizing={isResizing} />
       
       <WidgetContainer
         widgets={validWidgets}
@@ -608,6 +623,7 @@ export default function GameDetailView({ game, onBack }) {
         dragStateRef={dragStateRef}
         resizeStateRef={resizeStateRef}
         onMouseDown={handleMouseDownWithContext}
+        centerOffset={centerOffset}
       />
       <Toaster toasts={toasts} onRemove={removeToast} />
     </div>

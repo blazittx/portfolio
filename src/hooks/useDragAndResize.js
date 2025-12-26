@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback } from 'react'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, snapToGridConstrained } from '../utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, snapToGridConstrained, isWithinUsableArea } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { hasCollisionWithOthers, findNearestValidPosition, findValidSize } from '../utils/collision'
 
-export const useDragAndResize = (widgets, setWidgets) => {
+export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 0 }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [collisionWidgetId, setCollisionWidgetId] = useState(null)
@@ -112,12 +112,12 @@ export const useDragAndResize = (widgets, setWidgets) => {
 
         // Allow resizing below minimum during drag - we'll validate on mouse up
         // Constrain size to viewport (no minimum enforced during resize)
-        const constrainedSize = constrainSizeToViewport(newX, newY, newWidth, newHeight)
+        const constrainedSize = constrainSizeToViewport(newX, newY, newWidth, newHeight, 0, 0, centerOffset)
         newWidth = constrainedSize.width
         newHeight = constrainedSize.height
 
         // Constrain position to viewport (in case resize moved it out)
-        const constrainedPos = constrainToViewport(newX, newY, newWidth, newHeight)
+        const constrainedPos = constrainToViewport(newX, newY, newWidth, newHeight, centerOffset)
         newX = constrainedPos.x
         newY = constrainedPos.y
 
@@ -131,7 +131,7 @@ export const useDragAndResize = (widgets, setWidgets) => {
       return
     }
 
-    // Handle dragging - allow free movement during drag, but constrain to viewport
+    // Handle dragging - allow free movement (no constraints during drag)
     if (dragStateRef.current.activeId) {
       const { startX, startY, widgetStartX, widgetStartY } = dragStateRef.current
       const deltaX = e.clientX - startX
@@ -141,20 +141,18 @@ export const useDragAndResize = (widgets, setWidgets) => {
         const activeWidget = prev.find(w => w.id === dragStateRef.current.activeId)
         if (!activeWidget) return prev
 
+        // Allow free movement - no constraints during drag
         let newX = widgetStartX + deltaX
         let newY = widgetStartY + deltaY
-
-        // Constrain to viewport
-        const constrained = constrainToViewport(newX, newY, activeWidget.width, activeWidget.height)
         
         return prev.map(w => 
           w.id === activeWidget.id
-            ? { ...w, x: constrained.x, y: constrained.y }
+            ? { ...w, x: newX, y: newY }
             : w
         )
       })
     }
-  }, [setWidgets])
+  }, [setWidgets, centerOffset])
 
   const handleMouseUp = useCallback(() => {
     // Clear collision state
@@ -236,12 +234,12 @@ export const useDragAndResize = (widgets, setWidgets) => {
           }
           
           // Constrain size to viewport (with content-based minimum)
-          const constrainedSize = constrainSizeToViewport(finalX, finalY, correctedWidth, correctedHeight, minWidth, minHeight)
+          const constrainedSize = constrainSizeToViewport(finalX, finalY, correctedWidth, correctedHeight, minWidth, minHeight, centerOffset)
           const finalWidth = constrainedSize.width
           const finalHeight = constrainedSize.height
           
           // Constrain position to viewport and ensure it's on grid
-          const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y)
+          const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
           finalX = snappedPos.x
           finalY = snappedPos.y
           
@@ -275,7 +273,7 @@ export const useDragAndResize = (widgets, setWidgets) => {
             )
             
             // Constrain valid size to viewport (with content-based minimum)
-            const constrainedValidSize = constrainSizeToViewport(finalX, finalY, validSize.width, validSize.height, minWidth, minHeight)
+            const constrainedValidSize = constrainSizeToViewport(finalX, finalY, validSize.width, validSize.height, minWidth, minHeight, centerOffset)
             validSize.width = constrainedValidSize.width
             validSize.height = constrainedValidSize.height
             
@@ -302,7 +300,7 @@ export const useDragAndResize = (widgets, setWidgets) => {
             }
             
             // Constrain adjusted position to viewport and ensure it's on grid
-            const snappedAdjustedPos = snapToGridConstrained(adjustedX, adjustedY, validSize.width, validSize.height, GRID_OFFSET_X, GRID_OFFSET_Y)
+            const snappedAdjustedPos = snapToGridConstrained(adjustedX, adjustedY, validSize.width, validSize.height, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
             adjustedX = snappedAdjustedPos.x
             adjustedY = snappedAdjustedPos.y
             
@@ -380,38 +378,64 @@ export const useDragAndResize = (widgets, setWidgets) => {
     // Handle drag end
     if (dragStateRef.current.activeId) {
       const activeId = dragStateRef.current.activeId
+      const wasDrag = dragStateRef.current.hasMoved
       setIsDragging(false)
       
-      // Snap the widget to the grid and find nearest valid position if collision
-      setWidgets(prev => {
-        const widget = prev.find(w => w.id === activeId)
-        if (widget) {
-          // Use snapToGridConstrained to ensure widget stays on grid and within viewport
-          const snapped = snapToGridConstrained(widget.x, widget.y, widget.width, widget.height, GRID_OFFSET_X, GRID_OFFSET_Y)
-          let snappedX = snapped.x
-          let snappedY = snapped.y
-          
-          // Check for collisions
-          const snappedRect = {
-            x: snappedX,
-            y: snappedY,
-            width: widget.width,
-            height: widget.height
-          }
-          
-          if (hasCollisionWithOthers(snappedRect, prev, activeId)) {
-            // Find nearest valid position
-            const validPos = findNearestValidPosition(
-              snappedX,
-              snappedY,
-              widget.width,
-              widget.height,
-              prev,
-              activeId
-            )
+      // Only process position if it was actually a drag (not just a click)
+      if (wasDrag) {
+        // Snap the widget to the grid and check if it's within usable area
+        setWidgets(prev => {
+          const widget = prev.find(w => w.id === activeId)
+          if (widget) {
+            // Snap to grid first
+            const snappedX = snapToGrid(widget.x, GRID_OFFSET_X)
+            const snappedY = snapToGrid(widget.y, GRID_OFFSET_Y)
             
-            // Show collision feedback if position was moved
-            if (validPos.x !== snappedX || validPos.y !== snappedY) {
+            // Check if widget is within usable area
+            const withinArea = isWithinUsableArea(snappedX, snappedY, widget.width, widget.height, centerOffset)
+            
+            let finalX = snappedX
+            let finalY = snappedY
+            let shouldWiggle = false
+            
+            if (!withinArea) {
+              // Widget is outside usable area - constrain it back
+              const constrained = constrainToViewport(snappedX, snappedY, widget.width, widget.height, centerOffset)
+              finalX = constrained.x
+              finalY = constrained.y
+              shouldWiggle = true
+            }
+            
+            // Check for collisions with other widgets
+            const finalRect = {
+              x: finalX,
+              y: finalY,
+              width: widget.width,
+              height: widget.height
+            }
+            
+            if (hasCollisionWithOthers(finalRect, prev, activeId)) {
+              // Find nearest valid position
+              const validPos = findNearestValidPosition(
+                finalX,
+                finalY,
+                widget.width,
+                widget.height,
+                prev,
+                activeId
+              )
+              
+              // Show collision feedback if position was moved
+              if (validPos.x !== finalX || validPos.y !== finalY) {
+                shouldWiggle = true
+              }
+              
+              finalX = validPos.x
+              finalY = validPos.y
+            }
+            
+            // Trigger wiggle if widget was moved back or had collision
+            if (shouldWiggle) {
               setCollisionWidgetId(activeId)
               setTimeout(() => setCollisionWidgetId(null), 300)
             }
@@ -420,28 +444,17 @@ export const useDragAndResize = (widgets, setWidgets) => {
               if (w.id === activeId) {
                 return {
                   ...w,
-                  x: validPos.x,
-                  y: validPos.y
+                  x: finalX,
+                  y: finalY
                 }
               }
               return w
             })
           }
-          
-          return prev.map(w => {
-            if (w.id === activeId) {
-              return {
-                ...w,
-                x: snappedX,
-                y: snappedY
-              }
-            }
-            return w
-          })
-        }
-        return prev
-      })
-      const wasDrag = dragStateRef.current.hasMoved
+          return prev
+        })
+      }
+      
       const widgetId = dragStateRef.current.activeId
       dragStateRef.current.activeId = null
       dragStateRef.current.hasMoved = false
