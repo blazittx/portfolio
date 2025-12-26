@@ -32,6 +32,7 @@ export const getWidgetMinSize = (widgetType) => {
     quote: { width: 3, height: 3 },
     time: { width: 3, height: 2 },
     github: { width: 4, height: 3 },
+    apikey: { width: 4, height: 2 },
   };
 
   const gridUnits = minSizesInGridUnits[widgetType] || { width: 2, height: 2 };

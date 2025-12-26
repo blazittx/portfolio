@@ -7,13 +7,14 @@ import { useContextMenu } from './hooks/useContextMenu'
 import { useView } from './hooks/useView'
 import { useToast } from './hooks/useToast'
 import { usePageTransition } from './hooks/usePageTransition'
+import { useScreenFill } from './hooks/useScreenFill'
 import ContextMenu from './components/WidgetSystem/ContextMenu'
 import GridBackground from './components/WidgetSystem/GridBackground'
 import GridMask from './components/WidgetSystem/GridMask'
 import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
 import Toaster from './components/Toaster'
-import { getWidgetMinSize, COOKIE_NAME_DEFAULT, GRID_SIZE } from './constants/grid'
+import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, GRID_SIZE } from './constants/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from './utils/grid'
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
@@ -48,6 +49,13 @@ function App() {
   const autosortWidgets = useAutosort(widgets, setWidgets)
   const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu()
   const { toasts, showToast, removeToast } = useToast()
+  
+  // Screen fill hook - only enable when not dragging/resizing
+  useScreenFill(
+    widgets, 
+    setWidgets, 
+    !isDragging && !isResizing && currentView === 'main'
+  )
 
   // Toggle lock on widget (unpins if pinned)
   const toggleLockWidget = useCallback((widgetId) => {
@@ -325,9 +333,14 @@ function App() {
       })
     })
     
+    // Animate the new widget in immediately
+    setTimeout(() => {
+      animateWidgetsIn()
+    }, 50)
+    
     // Close the context menu after state update
     closeContextMenu()
-  }, [setWidgets, closeContextMenu])
+  }, [setWidgets, closeContextMenu, animateWidgetsIn])
 
   // Handle mouse down (only for left-click drag, right-click handled by contextmenu)
   const handleMouseDownWithContext = (e, id) => {
@@ -386,6 +399,39 @@ function App() {
       }, 100)
     }
   }, [currentView, animateWidgetsIn])
+
+  // Initialize default cookies if they don't exist
+  useEffect(() => {
+    const defaultLayout = getCookie(COOKIE_NAME_DEFAULT)
+    if (!defaultLayout || !Array.isArray(defaultLayout) || defaultLayout.length === 0) {
+      // Set default homepage layout (from useWidgets.js DEFAULT_HOMEPAGE_LAYOUT)
+      const homepageDefault = [
+        {"id":"profile","type":"profile","x":28.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true},
+        {"id":"about","type":"about","x":298.2,"y":26.4,"width":291,"height":111,"locked":false,"pinned":true},
+        {"id":"contact","type":"contact","x":1288.2,"y":746.4,"width":239.79999999999995,"height":111,"locked":false,"pinned":true},
+        {"id":"games","type":"games","x":28.2,"y":161.4,"width":561,"height":696,"locked":false,"pinned":true},
+        {"id":"visitors","type":"visitors","x":1153.2,"y":746.4,"width":111,"height":111,"locked":false,"pinned":true},
+        {"id":"time","type":"time","x":1288.2,"y":26.4,"width":239.79999999999995,"height":111,"locked":false,"pinned":true},
+        {"id":"github","type":"github","x":1153.2,"y":161.4,"width":374.79999999999995,"height":561,"locked":false,"pinned":true},
+        {"id":"skills","type":"skills","x":613.2,"y":791.4,"width":516,"height":66,"locked":false,"pinned":false},
+        {"id":"apikey","type":"apikey","x":1018.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true}
+      ]
+      setCookie(COOKIE_NAME_DEFAULT, homepageDefault)
+    }
+    
+    // Also check game detail default
+    const gameDetailDefault = getCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL)
+    if (!gameDetailDefault || !Array.isArray(gameDetailDefault) || gameDetailDefault.length === 0) {
+      const gameDetailLayout = [
+        {"id":"back-button","type":"back-button","x":28.2,"y":26.4,"width":111,"height":66,"locked":true,"pinned":false},
+        {"id":"game-info","type":"game-info","x":613.2,"y":116.4,"width":246,"height":201,"locked":false,"pinned":false},
+        {"id":"game-description","type":"game-description","x":1108.2,"y":116.4,"width":419.79999999999995,"height":201,"locked":false,"pinned":false},
+        {"id":"game-image","type":"game-image","x":28.2,"y":116.4,"width":561,"height":741,"locked":false,"pinned":false},
+        {"id":"game-details","type":"game-details","x":883.2,"y":116.4,"width":201,"height":201,"locked":false,"pinned":false}
+      ]
+      setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL, gameDetailLayout)
+    }
+  }, [])
 
   // Initial animation on mount
   useEffect(() => {

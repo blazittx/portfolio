@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import BaseWidget from './BaseWidget'
 import { useEffect, useRef, useState } from 'react'
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getCookie, setCookie } from '../utils/cookies'
-import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT, getWidgetMinSize } from '../constants/grid'
+import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT } from '../constants/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from '../utils/grid'
-import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
+import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import ProfileWidget from '../components/ProfileWidget'
 import AboutWidget from '../components/AboutWidget'
 import SkillsWidget from '../components/SkillsWidget'
@@ -13,6 +13,20 @@ import MessageOfTheDayWidget from '../components/MessageOfTheDayWidget'
 import QuoteWidget from '../components/QuoteWidget'
 import TimeWidget from '../components/TimeWidget'
 import GitHubActivityWidget from '../components/GitHubActivityWidget'
+import ApiKeyWidget from '../components/ApiKeyWidget'
+
+// Default homepage layout (from user's current setup)
+const DEFAULT_HOMEPAGE_LAYOUT = [
+  {"id":"profile","type":"profile","x":28.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true},
+  {"id":"about","type":"about","x":298.2,"y":26.4,"width":291,"height":111,"locked":false,"pinned":true},
+  {"id":"contact","type":"contact","x":1288.2,"y":746.4,"width":239.79999999999995,"height":111,"locked":false,"pinned":true},
+  {"id":"games","type":"games","x":28.2,"y":161.4,"width":561,"height":696,"locked":false,"pinned":true},
+  {"id":"visitors","type":"visitors","x":1153.2,"y":746.4,"width":111,"height":111,"locked":false,"pinned":true},
+  {"id":"time","type":"time","x":1288.2,"y":26.4,"width":239.79999999999995,"height":111,"locked":false,"pinned":true},
+  {"id":"github","type":"github","x":1153.2,"y":161.4,"width":374.79999999999995,"height":561,"locked":false,"pinned":true},
+  {"id":"skills","type":"skills","x":613.2,"y":791.4,"width":516,"height":66,"locked":false,"pinned":false},
+  {"id":"apikey","type":"apikey","x":1018.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true}
+]
 
 // Component mapping - exported for use in other components
 export const componentMap = {
@@ -25,7 +39,8 @@ export const componentMap = {
   motd: MessageOfTheDayWidget,
   quote: QuoteWidget,
   time: TimeWidget,
-  github: GitHubActivityWidget
+  github: GitHubActivityWidget,
+  apikey: ApiKeyWidget
 }
 
 export const useWidgets = (view = 'main') => {
@@ -156,98 +171,37 @@ export const useWidgets = (view = 'main') => {
         return restoredWidgets
       }
       
-      // Hardcoded default layout - use getWidgetMinSize for default sizes
-      const baseX = snapToGrid(100, GRID_OFFSET_X)
-      const baseY = snapToGrid(100, GRID_OFFSET_Y)
-    
-    // Calculate widget sizes using getWidgetMinSize (which now uses grid units)
-    const profileSize = getWidgetMinSize('profile')
-    const profileWidth = snapSizeToGrid(profileSize.width)
-    const profileHeight = snapSizeToGrid(profileSize.height)
-    
-    const aboutSize = getWidgetMinSize('about')
-    const aboutWidth = snapSizeToGrid(aboutSize.width)
-    const aboutHeight = snapSizeToGrid(aboutSize.height)
-    
-    const skillsSize = getWidgetMinSize('skills')
-    const skillsWidth = snapSizeToGrid(skillsSize.width)
-    const skillsHeight = snapSizeToGrid(skillsSize.height)
-    
-    const contactSize = getWidgetMinSize('contact')
-    const contactWidth = snapSizeToGrid(contactSize.width)
-    const contactHeight = snapSizeToGrid(contactSize.height)
-    
-    const gamesSize = getWidgetMinSize('games')
-    const gamesWidth = snapSizeToGrid(gamesSize.width)
-    const gamesHeight = snapSizeToGrid(gamesSize.height)
-    
-    // Calculate positions, ensuring they snap to grid
-    const aboutX = baseX + profileWidth + GRID_SIZE
-    const aboutXSnapped = snapToGrid(aboutX, GRID_OFFSET_X)
-    
-    const skillsY = baseY + profileHeight + GRID_SIZE
-    const skillsYSnapped = snapToGrid(skillsY, GRID_OFFSET_Y)
-    
-    const skillsX = aboutXSnapped
-    const contactX = skillsX
-    const contactY = skillsYSnapped + skillsHeight + GRID_SIZE
-    const contactYSnapped = snapToGrid(contactY, GRID_OFFSET_Y)
-    
-    // Place games widget below profile widget
-    const gamesX = baseX
-    const gamesXSnapped = snapToGrid(gamesX, GRID_OFFSET_X)
-    const gamesY = skillsYSnapped
-    const gamesYSnapped = snapToGrid(gamesY, GRID_OFFSET_Y)
-    
-    return [
-      {
-        id: 'profile',
-        type: 'profile',
-        x: baseX,
-        y: baseY,
-        width: profileWidth,
-        height: profileHeight,
-        component: ProfileWidget,
-        locked: false,
-        pinned: false
-      },
-      {
-        id: 'about',
-        type: 'about',
-        x: aboutXSnapped,
-        y: baseY,
-        width: aboutWidth,
-        height: aboutHeight,
-        component: AboutWidget
-      },
-      {
-        id: 'skills',
-        type: 'skills',
-        x: skillsX,
-        y: skillsYSnapped,
-        width: skillsWidth,
-        height: skillsHeight,
-        component: SkillsWidget
-      },
-      {
-        id: 'contact',
-        type: 'contact',
-        x: contactX,
-        y: contactYSnapped,
-        width: contactWidth,
-        height: contactHeight,
-        component: ContactWidget
-      },
-      {
-        id: 'games',
-        type: 'games',
-        x: gamesXSnapped,
-        y: gamesYSnapped,
-        width: gamesWidth,
-        height: gamesHeight,
-        component: GamesWidget
-      }
-    ]
+      // Use hardcoded default layout from user's current setup
+      // Map the default layout to include component references
+      return DEFAULT_HOMEPAGE_LAYOUT
+        .map(widget => {
+          try {
+            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
+            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+            const component = componentMap[widget.type] || componentMap[widget.id]
+            
+            // Only include widgets with valid components
+            if (!component) {
+              console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+              return null
+            }
+            
+            return {
+              ...widget,
+              x: constrainedPos.x,
+              y: constrainedPos.y,
+              width: constrainedSize.width,
+              height: constrainedSize.height,
+              component: component,
+              locked: widget.locked || false,
+              pinned: widget.pinned || false
+            }
+          } catch (error) {
+            console.error(`Error creating widget ${widget.id}:`, error)
+            return null
+          }
+        })
+        .filter(widget => widget !== null)
     } catch (error) {
       console.error('Error creating default widget layout:', error)
       // Return minimal safe layout

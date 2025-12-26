@@ -19,6 +19,15 @@ import GameDescriptionWidget from './GameDetailWidgets/GameDescriptionWidget'
 import GameImageWidget from './GameDetailWidgets/GameImageWidget'
 import GameDetailsWidget from './GameDetailWidgets/GameDetailsWidget'
 
+// Default game detail layout (from user's current setup)
+const DEFAULT_GAME_DETAIL_LAYOUT = [
+  {"id":"back-button","type":"back-button","x":28.2,"y":26.4,"width":111,"height":66,"locked":true,"pinned":false},
+  {"id":"game-info","type":"game-info","x":613.2,"y":116.4,"width":246,"height":201,"locked":false,"pinned":false},
+  {"id":"game-description","type":"game-description","x":1108.2,"y":116.4,"width":419.79999999999995,"height":201,"locked":false,"pinned":false},
+  {"id":"game-image","type":"game-image","x":28.2,"y":116.4,"width":561,"height":741,"locked":false,"pinned":false},
+  {"id":"game-details","type":"game-details","x":883.2,"y":116.4,"width":201,"height":201,"locked":false,"pinned":false}
+]
+
 /* eslint-disable react/prop-types */
 
 export default function GameDetailView({ game, onBack }) {
@@ -237,95 +246,46 @@ export default function GameDetailView({ game, onBack }) {
       return
     }
 
-    // Create hardcoded default layout if no saved or default layout exists
-    const backButtonWidth = snapSizeToGrid(120)
-    const backButtonHeight = snapSizeToGrid(60)
-    const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
-    const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-    const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight)
-
-    // Calculate positions for other widgets, snapping to grid
-    const gameInfoX = snapToGrid(constrainedBackButton.x + backButtonWidth + GRID_SIZE, GRID_OFFSET_X)
-    const gameInfoY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-    const gameInfoWidth = snapSizeToGrid(250)
-    const gameInfoHeight = snapSizeToGrid(180)
-    const constrainedGameInfo = constrainToViewport(gameInfoX, gameInfoY, gameInfoWidth, gameInfoHeight)
-
-    const gameDescriptionX = snapToGrid(constrainedGameInfo.x + gameInfoWidth + GRID_SIZE, GRID_OFFSET_X)
-    const gameDescriptionY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-    const gameDescriptionWidth = snapSizeToGrid(300)
-    const gameDescriptionHeight = snapSizeToGrid(250)
-    const constrainedGameDescription = constrainToViewport(gameDescriptionX, gameDescriptionY, gameDescriptionWidth, gameDescriptionHeight)
-
-    const gameImageX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
-    const gameImageY = snapToGrid(constrainedBackButton.y + backButtonHeight + GRID_SIZE, GRID_OFFSET_Y)
-    const gameImageWidth = snapSizeToGrid(400)
-    const gameImageHeight = snapSizeToGrid(300)
-    const constrainedGameImage = constrainToViewport(gameImageX, gameImageY, gameImageWidth, gameImageHeight)
-
-    const gameDetailsX = snapToGrid(constrainedGameImage.x + gameImageWidth + GRID_SIZE, GRID_OFFSET_X)
-    const gameDetailsY = snapToGrid(constrainedGameImage.y, GRID_OFFSET_Y)
-    const gameDetailsWidth = snapSizeToGrid(200)
-    const gameDetailsHeight = snapSizeToGrid(200)
-    const constrainedGameDetails = constrainToViewport(gameDetailsX, gameDetailsY, gameDetailsWidth, gameDetailsHeight)
-
-    const gameWidgets = [
-      {
-        id: 'back-button',
-        type: 'back-button',
-        x: constrainedBackButton.x,
-        y: constrainedBackButton.y,
-        width: backButtonWidth,
-        height: backButtonHeight,
-        component: () => <BackButtonWidget onBack={onBack} />,
-        locked: true,
-        pinned: false
-      },
-      {
-        id: 'game-info',
-        type: 'game-info',
-        x: constrainedGameInfo.x,
-        y: constrainedGameInfo.y,
-        width: gameInfoWidth,
-        height: gameInfoHeight,
-        component: () => <GameInfoWidget game={game} />,
-        locked: false,
-        pinned: false
-      },
-      {
-        id: 'game-description',
-        type: 'game-description',
-        x: constrainedGameDescription.x,
-        y: constrainedGameDescription.y,
-        width: gameDescriptionWidth,
-        height: gameDescriptionHeight,
-        component: () => <GameDescriptionWidget game={game} />,
-        locked: false,
-        pinned: false
-      },
-      {
-        id: 'game-image',
-        type: 'game-image',
-        x: constrainedGameImage.x,
-        y: constrainedGameImage.y,
-        width: gameImageWidth,
-        height: gameImageHeight,
-        component: () => <GameImageWidget game={game} />,
-        locked: false,
-        pinned: false
-      },
-      {
-        id: 'game-details',
-        type: 'game-details',
-        x: constrainedGameDetails.x,
-        y: constrainedGameDetails.y,
-        width: gameDetailsWidth,
-        height: gameDetailsHeight,
-        component: () => <GameDetailsWidget game={game} />,
-        locked: false,
-        pinned: false
+    // Use hardcoded default layout from user's current setup
+    const gameWidgets = DEFAULT_GAME_DETAIL_LAYOUT.map(widget => {
+      try {
+        const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
+        const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+        
+        // Map widget types to components
+        let component = null
+        if (widget.id === 'back-button' || widget.type === 'back-button') {
+          component = () => <BackButtonWidget onBack={onBack} />
+        } else if (widget.id === 'game-info' || widget.type === 'game-info') {
+          component = () => <GameInfoWidget game={game} />
+        } else if (widget.id === 'game-description' || widget.type === 'game-description') {
+          component = () => <GameDescriptionWidget game={game} />
+        } else if (widget.id === 'game-image' || widget.type === 'game-image') {
+          component = () => <GameImageWidget game={game} />
+        } else if (widget.id === 'game-details' || widget.type === 'game-details') {
+          component = () => <GameDetailsWidget game={game} />
+        }
+        
+        if (!component) {
+          console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+          return null
+        }
+        
+        return {
+          ...widget,
+          x: constrainedPos.x,
+          y: constrainedPos.y,
+          width: constrainedSize.width,
+          height: constrainedSize.height,
+          component: component,
+          locked: widget.locked || false,
+          pinned: widget.pinned || false
+        }
+      } catch (error) {
+        console.error(`Error creating widget ${widget.id}:`, error)
+        return null
       }
-    ]
+    }).filter(widget => widget !== null)
 
     setWidgets(gameWidgets)
     initializedRef.current = true

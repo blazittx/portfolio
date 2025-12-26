@@ -10,6 +10,7 @@ export const WIDGET_INFO = {
   quote: { name: 'Quote', icon: '💭' },
   time: { name: 'Time', icon: '🕐' },
   github: { name: 'GitHub Activity', icon: '🐙' },
+  apikey: { name: 'API Key', icon: '🔑' },
 }
 
 export const getWidgetDisplayName = (widgetType) => {
