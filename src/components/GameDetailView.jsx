@@ -121,8 +121,9 @@ export default function GameDetailView({ game, onBack }) {
       return
     }
     
+    // On mobile, always use default layout - ignore saved cookies
     // Only initialize layout if we don't have widgets yet
-    if (savedLayout && Array.isArray(savedLayout) && savedLayout.length > 0) {
+    if (!mobile && savedLayout && Array.isArray(savedLayout) && savedLayout.length > 0) {
       // Restore from saved layout
       const restoredWidgets = savedLayout.map(widget => {
         try {
@@ -203,13 +204,9 @@ export default function GameDetailView({ game, onBack }) {
     
     // If no saved layout, try to load default layout
     if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
-      // Restore from default layout
+      // Restore from default layout - use exact positions without constraining
       const restoredWidgets = defaultLayout.map(widget => {
         try {
-          // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-          
           // Map widget types to components
           let component = null
           if (widget.id === 'back-button' || widget.type === 'back-button') {
@@ -231,12 +228,13 @@ export default function GameDetailView({ game, onBack }) {
             return null
           }
           
+          // Use EXACT saved sizes and positions from default layout - don't constrain or modify
           return {
             ...widget,
-            x: constrainedPos.x,
-            y: constrainedPos.y,
-            width: constrainedSize.width,
-            height: constrainedSize.height,
+            x: widget.x,
+            y: widget.y,
+            width: widget.width,
+            height: widget.height,
             component: component,
             locked: widget.locked || false,
             pinned: widget.pinned || false
@@ -337,18 +335,17 @@ export default function GameDetailView({ game, onBack }) {
     if (previousMobile !== currentMobile && initializedRef.current) {
       previousMobileStateRef.current = currentMobile
       
-      // Use the same logic as revertToDefault
-      const defaultCookieName = currentMobile ? COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_GAME_DETAIL
-      const defaultLayout = getCookie(defaultCookieName)
+      // Small delay to ensure viewport has updated after resize
+      setTimeout(() => {
+        // Use the same logic as revertToDefault
+        const mobile = isMobile() // Re-check mobile state after delay
+        const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_GAME_DETAIL
+        const defaultLayout = getCookie(defaultCookieName)
       
       if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
-        // Restore from default layout - same logic as revertToDefault
+        // Restore from default layout - use exact positions without constraining
         const restoredWidgets = defaultLayout.map(widget => {
           try {
-            // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-            
             // Map widget types to components
             let component = null
             if (widget.id === 'back-button' || widget.type === 'back-button') {
@@ -370,12 +367,13 @@ export default function GameDetailView({ game, onBack }) {
               return null
             }
             
+            // Use EXACT saved sizes and positions from default layout - don't constrain or modify
             return {
               ...widget,
-              x: constrainedPos.x,
-              y: constrainedPos.y,
-              width: constrainedSize.width,
-              height: constrainedSize.height,
+              x: widget.x,
+              y: widget.y,
+              width: widget.width,
+              height: widget.height,
               component: component,
               locked: widget.locked || false,
               pinned: widget.pinned || false
@@ -393,13 +391,12 @@ export default function GameDetailView({ game, onBack }) {
           const backButtonHeight = snapSizeToGrid(60)
           const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
           const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-          const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
           
           restoredWidgets.unshift({
             id: 'back-button',
             type: 'back-button',
-            x: constrainedBackButton.x,
-            y: constrainedBackButton.y,
+            x: backButtonX,
+            y: backButtonY,
             width: backButtonWidth,
             height: backButtonHeight,
             component: () => <BackButtonWidget onBack={onBack} />,
@@ -414,17 +411,23 @@ export default function GameDetailView({ game, onBack }) {
           }
         }
         
-        setWidgets(restoredWidgets)
+        // Use flushSync to ensure the state update happens synchronously
+        flushSync(() => {
+          setWidgets(restoredWidgets)
+        })
+        
+        // Animate widgets in immediately after state update
+        setTimeout(() => {
+          animateWidgetsIn()
+        }, 50)
       } else {
         // If no default layout, use hardcoded default
-        const layoutToUse = currentMobile ? DEFAULT_GAME_DETAIL_LAYOUT_MOBILE : DEFAULT_GAME_DETAIL_LAYOUT
+        const layoutToUse = mobile ? DEFAULT_GAME_DETAIL_LAYOUT_MOBILE : DEFAULT_GAME_DETAIL_LAYOUT
         
         if (layoutToUse && Array.isArray(layoutToUse) && layoutToUse.length > 0) {
+          // Use exact positions from hardcoded default layout - don't constrain
           const restoredWidgets = layoutToUse.map(widget => {
             try {
-              const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-              const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-              
               let component = null
               if (widget.id === 'back-button' || widget.type === 'back-button') {
                 component = () => <BackButtonWidget onBack={onBack} />
@@ -445,12 +448,13 @@ export default function GameDetailView({ game, onBack }) {
                 return null
               }
               
+              // Use EXACT saved sizes and positions from default layout - don't constrain or modify
               return {
                 ...widget,
-                x: constrainedPos.x,
-                y: constrainedPos.y,
-                width: constrainedSize.width,
-                height: constrainedSize.height,
+                x: widget.x,
+                y: widget.y,
+                width: widget.width,
+                height: widget.height,
                 component: component,
                 locked: widget.locked || false,
                 pinned: widget.pinned || false
@@ -468,13 +472,12 @@ export default function GameDetailView({ game, onBack }) {
             const backButtonHeight = snapSizeToGrid(60)
             const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
             const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-            const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
             
             restoredWidgets.unshift({
               id: 'back-button',
               type: 'back-button',
-              x: constrainedBackButton.x,
-              y: constrainedBackButton.y,
+              x: backButtonX,
+              y: backButtonY,
               width: backButtonWidth,
               height: backButtonHeight,
               component: () => <BackButtonWidget onBack={onBack} />,
@@ -500,6 +503,7 @@ export default function GameDetailView({ game, onBack }) {
           }, 50)
         }
       }
+      }, 100) // Small delay to ensure viewport has updated
     } else {
       previousMobileStateRef.current = currentMobile
     }
@@ -665,13 +669,9 @@ export default function GameDetailView({ game, onBack }) {
     const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_GAME_DETAIL
     const defaultLayout = getCookie(defaultCookieName)
     if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
-      // Restore from default layout
+      // Restore from default layout - use exact positions without constraining
       const restoredWidgets = defaultLayout.map(widget => {
         try {
-          // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-          
           // Map widget types to components
           let component = null
           if (widget.id === 'back-button' || widget.type === 'back-button') {
@@ -693,12 +693,13 @@ export default function GameDetailView({ game, onBack }) {
             return null
           }
           
+          // Use EXACT saved sizes and positions from default layout - don't constrain or modify
           return {
             ...widget,
-            x: constrainedPos.x,
-            y: constrainedPos.y,
-            width: constrainedSize.width,
-            height: constrainedSize.height,
+            x: widget.x,
+            y: widget.y,
+            width: widget.width,
+            height: widget.height,
             component: component,
             locked: widget.locked || false,
             pinned: widget.pinned || false
@@ -909,6 +910,7 @@ export default function GameDetailView({ game, onBack }) {
         height: mobile ? 'auto' : '100vh',
         minHeight: mobile ? '100vh' : 'auto',
         overflow: mobile ? 'auto' : 'hidden',
+        overflowX: 'hidden', // Prevent horizontal scrolling on all devices
         position: 'relative'
       }}
       onContextMenu={handleContextMenu}

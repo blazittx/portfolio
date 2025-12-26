@@ -992,6 +992,7 @@ function App() {
         height: mobile ? 'auto' : '100vh',
         minHeight: mobile ? '100vh' : 'auto',
         overflow: mobile ? 'auto' : 'hidden',
+        overflowX: 'hidden', // Prevent horizontal scrolling on all devices
         position: 'relative'
       }}
       onContextMenu={handleContextMenu}

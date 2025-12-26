@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, snapToGridConstrained, isWithinUsableArea } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
+import { isMobile } from '../utils/mobile'
 import { hasCollisionWithOthers, findNearestValidPosition, findValidSize, findCollidingWidget, findWidgetAtPoint } from '../utils/collision'
 
 export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 0 }) => {
@@ -34,6 +35,9 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
 
   const handleMouseDown = (e, id) => {
     if (e.button !== 0) return
+    
+    // Disable all widget interactions on mobile
+    if (isMobile()) return
     
     const widget = widgets.find(w => w.id === id)
     if (!widget) return

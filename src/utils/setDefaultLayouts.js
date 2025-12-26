@@ -43,7 +43,13 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
   {"id":"profile-picture","type":"profile-picture","x":28.2,"y":26.4,"width":111,"height":111,"locked":false,"pinned":false,"settings":{"expandable":true,"expandScaleX":2,"expandScaleY":2,"expanded":false,"originalWidth":111,"originalHeight":111,"originalX":28.2,"originalY":26.4}}
 ]
 
-export const DEFAULT_GAME_DETAIL_LAYOUT_MOBILE = []
+export const DEFAULT_GAME_DETAIL_LAYOUT_MOBILE = [
+  {"id":"back-button","type":"back-button","x":28.2,"y":26.4,"width":111,"height":66,"locked":true,"pinned":false},
+  {"id":"game-info","type":"game-info","x":28.2,"y":116.4,"width":291,"height":201,"locked":false,"pinned":true},
+  {"id":"game-description","type":"game-description","x":28.2,"y":701.4,"width":336,"height":201,"locked":false,"pinned":true},
+  {"id":"game-image","type":"game-image","x":28.2,"y":341.4,"width":336,"height":336,"locked":false,"pinned":true},
+  {"id":"game-development-info","type":"game-development-info","x":28.2,"y":926.4,"width":336,"height":1056,"locked":false,"pinned":false}
+]
 
 /**
  * Set the default layouts for both main page and game detail page

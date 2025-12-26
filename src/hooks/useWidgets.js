@@ -4,7 +4,7 @@ import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT, COOKIE_NAME_
 import { snapToGrid, snapSizeToGrid, constrainToViewport } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
-import { DEFAULT_HOMEPAGE_LAYOUT } from '../utils/setDefaultLayouts'
+import { DEFAULT_HOMEPAGE_LAYOUT, DEFAULT_HOMEPAGE_LAYOUT_MOBILE } from '../utils/setDefaultLayouts'
 import { isMobile } from '../utils/mobile'
 import ProfileWidget from '../components/ProfileWidget'
 import AboutWidget from '../components/AboutWidget'
@@ -53,7 +53,107 @@ export const useWidgets = (view = 'main') => {
     }
     
     try {
-      // Try to load from cookie
+      // On mobile, always use default layout - ignore saved cookies
+      if (mobile) {
+        // Try to load default layout (mobile or desktop)
+        const defaultLayout = defaultCookieName ? getCookie(defaultCookieName) : null
+        if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
+          // Restore from default layout - use exact positions without constraining
+          const restoredWidgets = defaultLayout
+            .map(widget => {
+              try {
+                // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
+                const component = componentMap[widget.type]
+                
+                // Only include widgets with valid components
+                if (!component) {
+                  console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+                  return null
+                }
+                
+                // Initialize default settings for widgets that need them
+                let settings = widget.settings || {}
+                if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
+                  settings = { gameId: 'pullbackracers' }
+                }
+                // Initialize expandable settings
+                if (widget.type === 'profile-picture' && !settings.expandable) {
+                  settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
+                }
+                
+                // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+                const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
+                const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+                
+                return {
+                  ...widget,
+                  x: widget.x,
+                  y: widget.y,
+                  width: finalWidth,
+                  height: finalHeight,
+                  component: component,
+                  locked: widget.locked || false,
+                  pinned: widget.pinned || false,
+                  settings: settings
+                }
+              } catch (error) {
+                console.error(`Error restoring widget ${widget.id}:`, error)
+                return null
+              }
+            })
+            .filter(widget => widget !== null)
+          
+          // Don't auto-add widgets - respect what the user has saved
+          return restoredWidgets
+        }
+        
+        // If no default layout, use hardcoded default - use exact positions without constraining
+        return DEFAULT_HOMEPAGE_LAYOUT_MOBILE
+          .map(widget => {
+            try {
+              // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
+              const component = componentMap[widget.type]
+              
+              // Only include widgets with valid components
+              if (!component) {
+                console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+                return null
+              }
+              
+              // Initialize default settings for widgets that need them
+              let settings = widget.settings || {}
+              if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
+                settings = { gameId: 'pullbackracers' }
+              }
+              // Initialize expandable settings
+              if (widget.type === 'profile-picture' && !settings.expandable) {
+                settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
+              }
+              
+              // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+              const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
+              const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+              
+              return {
+                ...widget,
+                x: widget.x,
+                y: widget.y,
+                width: finalWidth,
+                height: finalHeight,
+                component: component,
+                locked: widget.locked || false,
+                pinned: widget.pinned || false,
+                settings: settings
+              }
+            } catch (error) {
+              console.error(`Error restoring widget ${widget.id}:`, error)
+              return null
+            }
+          })
+          .filter(widget => widget !== null)
+      }
+      
+      // Try to load from cookie (desktop only)
       const savedLayout = getCookie(cookieName)
       
       if (savedLayout && Array.isArray(savedLayout) && savedLayout.length > 0) {
