@@ -261,8 +261,8 @@ export default function WidgetItem({
       style={getWidgetStyle()}
       data-widget-id={widget.id}
       onMouseDown={(e) => {
-        // Don't start dragging if clicking on interactive elements
-        const isInteractiveElement = e.target.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"]')
+        // Don't start dragging if clicking on interactive elements or images
+        const isInteractiveElement = e.target.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"], img')
         if (!widget.locked && !isInteractiveElement) {
           onMouseDown(e, widget.id)
           e.currentTarget.style.cursor = 'grabbing'

@@ -1,7 +1,9 @@
 import BaseWidget from './BaseWidget'
+import { useState } from 'react'
 
 /* eslint-disable react/prop-types */
 export default function ProfilePictureWidget({ widget }) {
+  const [isHovered, setIsHovered] = useState(false)
 
   const handleClick = (e) => {
     e.stopPropagation()
@@ -19,7 +21,9 @@ export default function ProfilePictureWidget({ widget }) {
       borderRadius: '4px',
       display: 'block',
       cursor: 'pointer',
-      transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+      transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      willChange: 'transform'
     }
   }
 
@@ -48,14 +52,13 @@ export default function ProfilePictureWidget({ widget }) {
         <img 
           src="/profilePic.png" 
           alt="Profile Picture" 
+          draggable="false"
           style={getImageStyle()}
           onClick={handleClick}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.02)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)'
-          }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onDragStart={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.stopPropagation()}
         />
       </div>
     </BaseWidget>

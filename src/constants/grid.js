@@ -2,12 +2,19 @@ export const GRID_SIZE = 45;
 export const GRID_OFFSET_X = GRID_SIZE * 0.36; // 16.2px
 export const GRID_OFFSET_Y = GRID_SIZE * 0.32; // 14.4px
 export const WIDGET_PADDING = 12; // Padding from grid lines - increase this value for more distance
-export const USABLE_GRID_WIDTH = 34; // Number of grid cells wide
-export const USABLE_GRID_HEIGHT = 19; // Number of grid cells high
+export const USABLE_GRID_WIDTH = 34; // Number of grid cells wide (desktop)
+export const USABLE_GRID_HEIGHT = 19; // Number of grid cells high (desktop)
+export const USABLE_GRID_WIDTH_MOBILE = 8; // Number of grid cells wide (mobile)
+export const USABLE_GRID_HEIGHT_MOBILE = 55; // Number of grid cells high (mobile - allows scrolling)
 export const COOKIE_NAME = "widgetLayout";
 export const COOKIE_NAME_GAME_DETAIL = "widgetLayoutGameDetail";
 export const COOKIE_NAME_DEFAULT = "widgetLayoutDefault";
 export const COOKIE_NAME_DEFAULT_GAME_DETAIL = "widgetLayoutDefaultGameDetail";
+export const COOKIE_NAME_DEFAULT_MOBILE = "widgetLayoutDefaultMobile";
+export const COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE = "widgetLayoutDefaultGameDetailMobile";
+
+// Mobile breakpoint - screens smaller than this are considered mobile
+export const MOBILE_BREAKPOINT = 768;
 
 // Convert grid units to pixel size (accounting for padding)
 // gridUnits: number of grid cells (e.g., 2 = 2 grid units wide)

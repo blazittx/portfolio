@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useWidgets } from '../hooks/useWidgets'
 import { useDragAndResize } from '../hooks/useDragAndResize'
 import { useAutosort } from '../hooks/useAutosort'
@@ -11,9 +12,10 @@ import GridMask from './WidgetSystem/GridMask'
 import WidgetContainer from './WidgetSystem/WidgetContainer'
 import Toaster from './Toaster'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from '../utils/grid'
-import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT_GAME_DETAIL } from '../constants/grid'
+import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT_GAME_DETAIL, COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE } from '../constants/grid'
 import { getCookie, setCookie } from '../utils/cookies'
-import { DEFAULT_GAME_DETAIL_LAYOUT } from '../utils/setDefaultLayouts'
+import { DEFAULT_GAME_DETAIL_LAYOUT, DEFAULT_GAME_DETAIL_LAYOUT_MOBILE } from '../utils/setDefaultLayouts'
+import { isMobile } from '../utils/mobile'
 import BackButtonWidget from './GameDetailWidgets/BackButtonWidget'
 import GameInfoWidget from './GameDetailWidgets/GameInfoWidget'
 import GameDescriptionWidget from './GameDetailWidgets/GameDescriptionWidget'
@@ -45,10 +47,14 @@ export default function GameDetailView({ game, onBack }) {
   
   // Calculate center offset to center the layout horizontally and vertically
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+  const [isMobileState, setIsMobileState] = useState(() => isMobile())
+  const previousMobileStateRef = useRef(isMobileState)
   
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+      const currentMobile = isMobile()
+      setIsMobileState(currentMobile)
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
@@ -79,7 +85,9 @@ export default function GameDetailView({ game, onBack }) {
 
     // Check if there's a saved layout for game detail view
     const savedLayout = getCookie(COOKIE_NAME_GAME_DETAIL)
-    const defaultLayout = getCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL)
+    const mobile = isMobile()
+    const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_GAME_DETAIL
+    const defaultLayout = getCookie(defaultCookieName)
     
     // If we have existing widgets and the game changed, just update the game data in components
     // This preserves the layout when switching between games
@@ -317,6 +325,186 @@ export default function GameDetailView({ game, onBack }) {
     setWidgets(gameWidgets)
     initializedRef.current = true
   }, [game, setWidgets, onBack, centerOffset])
+  
+  // Switch layouts when mobile state changes - uses same logic as revertToDefault
+  useEffect(() => {
+    if (!game) return
+    
+    const previousMobile = previousMobileStateRef.current
+    const currentMobile = isMobileState
+    
+    // Only reload if mobile state actually changed and we're already initialized
+    if (previousMobile !== currentMobile && initializedRef.current) {
+      previousMobileStateRef.current = currentMobile
+      
+      // Use the same logic as revertToDefault
+      const defaultCookieName = currentMobile ? COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_GAME_DETAIL
+      const defaultLayout = getCookie(defaultCookieName)
+      
+      if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
+        // Restore from default layout - same logic as revertToDefault
+        const restoredWidgets = defaultLayout.map(widget => {
+          try {
+            // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
+            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
+            
+            // Map widget types to components
+            let component = null
+            if (widget.id === 'back-button' || widget.type === 'back-button') {
+              component = () => <BackButtonWidget onBack={onBack} />
+            } else if (widget.id === 'game-info' || widget.type === 'game-info') {
+              component = () => <GameInfoWidget game={game} />
+            } else if (widget.id === 'game-description' || widget.type === 'game-description') {
+              component = () => <GameDescriptionWidget game={game} />
+            } else if (widget.id === 'game-image' || widget.type === 'game-image') {
+              component = () => <GameImageWidget game={game} />
+            } else if (widget.id === 'game-details' || widget.type === 'game-details') {
+              component = () => <GameDetailsWidget game={game} />
+            } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+              component = () => <GameDevelopmentInfoWidget game={game} />
+            }
+            
+            if (!component) {
+              console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+              return null
+            }
+            
+            return {
+              ...widget,
+              x: constrainedPos.x,
+              y: constrainedPos.y,
+              width: constrainedSize.width,
+              height: constrainedSize.height,
+              component: component,
+              locked: widget.locked || false,
+              pinned: widget.pinned || false
+            }
+          } catch (error) {
+            console.error(`Error restoring widget ${widget.id}:`, error)
+            return null
+          }
+        }).filter(widget => widget !== null)
+        
+        // Ensure back button exists and is locked
+        const hasBackButton = restoredWidgets.some(w => w.id === 'back-button')
+        if (!hasBackButton) {
+          const backButtonWidth = snapSizeToGrid(120)
+          const backButtonHeight = snapSizeToGrid(60)
+          const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
+          const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
+          const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
+          
+          restoredWidgets.unshift({
+            id: 'back-button',
+            type: 'back-button',
+            x: constrainedBackButton.x,
+            y: constrainedBackButton.y,
+            width: backButtonWidth,
+            height: backButtonHeight,
+            component: () => <BackButtonWidget onBack={onBack} />,
+            locked: true,
+            pinned: false
+          })
+        } else {
+          const backButton = restoredWidgets.find(w => w.id === 'back-button')
+          if (backButton) {
+            backButton.locked = true
+            backButton.component = () => <BackButtonWidget onBack={onBack} />
+          }
+        }
+        
+        setWidgets(restoredWidgets)
+      } else {
+        // If no default layout, use hardcoded default
+        const layoutToUse = currentMobile ? DEFAULT_GAME_DETAIL_LAYOUT_MOBILE : DEFAULT_GAME_DETAIL_LAYOUT
+        
+        if (layoutToUse && Array.isArray(layoutToUse) && layoutToUse.length > 0) {
+          const restoredWidgets = layoutToUse.map(widget => {
+            try {
+              const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+              const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
+              
+              let component = null
+              if (widget.id === 'back-button' || widget.type === 'back-button') {
+                component = () => <BackButtonWidget onBack={onBack} />
+              } else if (widget.id === 'game-info' || widget.type === 'game-info') {
+                component = () => <GameInfoWidget game={game} />
+              } else if (widget.id === 'game-description' || widget.type === 'game-description') {
+                component = () => <GameDescriptionWidget game={game} />
+              } else if (widget.id === 'game-image' || widget.type === 'game-image') {
+                component = () => <GameImageWidget game={game} />
+              } else if (widget.id === 'game-details' || widget.type === 'game-details') {
+                component = () => <GameDetailsWidget game={game} />
+              } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+                component = () => <GameDevelopmentInfoWidget game={game} />
+              }
+              
+              if (!component) {
+                console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+                return null
+              }
+              
+              return {
+                ...widget,
+                x: constrainedPos.x,
+                y: constrainedPos.y,
+                width: constrainedSize.width,
+                height: constrainedSize.height,
+                component: component,
+                locked: widget.locked || false,
+                pinned: widget.pinned || false
+              }
+            } catch (error) {
+              console.error(`Error restoring widget ${widget.id}:`, error)
+              return null
+            }
+          }).filter(widget => widget !== null)
+          
+          // Ensure back button exists and is locked
+          const hasBackButton = restoredWidgets.some(w => w.id === 'back-button')
+          if (!hasBackButton) {
+            const backButtonWidth = snapSizeToGrid(120)
+            const backButtonHeight = snapSizeToGrid(60)
+            const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
+            const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
+            const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
+            
+            restoredWidgets.unshift({
+              id: 'back-button',
+              type: 'back-button',
+              x: constrainedBackButton.x,
+              y: constrainedBackButton.y,
+              width: backButtonWidth,
+              height: backButtonHeight,
+              component: () => <BackButtonWidget onBack={onBack} />,
+              locked: true,
+              pinned: false
+            })
+          } else {
+            const backButton = restoredWidgets.find(w => w.id === 'back-button')
+            if (backButton) {
+              backButton.locked = true
+              backButton.component = () => <BackButtonWidget onBack={onBack} />
+            }
+          }
+          
+          // Use flushSync to ensure the state update happens synchronously
+          flushSync(() => {
+            setWidgets(restoredWidgets)
+          })
+          
+          // Animate widgets in immediately after state update
+          setTimeout(() => {
+            animateWidgetsIn()
+          }, 50)
+        }
+      }
+    } else {
+      previousMobileStateRef.current = currentMobile
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobileState, game, animateWidgetsIn])
 
   // Initial animation on mount or when widgets are first set
   useEffect(() => {
@@ -464,14 +652,18 @@ export default function GameDetailView({ game, onBack }) {
       locked: locked || false,
       pinned: pinned || false
     }))
-    setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL, layoutToSave)
-    showToast('Current layout saved as default!')
+    const mobile = isMobile()
+    const cookieName = mobile ? COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_GAME_DETAIL
+    setCookie(cookieName, layoutToSave)
+    showToast(`Current layout saved as ${mobile ? 'mobile ' : ''}default!`)
   }, [widgets, showToast])
 
   // Revert to default layout
   const revertToDefault = useCallback(() => {
-    // Try to load default layout from cookie
-    const defaultLayout = getCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL)
+    // Try to load default layout from cookie (mobile or desktop)
+    const mobile = isMobile()
+    const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_GAME_DETAIL
+    const defaultLayout = getCookie(defaultCookieName)
     if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
       // Restore from default layout
       const restoredWidgets = defaultLayout.map(widget => {
@@ -545,7 +737,16 @@ export default function GameDetailView({ game, onBack }) {
         }
       }
       
-      setWidgets(restoredWidgets)
+      // Use flushSync to ensure the state update happens synchronously
+      flushSync(() => {
+        setWidgets(restoredWidgets)
+      })
+      
+      // Animate widgets in immediately after state update
+      setTimeout(() => {
+        animateWidgetsIn()
+      }, 50)
+      
       showToast('Layout reverted to default!')
       return
     }
@@ -656,9 +857,18 @@ export default function GameDetailView({ game, onBack }) {
       }
     ]
 
-    setWidgets(defaultWidgets)
+    // Use flushSync to ensure the state update happens synchronously
+    flushSync(() => {
+      setWidgets(defaultWidgets)
+    })
+    
+    // Animate widgets in immediately after state update
+    setTimeout(() => {
+      animateWidgetsIn()
+    }, 50)
+    
     showToast('Layout reverted to default!')
-  }, [setWidgets, showToast, game, onBack, centerOffset])
+  }, [setWidgets, showToast, game, onBack, animateWidgetsIn, centerOffset])
 
   const handleMouseDownWithContext = (e, id) => {
     if (e.button !== 2) {
@@ -690,12 +900,15 @@ export default function GameDetailView({ game, onBack }) {
     }
   }, [handleMouseMove, handleMouseUp])
 
+  const mobile = isMobile()
+  
   return (
     <div 
       style={{
         width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
+        height: mobile ? 'auto' : '100vh',
+        minHeight: mobile ? '100vh' : 'auto',
+        overflow: mobile ? 'auto' : 'hidden',
         position: 'relative'
       }}
       onContextMenu={handleContextMenu}

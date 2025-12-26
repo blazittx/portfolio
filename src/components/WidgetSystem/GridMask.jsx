@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { WIDGET_PADDING, GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, USABLE_GRID_WIDTH, USABLE_GRID_HEIGHT } from '../../constants/grid'
-import { getRawUsableAreaBounds } from '../../utils/grid'
+import { WIDGET_PADDING, GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../../constants/grid'
+import { getRawUsableAreaBounds, getUsableGridWidth, getUsableGridHeight } from '../../utils/grid'
 
 /* eslint-disable react/prop-types */
 export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDragging = false, isResizing = false, dragStateRef }) {
@@ -15,8 +15,10 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
   const availableAreaOutline = useMemo(() => {
     if (!isDragging) return null
     
-    // Use raw bounds as the single source of truth for the 34x19 area
+    // Use raw bounds as the single source of truth for the usable area
     const rawBounds = getRawUsableAreaBounds(centerOffset)
+    const gridWidth = getUsableGridWidth()
+    const gridHeight = getUsableGridHeight()
     const occupiedCells = new Set()
     const availableCells = new Set()
     
@@ -42,20 +44,20 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
       const startRow = Math.floor((widgetTop - baseGridY) / GRID_SIZE)
       const endRow = Math.ceil((widgetBottom - baseGridY) / GRID_SIZE)
       
-      // Mark all cells in this range as occupied (only if within valid 34x19 grid bounds)
+      // Mark all cells in this range as occupied (only if within valid grid bounds)
       for (let row = startRow; row < endRow; row++) {
         for (let col = startCol; col < endCol; col++) {
-          // Only mark cells that are within the 34x19 grid bounds
-          if (row >= 0 && row < USABLE_GRID_HEIGHT && col >= 0 && col < USABLE_GRID_WIDTH) {
+          // Only mark cells that are within the grid bounds
+          if (row >= 0 && row < gridHeight && col >= 0 && col < gridWidth) {
             occupiedCells.add(`${row},${col}`)
           }
         }
       }
     })
     
-    // Find all available cells within the raw 34x19 bounds
-    for (let row = 0; row < USABLE_GRID_HEIGHT; row++) {
-      for (let col = 0; col < USABLE_GRID_WIDTH; col++) {
+    // Find all available cells within the raw bounds
+    for (let row = 0; row < gridHeight; row++) {
+      for (let col = 0; col < gridWidth; col++) {
         const cellKey = `${row},${col}`
         if (!occupiedCells.has(cellKey)) {
           // Calculate pixel position for this cell using raw bounds (no double offset)
@@ -77,7 +79,7 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
     
     // Helper to check if a cell is available
     const isAvailable = (row, col) => {
-      if (row < 0 || row >= USABLE_GRID_HEIGHT || col < 0 || col >= USABLE_GRID_WIDTH) {
+      if (row < 0 || row >= gridHeight || col < 0 || col >= gridWidth) {
         return false
       }
       return availableCells.has(`${row},${col}`)

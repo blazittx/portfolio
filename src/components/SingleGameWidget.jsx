@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import BaseWidget from "./BaseWidget";
+import { isMobile } from "../utils/mobile";
 
 const GAME_IDS = [
   "pullbackracers",
@@ -211,11 +212,30 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
     if (thumbnailElement && thumbnailContainerRef.current && !isHovered) {
       // Small delay to ensure DOM is updated
       setTimeout(() => {
-        thumbnailElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest'
-        });
+        // On mobile, scroll within the container only to avoid page scrolling
+        if (isMobile()) {
+          const container = thumbnailContainerRef.current;
+          const element = thumbnailElement;
+          if (container && element) {
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+            
+            // Calculate scroll position to center the thumbnail in the container
+            const scrollTop = element.offsetTop - container.offsetTop - (containerRect.height / 2) + (elementRect.height / 2);
+            
+            container.scrollTo({
+              top: scrollTop,
+              behavior: 'smooth'
+            });
+          }
+        } else {
+          // On desktop, use scrollIntoView with block: 'nearest' to avoid page scrolling
+          thumbnailElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest'
+          });
+        }
       }, 50);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -337,7 +357,10 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
               const clickedDropdown = e.target.closest('[data-dropdown-trigger]') || 
                                      e.target.closest('[data-dropdown-menu]');
               
-              if (!clickedDropdown) {
+              // Check if click was on thumbnail container
+              const clickedThumbnail = e.target.closest('[data-thumbnail-container]');
+              
+              if (!clickedDropdown && !clickedThumbnail) {
                 // Small delay to let drag system update
                 setTimeout(() => {
                   const wasDrag = wasLastInteractionDrag && typeof wasLastInteractionDrag === 'function' 
@@ -617,6 +640,8 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
                         transition: 'opacity 0.3s ease'
                       }}
                       loading="lazy"
+                      onDragStart={(e) => e.preventDefault()}
+                      onMouseDown={(e) => e.stopPropagation()}
                       onError={(e) => {
                         e.target.src = "https://via.placeholder.com/800x600?text=Game+Image";
                       }}
@@ -639,7 +664,10 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
                   flexShrink: 0,
                   width: '60px',
                   scrollbarWidth: 'none',
-                  msOverflowStyle: 'none'
+                  msOverflowStyle: 'none',
+                  // Prevent page scrolling when scrolling thumbnails on mobile
+                  touchAction: 'pan-y',
+                  WebkitOverflowScrolling: 'touch'
                 }}
               >
                 {(() => {
@@ -652,7 +680,16 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         handleThumbnailClick(index);
+                      }}
+                      onMouseUp={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      onTouchStart={(e) => {
+                        // Prevent page scrolling when touching thumbnails on mobile
+                        e.stopPropagation();
                       }}
                       style={{
                         position: 'relative',
@@ -692,6 +729,8 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
                           userSelect: 'none'
                         }}
                         loading="lazy"
+                        onDragStart={(e) => e.preventDefault()}
+                        onMouseDown={(e) => e.stopPropagation()}
                         onError={(e) => {
                           e.target.src = "https://via.placeholder.com/60x60?text=Image";
                         }}

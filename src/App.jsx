@@ -13,12 +13,14 @@ import GridMask from './components/WidgetSystem/GridMask'
 import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
 import Toaster from './components/Toaster'
-import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, GRID_SIZE, USABLE_GRID_HEIGHT, USABLE_GRID_WIDTH, WIDGET_PADDING } from './constants/grid'
+import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, COOKIE_NAME_DEFAULT_MOBILE, GRID_SIZE, WIDGET_PADDING } from './constants/grid'
+import { getUsableGridWidth, getUsableGridHeight } from './utils/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from './utils/grid'
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
 import { setCookie, getCookie } from './utils/cookies'
-import { DEFAULT_HOMEPAGE_LAYOUT, DEFAULT_GAME_DETAIL_LAYOUT } from './utils/setDefaultLayouts'
+import { DEFAULT_HOMEPAGE_LAYOUT, DEFAULT_GAME_DETAIL_LAYOUT, DEFAULT_HOMEPAGE_LAYOUT_MOBILE } from './utils/setDefaultLayouts'
+import { isMobile } from './utils/mobile'
 import ProfileWidget from './components/ProfileWidget'
 import AboutWidget from './components/AboutWidget'
 import SkillsWidget from './components/SkillsWidget'
@@ -38,14 +40,157 @@ function App() {
   // Calculate center offset to center the layout horizontally and vertically
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
   const [showDebugOutline, setShowDebugOutline] = useState(false)
+  const [isMobileState, setIsMobileState] = useState(() => isMobile())
+  const previousMobileStateRef = useRef(isMobileState)
   
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+      const currentMobile = isMobile()
+      setIsMobileState(currentMobile)
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+  
+  // Switch layouts when mobile state changes - calls revertToDefault logic directly
+  useEffect(() => {
+    const previousMobile = previousMobileStateRef.current
+    const currentMobile = isMobileState
+    
+    // Only reload if mobile state actually changed
+    if (previousMobile !== currentMobile && currentView === 'main') {
+      previousMobileStateRef.current = currentMobile
+      
+      // Small delay to ensure viewport has updated after resize
+      setTimeout(() => {
+        // Directly call the revertToDefault logic to ensure it works correctly
+        // This ensures widgets are properly restored without getting mushed together
+        const mobile = isMobile() // Re-check mobile state after delay
+        const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_MOBILE : COOKIE_NAME_DEFAULT
+        const defaultLayout = getCookie(defaultCookieName)
+        
+        if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
+          // Restore from default layout - use exact positions without constraining
+          // Default layouts are already positioned correctly for their screen size
+          const restoredWidgets = defaultLayout
+            .map(widget => {
+              try {
+                // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
+                const component = componentMap[widget.type]
+                
+                if (!component) {
+                  console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+                  return null
+                }
+                
+                // Initialize default settings for widgets that need them
+                let settings = widget.settings || {}
+                if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
+                  settings = { gameId: 'pullbackracers' }
+                }
+                // Initialize expandable settings
+                if (widget.type === 'profile-picture' && !settings.expandable) {
+                  settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
+                }
+                
+                // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+                const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
+                const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+                
+                return {
+                  ...widget,
+                  x: widget.x,
+                  y: widget.y,
+                  width: finalWidth,
+                  height: finalHeight,
+                  component: component,
+                  locked: widget.locked || false,
+                  pinned: widget.pinned || false,
+                  settings: settings
+                }
+              } catch (error) {
+                console.error(`Error restoring widget ${widget.id}:`, error)
+                return null
+              }
+            })
+            .filter(widget => widget !== null)
+          
+          // Use flushSync to ensure the state update happens synchronously
+          flushSync(() => {
+            setWidgets(restoredWidgets)
+          })
+          
+          // Animate widgets in immediately after state update
+          setTimeout(() => {
+            animateWidgetsIn()
+          }, 50)
+        } else {
+          // If no default layout cookie, use hardcoded default for the current screen size
+          const layoutToUse = mobile ? DEFAULT_HOMEPAGE_LAYOUT_MOBILE : DEFAULT_HOMEPAGE_LAYOUT
+          
+          if (layoutToUse && Array.isArray(layoutToUse) && layoutToUse.length > 0) {
+            // Use exact positions from hardcoded default layout - don't constrain
+            const restoredWidgets = layoutToUse
+              .map(widget => {
+                try {
+                  // Always use widget.type to look up component
+                  const component = componentMap[widget.type]
+                  
+                  if (!component) {
+                    console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+                    return null
+                  }
+                  
+                  // Initialize default settings for widgets that need them
+                  let settings = widget.settings || {}
+                  if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
+                    settings = { gameId: 'pullbackracers' }
+                  }
+                  // Initialize expandable settings
+                  if (widget.type === 'profile-picture' && !settings.expandable) {
+                    settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
+                  }
+                  
+                  // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+                  const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
+                  const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+                  
+                  return {
+                    ...widget,
+                    x: widget.x,
+                    y: widget.y,
+                    width: finalWidth,
+                    height: finalHeight,
+                    component: component,
+                    locked: widget.locked || false,
+                    pinned: widget.pinned || false,
+                    settings: settings
+                  }
+                } catch (error) {
+                  console.error(`Error creating widget ${widget.id}:`, error)
+                  return null
+                }
+              })
+              .filter(widget => widget !== null)
+            
+            // Use flushSync to ensure the state update happens synchronously
+            flushSync(() => {
+              setWidgets(restoredWidgets)
+            })
+            
+            // Animate widgets in immediately after state update
+            setTimeout(() => {
+              animateWidgetsIn()
+            }, 50)
+          }
+        }
+      }, 100) // Small delay to ensure viewport has updated
+    } else {
+      previousMobileStateRef.current = currentMobile
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobileState, currentView, animateWidgetsIn])
   
   // Toggle debug outline with F3 key
   useEffect(() => {
@@ -214,11 +359,12 @@ function App() {
                   (widgetRect.y - expandedBottom < GRID_SIZE ? GRID_SIZE - (widgetRect.y - expandedBottom) + profOrigH * 0.1 : profOrigH * 0.15)
                 adjustedHeight = Math.max(minH, snapSizeToGrid(profOrigH - heightReduction))
                 adjustedY = snapToGrid(profOrigY + (profOrigH - adjustedHeight), GRID_OFFSET_Y)
-                const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - adjustedHeight
-                if (adjustedY + adjustedHeight > GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) {
+                const gridHeight = getUsableGridHeight()
+                const maxY = GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING - adjustedHeight
+                if (adjustedY + adjustedHeight > GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING) {
                   adjustedY = Math.max(GRID_OFFSET_Y + WIDGET_PADDING, maxY)
-                  if (adjustedY + adjustedHeight > GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) {
-                    adjustedHeight = Math.max(minH, snapSizeToGrid((GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) - adjustedY))
+                  if (adjustedY + adjustedHeight > GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING) {
+                    adjustedHeight = Math.max(minH, snapSizeToGrid((GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING) - adjustedY))
                   }
                 }
               }
@@ -243,11 +389,12 @@ function App() {
                 const widthReduction = widgetRight <= expandedRight ? GRID_SIZE + profOrigW * 0.1 : overlap + GRID_SIZE
                 adjustedWidth = Math.max(minW, snapSizeToGrid(profOrigW - widthReduction))
                 adjustedX = snapToGrid(profOrigX + (profOrigW - adjustedWidth), GRID_OFFSET_X)
-                const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - adjustedWidth
-                if (adjustedX + adjustedWidth > GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) {
-                  adjustedX = Math.min(GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - adjustedWidth, maxX)
-                  if (adjustedX + adjustedWidth > GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) {
-                    adjustedWidth = Math.max(minW, snapSizeToGrid((GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) - adjustedX))
+                const gridWidth = getUsableGridWidth()
+                const maxX = GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING - adjustedWidth
+                if (adjustedX + adjustedWidth > GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING) {
+                  adjustedX = Math.min(GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING - adjustedWidth, maxX)
+                  if (adjustedX + adjustedWidth > GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING) {
+                    adjustedWidth = Math.max(minW, snapSizeToGrid((GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING) - adjustedX))
                   }
                 }
               }
@@ -307,11 +454,12 @@ function App() {
               (widgetRect.y - expandedBottom < GRID_SIZE ? GRID_SIZE - (widgetRect.y - expandedBottom) + origH * 0.1 : origH * 0.15)
             newHeight = Math.max(minH, snapSizeToGrid(origH - heightReduction))
             newY = snapToGrid(origY + (origH - newHeight), GRID_OFFSET_Y)
-            const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - newHeight
-            if (newY + newHeight > GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) {
+            const gridHeight = getUsableGridHeight()
+            const maxY = GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING - newHeight
+            if (newY + newHeight > GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING) {
               newY = Math.max(GRID_OFFSET_Y + WIDGET_PADDING, maxY)
-              if (newY + newHeight > GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) {
-                newHeight = Math.max(minH, snapSizeToGrid((GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) - newY))
+              if (newY + newHeight > GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING) {
+                newHeight = Math.max(minH, snapSizeToGrid((GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING) - newY))
               }
             }
           }
@@ -336,11 +484,12 @@ function App() {
             const widthReduction = widgetRight <= expandedRight ? GRID_SIZE + origW * 0.1 : overlap + GRID_SIZE
             newWidth = Math.max(minW, snapSizeToGrid(origW - widthReduction))
             newX = snapToGrid(origX + (origW - newWidth), GRID_OFFSET_X)
-            const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - newWidth
-            if (newX + newWidth > GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) {
-              newX = Math.min(GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - newWidth, maxX)
-              if (newX + newWidth > GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) {
-                newWidth = Math.max(minW, snapSizeToGrid((GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) - newX))
+            const gridWidth = getUsableGridWidth()
+            const maxX = GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING - newWidth
+            if (newX + newWidth > GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING) {
+              newX = Math.min(GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING - newWidth, maxX)
+              if (newX + newWidth > GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING) {
+                newWidth = Math.max(minW, snapSizeToGrid((GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING) - newX))
               }
             }
           }
@@ -409,14 +558,17 @@ function App() {
       pinned: pinned || false,
       settings: settings || {}
     }))
-    setCookie(COOKIE_NAME_DEFAULT, layoutToSave)
-    showToast('Current layout saved as default!')
+    const cookieName = isMobile() ? COOKIE_NAME_DEFAULT_MOBILE : COOKIE_NAME_DEFAULT
+    setCookie(cookieName, layoutToSave)
+    showToast(`Current layout saved as ${isMobile() ? 'mobile ' : ''}default!`)
   }, [widgets, showToast])
 
   // Revert to default layout
   const revertToDefault = useCallback(() => {
-    // Try to load default layout from cookie
-    const defaultLayout = getCookie(COOKIE_NAME_DEFAULT)
+    // Try to load default layout from cookie (mobile or desktop)
+    const mobile = isMobile()
+    const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_MOBILE : COOKIE_NAME_DEFAULT
+    const defaultLayout = getCookie(defaultCookieName)
     if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
       // Restore from default layout
       const restoredWidgets = defaultLayout
@@ -466,8 +618,16 @@ function App() {
         })
         .filter(widget => widget !== null)
       
-      // Don't auto-add widgets - respect what the user has saved
-      setWidgets(restoredWidgets)
+      // Use flushSync to ensure the state update happens synchronously (like addWidget does)
+      flushSync(() => {
+        setWidgets(restoredWidgets)
+      })
+      
+      // Animate widgets in immediately after state update
+      setTimeout(() => {
+        animateWidgetsIn()
+      }, 50)
+      
       showToast('Layout reverted to default!')
       return
     }
@@ -562,9 +722,18 @@ function App() {
       }
     ]
     
-    setWidgets(defaultWidgets)
+    // Use flushSync to ensure the state update happens synchronously
+    flushSync(() => {
+      setWidgets(defaultWidgets)
+    })
+    
+    // Animate widgets in immediately after state update
+    setTimeout(() => {
+      animateWidgetsIn()
+    }, 50)
+    
     showToast('Layout reverted to default!')
-  }, [setWidgets, showToast, centerOffset])
+  }, [setWidgets, showToast, animateWidgetsIn, centerOffset])
 
   // Add widget at position
   const addWidget = useCallback((widgetType, x, y) => {
@@ -743,13 +912,25 @@ function App() {
 
   // Initialize default cookies if they don't exist
   useEffect(() => {
+    const mobile = isMobile()
+    
+    // Initialize desktop defaults
     const defaultLayout = getCookie(COOKIE_NAME_DEFAULT)
     if (!defaultLayout || !Array.isArray(defaultLayout) || defaultLayout.length === 0) {
       // Set default homepage layout from single source of truth
       setCookie(COOKIE_NAME_DEFAULT, DEFAULT_HOMEPAGE_LAYOUT)
     }
     
-    // Also check game detail default
+    // Initialize mobile defaults (only if on mobile and not already set)
+    if (mobile) {
+      const mobileDefaultLayout = getCookie(COOKIE_NAME_DEFAULT_MOBILE)
+      if (!mobileDefaultLayout || !Array.isArray(mobileDefaultLayout) || mobileDefaultLayout.length === 0) {
+        // Set mobile default layout from single source of truth
+        setCookie(COOKIE_NAME_DEFAULT_MOBILE, DEFAULT_HOMEPAGE_LAYOUT_MOBILE)
+      }
+    }
+    
+    // Also check game detail default (desktop)
     const gameDetailDefault = getCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL)
     if (!gameDetailDefault || !Array.isArray(gameDetailDefault) || gameDetailDefault.length === 0) {
       // Set default game detail layout from single source of truth
@@ -802,12 +983,15 @@ function App() {
     return <GameDetailView game={selectedGame} onBack={navigateToMain} />
   }
 
+  const mobile = isMobile()
+  
   return (
     <div 
       style={{
         width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
+        height: mobile ? 'auto' : '100vh',
+        minHeight: mobile ? '100vh' : 'auto',
+        overflow: mobile ? 'auto' : 'hidden',
         position: 'relative'
       }}
       onContextMenu={handleContextMenu}

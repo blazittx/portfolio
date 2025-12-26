@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { getCookie, setCookie } from '../utils/cookies'
-import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT } from '../constants/grid'
+import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_MOBILE } from '../constants/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { DEFAULT_HOMEPAGE_LAYOUT } from '../utils/setDefaultLayouts'
+import { isMobile } from '../utils/mobile'
 import ProfileWidget from '../components/ProfileWidget'
 import AboutWidget from '../components/AboutWidget'
 import SkillsWidget from '../components/SkillsWidget'
@@ -37,8 +38,12 @@ export const componentMap = {
 }
 
 export const useWidgets = (view = 'main') => {
-  // Determine which cookie to use based on view
+  // Determine which cookie to use based on view and mobile state
+  const mobile = isMobile()
   const cookieName = view === 'game-detail' ? COOKIE_NAME_GAME_DETAIL : COOKIE_NAME
+  const defaultCookieName = mobile 
+    ? (view === 'game-detail' ? null : COOKIE_NAME_DEFAULT_MOBILE) // Game detail mobile default handled in GameDetailView
+    : (view === 'game-detail' ? null : COOKIE_NAME_DEFAULT)
   
   // Initialize widget positions - load from cookie or use defaults
   const [widgets, setWidgets] = useState(() => {
@@ -106,8 +111,8 @@ export const useWidgets = (view = 'main') => {
         return restoredWidgets
       }
       
-      // If no saved layout, try to load default layout
-      const defaultLayout = getCookie(COOKIE_NAME_DEFAULT)
+      // If no saved layout, try to load default layout (mobile or desktop)
+      const defaultLayout = defaultCookieName ? getCookie(defaultCookieName) : null
       if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
         // Restore from default layout
         const restoredWidgets = defaultLayout
@@ -162,7 +167,8 @@ export const useWidgets = (view = 'main') => {
         return restoredWidgets
       }
       
-      // Use hardcoded default layout from user's current setup
+      // Use hardcoded default layout from user's current setup (desktop only)
+      // On mobile, if no mobile default is set, fall back to desktop default
       // Map the default layout to include component references
       return DEFAULT_HOMEPAGE_LAYOUT
         .map(widget => {

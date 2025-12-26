@@ -333,6 +333,10 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                 onMouseUp={(e) => {
                   // Only navigate if it wasn't a drag (check after mouse up)
                   if (onGameClick && e.button === 0) {
+                    // Check if click was on thumbnail container
+                    const clickedThumbnail = e.target.closest('[data-thumbnail-container]');
+                    if (clickedThumbnail) return;
+                    
                     // Small delay to let drag system update
                     setTimeout(() => {
                       const wasDrag = wasLastInteractionDrag && typeof wasLastInteractionDrag === 'function' 
@@ -444,6 +448,8 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                               transition: 'opacity 0.3s ease'
                             }}
                             loading="lazy"
+                            onDragStart={(e) => e.preventDefault()}
+                            onMouseDown={(e) => e.stopPropagation()}
                             onError={(e) => {
                               e.target.src = "https://via.placeholder.com/800x600?text=Game+Image";
                             }}
@@ -464,7 +470,10 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                         paddingBottom: '0.25rem',
                         flexShrink: 0,
                         flexWrap: 'wrap',
-                        justifyContent: 'flex-start'
+                        justifyContent: 'flex-start',
+                        // Prevent page scrolling when clicking thumbnails on mobile
+                        touchAction: 'pan-y',
+                        WebkitOverflowScrolling: 'touch'
                       }}
                     >
                       {(() => {
@@ -475,7 +484,16 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                             key={index}
                             onClick={(e) => {
                               e.stopPropagation();
+                              e.preventDefault();
                               setImageIndices(prev => ({ ...prev, [game.id]: index }));
+                            }}
+                            onMouseUp={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }}
+                            onTouchStart={(e) => {
+                              // Prevent page scrolling when touching thumbnails on mobile
+                              e.stopPropagation();
                             }}
                             style={{
                               position: 'relative',
@@ -515,6 +533,8 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                                 userSelect: 'none'
                               }}
                               loading="lazy"
+                              onDragStart={(e) => e.preventDefault()}
+                              onMouseDown={(e) => e.stopPropagation()}
                               onError={(e) => {
                                 e.target.src = "https://via.placeholder.com/60x60?text=Image";
                               }}

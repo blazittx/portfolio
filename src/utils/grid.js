@@ -1,4 +1,14 @@
-import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, WIDGET_PADDING, USABLE_GRID_WIDTH, USABLE_GRID_HEIGHT } from '../constants/grid'
+import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, WIDGET_PADDING, USABLE_GRID_WIDTH, USABLE_GRID_HEIGHT, USABLE_GRID_WIDTH_MOBILE, USABLE_GRID_HEIGHT_MOBILE } from '../constants/grid'
+import { isMobile } from './mobile'
+
+// Get the appropriate grid dimensions based on screen size
+export const getUsableGridWidth = () => {
+  return isMobile() ? USABLE_GRID_WIDTH_MOBILE : USABLE_GRID_WIDTH
+}
+
+export const getUsableGridHeight = () => {
+  return isMobile() ? USABLE_GRID_HEIGHT_MOBILE : USABLE_GRID_HEIGHT
+}
 
 // Snap a coordinate to the nearest grid line with padding (inside the grid cell)
 export const snapToGrid = (coord, offset) => {
@@ -38,13 +48,15 @@ export const constrainToViewport = (x, y, width, height, centerOffset = { x: 0, 
   }
   
   // Enforce usable area bounds (for drag/resize operations)
-  // Widgets must stay within the raw 34x19 area, accounting for padding
+  // Widgets must stay within the usable area, accounting for padding
   // Widget positions are relative to base grid origin (GRID_OFFSET_X, GRID_OFFSET_Y)
   // So we calculate bounds relative to base grid origin (not including centerOffset)
+  const gridWidth = getUsableGridWidth()
+  const gridHeight = getUsableGridHeight()
   const minX = GRID_OFFSET_X + WIDGET_PADDING
   const minY = GRID_OFFSET_Y + WIDGET_PADDING
-  const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - width
-  const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - height
+  const maxX = GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING - width
+  const maxY = GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING - height
   
   return {
     x: Math.max(minX, Math.min(maxX, x)),
@@ -57,8 +69,10 @@ export const constrainToViewport = (x, y, width, height, centerOffset = { x: 0, 
 // eslint-disable-next-line no-unused-vars
 export const constrainSizeToViewport = (x, y, width, height, minWidth = 0, minHeight = 0, centerOffset = { x: 0, y: 0 }) => {
   // Widget positions are relative to base grid origin, so calculate bounds relative to base grid
-  const maxWidth = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - x
-  const maxHeight = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - y
+  const gridWidth = getUsableGridWidth()
+  const gridHeight = getUsableGridHeight()
+  const maxWidth = GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING - x
+  const maxHeight = GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING - y
   
   return {
     width: Math.max(minWidth, Math.min(maxWidth, width)),
@@ -80,8 +94,10 @@ export const snapToGridConstrained = (x, y, width, height, offsetX, offsetY, cen
   const reConstrained = constrainToViewport(snappedX, snappedY, width, height, centerOffset)
   
   // Get usable area bounds relative to base grid origin for max calculations
-  const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - width
-  const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - height
+  const gridWidth = getUsableGridWidth()
+  const gridHeight = getUsableGridHeight()
+  const maxX = GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING - width
+  const maxY = GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING - height
   const minX = GRID_OFFSET_X + WIDGET_PADDING
   const minY = GRID_OFFSET_Y + WIDGET_PADDING
   
@@ -105,43 +121,56 @@ export const snapToGridConstrained = (x, y, width, height, offsetX, offsetY, cen
 
 // Calculate the horizontal and vertical offsets needed to center the usable grid area
 // Returns an object with x and y offsets in pixels
+// On mobile: centers horizontally only, keeps grid at top (y = 0)
+// On desktop: centers both horizontally and vertically
 export const calculateCenterOffset = () => {
+  const mobile = isMobile()
+  
   // Calculate the size of the usable grid area in pixels
-  const usableAreaWidth = USABLE_GRID_WIDTH * GRID_SIZE
-  const usableAreaHeight = USABLE_GRID_HEIGHT * GRID_SIZE
+  const gridWidth = getUsableGridWidth()
+  const gridHeight = getUsableGridHeight()
+  const usableAreaWidth = gridWidth * GRID_SIZE
+  const usableAreaHeight = gridHeight * GRID_SIZE
   
   // Calculate the center of the usable grid area (starting from grid offset)
   const usableAreaCenterX = GRID_OFFSET_X + (usableAreaWidth / 2)
-  const usableAreaCenterY = GRID_OFFSET_Y + (usableAreaHeight / 2)
   
   // Calculate the center of the viewport
   const viewportCenterX = window.innerWidth / 2
-  const viewportCenterY = window.innerHeight / 2
   
-  // Calculate the offsets needed to center the usable area
+  // Calculate the horizontal offset needed to center the usable area
   const offsetX = viewportCenterX - usableAreaCenterX
-  const offsetY = viewportCenterY - usableAreaCenterY
   
-  // Snap the offsets to grid for better alignment
+  // Snap the horizontal offset to grid for better alignment
   const gridUnitsX = Math.round(offsetX / GRID_SIZE)
-  const gridUnitsY = Math.round(offsetY / GRID_SIZE)
   const snappedOffsetX = gridUnitsX * GRID_SIZE
-  const snappedOffsetY = gridUnitsY * GRID_SIZE
+  
+  // On mobile: keep grid at top (y = 0), on desktop: center vertically
+  let snappedOffsetY = 0
+  if (!mobile) {
+    const usableAreaCenterY = GRID_OFFSET_Y + (usableAreaHeight / 2)
+    const viewportCenterY = window.innerHeight / 2
+    const offsetY = viewportCenterY - usableAreaCenterY
+    const gridUnitsY = Math.round(offsetY / GRID_SIZE)
+    snappedOffsetY = gridUnitsY * GRID_SIZE
+  }
   
   return { x: snappedOffsetX, y: snappedOffsetY }
 }
 
-// Get the raw bounds of the usable grid area (34x19) - SINGLE SOURCE OF TRUTH
+// Get the raw bounds of the usable grid area - SINGLE SOURCE OF TRUTH
 // This is the actual grid area without any padding adjustments
 export const getRawUsableAreaBounds = (centerOffset = { x: 0, y: 0 }) => {
   const offsetX = centerOffset.x || 0
   const offsetY = centerOffset.y || 0
   
   // Calculate the raw usable area position (grid offset + center offset)
+  const gridWidth = getUsableGridWidth()
+  const gridHeight = getUsableGridHeight()
   const areaStartX = GRID_OFFSET_X + offsetX
   const areaStartY = GRID_OFFSET_Y + offsetY
-  const areaWidth = USABLE_GRID_WIDTH * GRID_SIZE
-  const areaHeight = USABLE_GRID_HEIGHT * GRID_SIZE
+  const areaWidth = gridWidth * GRID_SIZE
+  const areaHeight = gridHeight * GRID_SIZE
   
   return {
     minX: areaStartX,
@@ -166,7 +195,7 @@ export const getUsableAreaBounds = (centerOffset = { x: 0, y: 0 }) => {
 }
 
 // Check if a widget is within the usable area bounds
-// Widgets must be fully contained within the raw 34x19 area
+// Widgets must be fully contained within the usable area
 // Widget positions are relative to base grid origin, so compare to bounds relative to base grid
 // centerOffset is kept for API compatibility but not used (widgets are relative to base grid)
 // eslint-disable-next-line no-unused-vars
@@ -174,12 +203,14 @@ export const isWithinUsableArea = (x, y, width, height, centerOffset = { x: 0, y
   const widgetRight = x + width
   const widgetBottom = y + height
   
-  // Widget must be fully within the 34x19 area (accounting for padding on all sides)
+  // Widget must be fully within the usable area (accounting for padding on all sides)
   // Compare to bounds relative to base grid origin (where widgets are positioned)
+  const gridWidth = getUsableGridWidth()
+  const gridHeight = getUsableGridHeight()
   const minX = GRID_OFFSET_X + WIDGET_PADDING
   const minY = GRID_OFFSET_Y + WIDGET_PADDING
-  const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING
-  const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING
+  const maxX = GRID_OFFSET_X + (gridWidth * GRID_SIZE) - WIDGET_PADDING
+  const maxY = GRID_OFFSET_Y + (gridHeight * GRID_SIZE) - WIDGET_PADDING
   
   return (
     x >= minX &&

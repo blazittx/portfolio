@@ -1,21 +1,27 @@
-import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, USABLE_GRID_WIDTH, USABLE_GRID_HEIGHT } from '../../constants/grid'
-import { getRawUsableAreaBounds } from '../../utils/grid'
+import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../../constants/grid'
+import { getRawUsableAreaBounds, getUsableGridWidth, getUsableGridHeight } from '../../utils/grid'
+import { isMobile } from '../../utils/mobile'
 
 /* eslint-disable react/prop-types */
 export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebugOutline = false }) {
   const size = 45
   const line = 'color-mix(in hsl, #ffffff, transparent 85%)'
   const lineSecondary = 'color-mix(in hsl, #808080, transparent 90%)'
+  const mobile = isMobile()
   
   // Calculate the adjusted offset for the grid background
   // The grid offset is GRID_SIZE * 0.36 for X and GRID_SIZE * 0.32 for Y, and we add the center offset
   const adjustedOffsetX = size * 0.36 + (centerOffset.x || 0)
   const adjustedOffsetY = size * 0.32 + (centerOffset.y || 0)
   
-  // Get the raw bounds of the 34x19 usable area (single source of truth)
+  // Get the raw bounds of the usable area (single source of truth)
   const rawBounds = getRawUsableAreaBounds(centerOffset)
   const areaWidth = rawBounds.maxX - rawBounds.minX
   const areaHeight = rawBounds.maxY - rawBounds.minY
+  
+  // On mobile, extend the grid background to cover the full scrollable area
+  const gridHeight = getUsableGridHeight()
+  const backgroundHeight = mobile ? `${gridHeight * GRID_SIZE}px` : '100vh'
   
   return (
     <>
@@ -23,11 +29,11 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
         style={{
           '--size': `${size}px`,
           '--line': line,
-          position: 'fixed',
+          position: mobile ? 'absolute' : 'fixed',
           top: 0,
           left: 0,
           width: '100vw',
-          height: '100vh',
+          height: backgroundHeight,
           background: `linear-gradient(90deg, var(--line) 1px, transparent 1px var(--size)) ${adjustedOffsetX}px 50% / var(--size) var(--size), linear-gradient(var(--line) 1px, transparent 1px var(--size)) 0% ${adjustedOffsetY}px / var(--size) var(--size)`,
           mask: 'linear-gradient(-20deg, transparent 50%, white)',
           pointerEvents: 'none',
@@ -38,11 +44,11 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
         style={{
           '--size': `${size}px`,
           '--line': lineSecondary,
-          position: 'fixed',
+          position: mobile ? 'absolute' : 'fixed',
           top: 0,
           left: 0,
           width: '100%',
-          height: '100%',
+          height: backgroundHeight,
           background: `linear-gradient(90deg, var(--line) 1px, transparent 1px var(--size)) ${adjustedOffsetX}px 50% / var(--size) var(--size), linear-gradient(var(--line) 1px, transparent 1px var(--size)) 0% ${adjustedOffsetY}px / var(--size) var(--size)`,
           mask: 'linear-gradient(-20deg, transparent 50%, white)',
           pointerEvents: 'none',
@@ -80,7 +86,7 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
               borderRadius: '2px'
             }}
           >
-            {USABLE_GRID_WIDTH}×{USABLE_GRID_HEIGHT} usable area
+            {getUsableGridWidth()}×{getUsableGridHeight()} usable area
           </div>
         </div>
       )}
