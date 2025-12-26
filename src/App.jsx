@@ -1,5 +1,4 @@
 import { useEffect, useCallback, useMemo } from 'react'
-import './App.css'
 import { useWidgets, componentMap } from './hooks/useWidgets'
 import { useDragAndResize } from './hooks/useDragAndResize'
 import { useAutosort } from './hooks/useAutosort'
@@ -116,7 +115,12 @@ function App() {
   const handleContextMenu = (e) => {
     e.preventDefault()
     const target = e.target
-    const widgetElement = target.closest('.widget')
+    // Look for element with data-widget-id attribute (widgets have this)
+    let widgetElement = target.closest('[data-widget-id]')
+    // If not found, also try looking for .widget class as fallback
+    if (!widgetElement) {
+      widgetElement = target.closest('.widget')
+    }
     const widgetId = widgetElement?.getAttribute('data-widget-id') || null
     openContextMenu(e, widgetId)
   }
@@ -136,7 +140,15 @@ function App() {
   }, [handleMouseMove, handleMouseUp])
 
   return (
-    <div className="app" onContextMenu={handleContextMenu}>
+    <div 
+      style={{
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+      onContextMenu={handleContextMenu}
+    >
       <ContextMenu
         contextMenu={contextMenu}
         widgets={validWidgets}

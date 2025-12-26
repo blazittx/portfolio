@@ -1,4 +1,6 @@
 import BaseWidget from './BaseWidget'
+import { useEffect, useRef, useState } from 'react'
+import { GRID_SIZE } from '../constants/grid'
 
 /* eslint-disable react/prop-types */
 // SVG Icons
@@ -24,6 +26,26 @@ const LinkedInIcon = ({ size = 24, color = 'currentColor' }) => (
 )
 
 export default function ContactWidget() {
+  const containerRef = useRef(null)
+  const [widgetHeight, setWidgetHeight] = useState(0)
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (!containerRef.current) return
+      const { height } = containerRef.current.getBoundingClientRect()
+      setWidgetHeight(height)
+    }
+    updateSize()
+    const resizeObserver = new ResizeObserver(updateSize)
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  // Show title only if widget is at least 3 grid units tall (3 * 45 = 135px)
+  const showTitle = widgetHeight >= GRID_SIZE * 3
+
   const containerStyle = {
     display: 'flex',
     flexDirection: 'column',
@@ -38,6 +60,7 @@ export default function ContactWidget() {
     color: 'var(--color-canvas-text, #ffffff)',
     letterSpacing: '-0.01em',
     flexShrink: 0,
+    display: showTitle ? 'block' : 'none'
   }
 
   const linksContainerStyle = {
@@ -88,8 +111,8 @@ export default function ContactWidget() {
 
   return (
     <BaseWidget padding="1rem 0.75rem 1rem 1rem">
-      <div style={containerStyle}>
-        <h3 style={titleStyle}>Contact</h3>
+      <div ref={containerRef} style={containerStyle}>
+        {showTitle && <h3 style={titleStyle}>Contact</h3>}
         <div style={linksContainerStyle}>
           {contacts.map((contact, index) => {
             const IconComponent = contact.icon

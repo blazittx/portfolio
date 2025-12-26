@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import BaseWidget from './BaseWidget'
+import { GRID_SIZE } from '../constants/grid'
 
 export default function VisitorsWidget() {
   const [visitorCount, setVisitorCount] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
+  const containerRef = useRef(null)
+  const [widgetHeight, setWidgetHeight] = useState(0)
 
   useEffect(() => {
     // Simulate visitor count (in real app, this would come from an API)
@@ -25,6 +28,23 @@ export default function VisitorsWidget() {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    const updateSize = () => {
+      if (!containerRef.current) return
+      const { height } = containerRef.current.getBoundingClientRect()
+      setWidgetHeight(height)
+    }
+    updateSize()
+    const resizeObserver = new ResizeObserver(updateSize)
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  // Show title only if widget is at least 3 grid units tall (3 * 45 = 135px)
+  const showTitle = widgetHeight >= GRID_SIZE * 3
+
   const containerStyle = {
     display: 'flex',
     flexDirection: 'column',
@@ -41,6 +61,7 @@ export default function VisitorsWidget() {
     color: 'var(--color-canvas-text, #ffffff)',
     opacity: 0.7,
     letterSpacing: '-0.01em',
+    display: showTitle ? 'block' : 'none'
   }
 
   const countStyle = {
@@ -62,8 +83,8 @@ export default function VisitorsWidget() {
 
   return (
     <BaseWidget padding="1rem">
-      <div style={containerStyle}>
-        <h3 style={titleStyle}>Visitors</h3>
+      <div ref={containerRef} style={containerStyle}>
+        {showTitle && <h3 style={titleStyle}>Visitors</h3>}
         <div style={countStyle}>{visitorCount}</div>
         <div style={labelStyle}>online now</div>
       </div>

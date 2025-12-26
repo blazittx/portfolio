@@ -1,4 +1,3 @@
-import './ContextMenu.css'
 import { componentMap } from '../../hooks/useWidgets'
 import { WIDGET_INFO } from '../../utils/widgets'
 
@@ -42,6 +41,15 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
     <div 
       className="context-menu"
       style={{
+        position: 'fixed',
+        zIndex: 1001,
+        background: 'color-mix(in hsl, hsl(0 0% 4%), transparent 5%)',
+        border: '1px solid color-mix(in hsl, canvasText, transparent 10%)',
+        borderRadius: '4px',
+        padding: '0.25rem 0',
+        minWidth: '120px',
+        boxShadow: '0 4px 12px color-mix(in hsl, canvasText, transparent 95%)',
+        backdropFilter: 'blur(10px)',
         left: `${contextMenu.x}px`,
         top: `${contextMenu.y}px`
       }}
@@ -52,33 +60,96 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
       {widget && (
         <>
           <button
-            className="context-menu-item"
+            style={{
+              width: '100%',
+              padding: '0.5rem 1rem',
+              background: 'none',
+              border: 'none',
+              color: 'canvasText',
+              fontSize: '0.875rem',
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
             onClick={() => {
               onTogglePin(contextMenu.widgetId)
               onClose()
             }}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'color-mix(in hsl, canvasText, transparent 90%)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none'
+            }}
           >
             <PinIcon size={16} />
             <span>{widget.pinned ? 'Unpin' : 'Pin'}</span>
           </button>
           <button
-            className="context-menu-item"
+            style={{
+              width: '100%',
+              padding: '0.5rem 1rem',
+              background: 'none',
+              border: 'none',
+              color: 'canvasText',
+              fontSize: '0.875rem',
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
             onClick={() => {
               onToggleLock(contextMenu.widgetId)
               onClose()
             }}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'color-mix(in hsl, canvasText, transparent 90%)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none'
+            }}
           >
             <LockIcon size={16} />
             <span>{widget.locked ? 'Unlock' : 'Lock'}</span>
           </button>
-          <div className="context-menu-divider"></div>
+          <div 
+            style={{
+              height: '1px',
+              background: 'color-mix(in hsl, canvasText, transparent 10%)',
+              margin: '0.25rem 0'
+            }}
+          ></div>
           <button
-            className="context-menu-item context-menu-item-danger"
+            style={{
+              width: '100%',
+              padding: '0.5rem 1rem',
+              background: 'none',
+              border: 'none',
+              color: '#ff6b6b',
+              fontSize: '0.875rem',
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              fontFamily: 'inherit'
+            }}
             onClick={() => {
               onRemoveWidget(contextMenu.widgetId)
               onClose()
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'color-mix(in hsl, #ff6b6b, transparent 90%)'
+              e.currentTarget.style.color = '#ff6b6b'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none'
+              e.currentTarget.style.color = '#ff6b6b'
             }}
           >
             🗑️ Remove
@@ -88,14 +159,43 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
       {missingWidgets.length > 0 && (
         <>
           {widget && <div className="context-menu-divider"></div>}
-          <div className="context-menu-section">Add Widget</div>
+          <div 
+            style={{
+              padding: '0.375rem 1rem',
+              fontSize: '0.75rem',
+              color: 'canvasText',
+              opacity: 0.5,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontWeight: 600
+            }}
+          >
+            Add Widget
+          </div>
           {missingWidgets.map(({ type, name, icon }) => (
             <button
               key={type}
-              className="context-menu-item"
+              style={{
+                width: '100%',
+                padding: '0.5rem 1rem',
+                background: 'none',
+                border: 'none',
+                color: 'canvasText',
+                fontSize: '0.875rem',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+                fontFamily: 'inherit'
+              }}
               onClick={() => {
                 onAddWidget(type, contextMenu.x, contextMenu.y)
                 onClose()
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'color-mix(in hsl, canvasText, transparent 90%)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'none'
               }}
             >
               {icon} {name}
@@ -105,10 +205,27 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
       )}
       {(widget || missingWidgets.length > 0) && <div className="context-menu-divider"></div>}
       <button
-        className="context-menu-item"
+        style={{
+          width: '100%',
+          padding: '0.5rem 1rem',
+          background: 'none',
+          border: 'none',
+          color: 'canvasText',
+          fontSize: '0.875rem',
+          textAlign: 'left',
+          cursor: 'pointer',
+          transition: 'background 0.2s',
+          fontFamily: 'inherit'
+        }}
         onClick={() => {
           onSort()
           onClose()
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'color-mix(in hsl, canvasText, transparent 90%)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'none'
         }}
       >
         ↻ Sort

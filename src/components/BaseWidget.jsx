@@ -1,9 +1,49 @@
 import { useEffect, useRef, useState } from 'react'
-import './Widget.css'
 
 export default function BaseWidget({ children, className = '', padding = '4px 0 4px 4px', style = {} }) {
   const containerRef = useRef(null)
   const [sizeClass, setSizeClass] = useState('')
+
+  // Add scrollbar and animation styles once
+  useEffect(() => {
+    if (!document.getElementById('base-widget-styles')) {
+      const style = document.createElement('style')
+      style.id = 'base-widget-styles'
+      style.textContent = `
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        /* Custom scrollbar styling */
+        [data-base-widget] * {
+          scrollbar-width: thin;
+          scrollbar-color: color-mix(in hsl, canvasText, transparent 20%) transparent;
+        }
+        [data-base-widget] *::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        [data-base-widget] *::-webkit-scrollbar-track {
+          background: transparent;
+          margin: 0;
+        }
+        [data-base-widget] *::-webkit-scrollbar-thumb {
+          background: color-mix(in hsl, canvasText, transparent 20%);
+          border-radius: 3px;
+        }
+        [data-base-widget] *::-webkit-scrollbar-thumb:hover {
+          background: color-mix(in hsl, canvasText, transparent 30%);
+        }
+      `
+      document.head.appendChild(style)
+    }
+  }, [])
 
   useEffect(() => {
     const updateSizeClass = () => {
@@ -38,17 +78,36 @@ export default function BaseWidget({ children, className = '', padding = '4px 0 
     }
   }, [])
 
-  // Merge padding with custom styles (custom styles take precedence)
-  const mergedStyle = {
-    padding,
-    ...style
+  // Get base widget style
+  const getBaseWidgetStyle = () => {
+    const baseStyle = {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      padding,
+      overflow: 'hidden',
+      minHeight: 0,
+      position: 'relative',
+      width: '100%',
+      justifyContent: 'space-between',
+      alignItems: 'stretch',
+      ...style
+    }
+
+    // Apply responsive styles based on size classes
+    if (sizeClass.includes('very-short')) {
+      baseStyle.fontSize = '0.9em'
+    }
+
+    return baseStyle
   }
 
   return (
     <div 
       ref={containerRef} 
-      className={`base-widget ${className} ${sizeClass}`}
-      style={mergedStyle}
+      data-base-widget
+      className={className}
+      style={getBaseWidgetStyle()}
     >
       {children}
     </div>

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import BaseWidget from './BaseWidget'
+import { GRID_SIZE } from '../constants/grid'
 
 const MESSAGES = [
   "Today is a great day to build something amazing!",
@@ -16,6 +17,8 @@ const MESSAGES = [
 
 export default function MessageOfTheDayWidget() {
   const [message, setMessage] = useState('')
+  const containerRef = useRef(null)
+  const [widgetHeight, setWidgetHeight] = useState(0)
 
   useEffect(() => {
     // Get message based on day of year for consistency
@@ -25,6 +28,23 @@ export default function MessageOfTheDayWidget() {
     const messageIndex = dayOfYear % MESSAGES.length
     setMessage(MESSAGES[messageIndex])
   }, [])
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (!containerRef.current) return
+      const { height } = containerRef.current.getBoundingClientRect()
+      setWidgetHeight(height)
+    }
+    updateSize()
+    const resizeObserver = new ResizeObserver(updateSize)
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  // Show title only if widget is at least 3 grid units tall (3 * 45 = 135px)
+  const showTitle = widgetHeight >= GRID_SIZE * 3
 
   const containerStyle = {
     display: 'flex',
@@ -40,6 +60,7 @@ export default function MessageOfTheDayWidget() {
     color: 'var(--color-canvas-text, #ffffff)',
     letterSpacing: '-0.01em',
     flexShrink: 0,
+    display: showTitle ? 'block' : 'none'
   }
 
   const messageStyle = {
@@ -57,8 +78,8 @@ export default function MessageOfTheDayWidget() {
 
   return (
     <BaseWidget padding="1rem 0.75rem 1rem 1rem">
-      <div style={containerStyle}>
-        <h3 style={titleStyle}>Message of the Day</h3>
+      <div ref={containerRef} style={containerStyle}>
+        {showTitle && <h3 style={titleStyle}>Message of the Day</h3>}
         <p style={messageStyle}>{message}</p>
       </div>
     </BaseWidget>

@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import BaseWidget from "./BaseWidget";
-import "./Widget.css";
 
 const GAME_IDS = [
   "pullbackracers",
@@ -28,6 +27,8 @@ export default function GamesWidget() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const autoPlayRef = useRef(null);
+  const containerRef = useRef(null);
+  const [sizeClass, setSizeClass] = useState('');
 
   // Fetch games from API
   useEffect(() => {
@@ -111,6 +112,48 @@ export default function GamesWidget() {
     };
   }, [isAutoPlaying, games.length]);
 
+  useEffect(() => {
+    const updateSizeClass = () => {
+      if (!containerRef.current) return
+      const { width, height } = containerRef.current.getBoundingClientRect()
+      const isNarrow = width < 200
+      const isShort = height < 150
+      const isVeryShort = height < 100
+      let classes = []
+      if (isNarrow) classes.push('narrow')
+      if (isShort) classes.push('short')
+      if (isVeryShort) classes.push('very-short')
+      setSizeClass(classes.join(' '))
+    }
+    updateSizeClass()
+    const resizeObserver = new ResizeObserver(updateSizeClass)
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  // Add fadeInUp animation
+  useEffect(() => {
+    if (!document.getElementById('games-widget-animation')) {
+      const style = document.createElement('style')
+      style.id = 'games-widget-animation'
+      style.textContent = `
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `
+      document.head.appendChild(style)
+    }
+  }, [])
+
   const goToSlide = (index) => {
     setCurrentIndex(index);
     setIsAutoPlaying(false);
@@ -132,110 +175,342 @@ export default function GamesWidget() {
 
   if (loading) {
     return (
-      <BaseWidget className="widget-games" padding="1rem 0.75rem 1rem 1rem">
-        <div className="games-loading">Loading games...</div>
+      <BaseWidget padding="1rem 0.75rem 1rem 1rem">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '200px',
+          color: 'canvasText',
+          opacity: 0.6,
+          fontSize: '0.875rem'
+        }}>Loading games...</div>
       </BaseWidget>
     );
   }
 
   if (games.length === 0) {
     return (
-      <BaseWidget className="widget-games" padding="1rem 0.75rem 1rem 1rem">
-        <div className="games-error">No games available</div>
+      <BaseWidget padding="1rem 0.75rem 1rem 1rem">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '200px',
+          color: 'canvasText',
+          opacity: 0.6,
+          fontSize: '0.875rem'
+        }}>No games available</div>
       </BaseWidget>
     );
   }
 
   return (
     <BaseWidget
-      className="widget-games"
       padding="1rem 0.75rem 1rem 1rem"
       style={{ gap: "0.75rem" }}
     >
       <div 
-        className="games-carousel"
+        ref={containerRef}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
         onMouseEnter={() => setIsAutoPlaying(false)}
         onMouseLeave={() => setIsAutoPlaying(true)}
       >
-        <div className="carousel-container">
-          {games.map((game, index) => (
-            <div
-              key={game.id}
-              className={`carousel-slide ${
-                index === currentIndex ? "active" : ""
-              }`}
-            >
-              <div className="game-card">
-                <div className="game-header">
-                  <div className="game-header-content">
-                    <h4 className="game-title">{game.title}</h4>
-                    <div className="game-team">
-                      {game.teamIcon && (
-                        <img
-                          src={game.teamIcon}
-                          alt={game.tech}
-                          className="game-team-icon"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                          }}
-                        />
-                      )}
-                      <span className="game-team-name">{game.tech}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="game-image-container">
-                  <img 
-                    src={game.image} 
-                    alt={game.title}
-                    className="game-image"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://via.placeholder.com/800x600?text=Game+Image";
-                    }}
-                  />
-                </div>
-                <div className="game-info">
-                  <p className="game-description">{game.description}</p>
-                  {game.version && (
-                    <div className="game-details">
-                      <div className="game-detail-item">
-                        <span className="game-detail-label">Version:</span>
-                        <span className="game-detail-value">{game.version}</span>
+        <div style={{
+          flex: 1,
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {games.map((game, index) => {
+            const isActive = index === currentIndex
+            return (
+              <div
+                key={game.id}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  opacity: isActive ? 1 : 0,
+                  transform: isActive ? 'translateX(0)' : 'translateX(20px)',
+                  transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                  pointerEvents: isActive ? 'all' : 'none'
+                }}
+              >
+                <div style={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                  padding: 0,
+                  animation: 'fadeInUp 0.6s ease-out'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: '0.75rem',
+                    flexShrink: 0,
+                    flexDirection: sizeClass.includes('narrow') ? 'column' : 'row'
+                  }}>
+                    <div style={{
+                      flex: 1,
+                      minWidth: 0
+                    }}>
+                      <h4 style={{
+                        fontSize: sizeClass.includes('short') ? '1rem' : (sizeClass.includes('very-short') ? '0.9375rem' : '1.125rem'),
+                        fontWeight: 600,
+                        margin: sizeClass.includes('very-short') ? '0 0 0 0' : (sizeClass.includes('short') ? '0 0 0.25rem 0' : '0 0 0.375rem 0'),
+                        color: 'canvasText',
+                        letterSpacing: '-0.01em',
+                        lineHeight: 1.3
+                      }}>{game.title}</h4>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.75rem',
+                        opacity: 0.7,
+                        color: 'canvasText'
+                      }}>
+                        {game.teamIcon && (
+                          <img
+                            src={game.teamIcon}
+                            alt={game.tech}
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              borderRadius: '2px',
+                              objectFit: 'cover',
+                              flexShrink: 0
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        )}
+                        <span style={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>{game.tech}</span>
                       </div>
                     </div>
-                  )}
+                  </div>
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    flex: 1,
+                    minHeight: 0,
+                    overflow: 'hidden',
+                    borderRadius: '4px',
+                    background: 'color-mix(in hsl, canvasText, transparent 98%)'
+                  }}>
+                    <img 
+                      src={game.image} 
+                      alt={game.title}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://via.placeholder.com/800x600?text=Game+Image";
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.05)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                      }}
+                    />
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.625rem',
+                    flexShrink: 0
+                  }}>
+                    <p style={{
+                      fontSize: sizeClass.includes('short') ? '0.75rem' : '0.8125rem',
+                      lineHeight: 1.5,
+                      opacity: 0.85,
+                      color: 'canvasText',
+                      margin: 0,
+                      display: sizeClass.includes('very-short') ? 'none' : (sizeClass.includes('short') ? '-webkit-box' : '-webkit-box'),
+                      WebkitLineClamp: sizeClass.includes('short') ? 1 : 2,
+                      lineClamp: sizeClass.includes('short') ? 1 : 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>{game.description}</p>
+                    {game.version && (
+                      <div style={{
+                        display: sizeClass.includes('very-short') ? 'none' : 'flex',
+                        gap: '1rem',
+                        flexWrap: 'wrap',
+                        paddingTop: sizeClass.includes('short') ? '0.375rem' : '0.5rem',
+                        borderTop: '1px solid color-mix(in hsl, canvasText, transparent 4%)'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          fontSize: '0.75rem'
+                        }}>
+                          <span style={{
+                            opacity: 0.6,
+                            color: 'canvasText'
+                          }}>Version:</span>
+                          <span style={{
+                            opacity: 0.9,
+                            color: 'canvasText',
+                            fontWeight: 500
+                          }}>{game.version}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
         
-        <div className="carousel-controls">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: '0.75rem',
+          marginTop: 'auto',
+          flexShrink: 0,
+          flexWrap: sizeClass.includes('narrow') ? 'wrap' : 'nowrap',
+          gap: sizeClass.includes('narrow') ? '0.25rem' : '0.5rem'
+        }}>
           <button 
-            className="carousel-btn prev" 
+            style={{
+              background: 'color-mix(in hsl, canvasText, transparent 95%)',
+              border: '1px solid color-mix(in hsl, canvasText, transparent 6%)',
+              borderRadius: '4px',
+              color: 'canvasText',
+              fontSize: sizeClass.includes('narrow') ? '1rem' : '1.25rem',
+              width: sizeClass.includes('narrow') ? '1.75rem' : '2rem',
+              height: sizeClass.includes('narrow') ? '1.75rem' : '2rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 0.6,
+              transition: 'opacity 0.2s, transform 0.2s',
+              padding: 0,
+              lineHeight: 1
+            }}
             onClick={goToPrev}
             aria-label="Previous game"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1'
+              e.currentTarget.style.transform = 'scale(1.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.6'
+              e.currentTarget.style.transform = 'scale(1)'
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)'
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)'
+            }}
           >
             ‹
           </button>
-          <div className="carousel-dots">
-            {games.map((_, index) => (
-              <button
-                key={index}
-                className={`carousel-dot ${
-                  index === currentIndex ? "active" : ""
-                }`}
-                onClick={() => goToSlide(index)}
-                aria-label={`Go to game ${index + 1}`}
-              />
-            ))}
+          <div style={{
+            display: 'flex',
+            gap: '0.375rem',
+            alignItems: 'center',
+            flex: 1,
+            justifyContent: 'center'
+          }}>
+            {games.map((_, index) => {
+              const isActive = index === currentIndex
+              return (
+                <button
+                  key={index}
+                  style={{
+                    width: isActive ? '8px' : '6px',
+                    height: isActive ? '8px' : '6px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: isActive ? 'canvasText' : 'color-mix(in hsl, canvasText, transparent 80%)',
+                    cursor: 'pointer',
+                    padding: 0,
+                    transition: 'all 0.3s ease',
+                    opacity: isActive ? 0.8 : 0.4,
+                    transform: isActive ? 'scale(1.2)' : 'scale(1)'
+                  }}
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Go to game ${index + 1}`}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.opacity = '0.7'
+                      e.currentTarget.style.transform = 'scale(1.3)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.opacity = '0.4'
+                      e.currentTarget.style.transform = 'scale(1)'
+                    }
+                  }}
+                />
+              )
+            })}
           </div>
           <button 
-            className="carousel-btn next" 
+            style={{
+              background: 'color-mix(in hsl, canvasText, transparent 95%)',
+              border: '1px solid color-mix(in hsl, canvasText, transparent 6%)',
+              borderRadius: '4px',
+              color: 'canvasText',
+              fontSize: sizeClass.includes('narrow') ? '1rem' : '1.25rem',
+              width: sizeClass.includes('narrow') ? '1.75rem' : '2rem',
+              height: sizeClass.includes('narrow') ? '1.75rem' : '2rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 0.6,
+              transition: 'opacity 0.2s, transform 0.2s',
+              padding: 0,
+              lineHeight: 1
+            }}
             onClick={goToNext}
             aria-label="Next game"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1'
+              e.currentTarget.style.transform = 'scale(1.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.6'
+              e.currentTarget.style.transform = 'scale(1)'
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)'
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)'
+            }}
           >
             ›
           </button>

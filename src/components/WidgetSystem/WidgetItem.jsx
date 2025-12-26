@@ -1,5 +1,4 @@
-import { Component } from 'react'
-import './WidgetItem.css'
+import { Component, useEffect } from 'react'
 
 /* eslint-disable react/prop-types */
 
@@ -62,32 +61,153 @@ export default function WidgetItem({
   hasCollision, 
   onMouseDown 
 }) {
+  // Add animation styles once
+  useEffect(() => {
+    if (!document.getElementById('widget-item-styles')) {
+      const style = document.createElement('style')
+      style.id = 'widget-item-styles'
+      style.textContent = `
+        @keyframes fadeInWidget {
+          from {
+            opacity: 0;
+            transform: translateY(10px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+          20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+      `
+      document.head.appendChild(style)
+    }
+  }, [])
+
+  const getWidgetStyle = () => {
+    const baseStyle = {
+      position: 'absolute',
+      background: 'hsl(0 0% 4%)',
+      border: hasCollision ? '2px solid #ff4444' : (widget.pinned ? '1px solid color-mix(in hsl, canvasText, transparent 30%)' : '1px solid #777777'),
+      borderRadius: '4px',
+      overflow: 'visible',
+      transition: isDragging || isResizing ? 'none' : 'border-color 0.2s ease, box-shadow 0.2s ease, left 0.2s cubic-bezier(0.4, 0, 0.2, 1), top 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1), height 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      cursor: widget.locked ? 'not-allowed' : 'move',
+      userSelect: 'none',
+      boxShadow: 'none',
+      animation: 'fadeInWidget 0.5s ease-out',
+      left: `${widget.x}px`,
+      top: `${widget.y}px`,
+      width: `${widget.width}px`,
+      height: `${widget.height}px`,
+      zIndex: (isDragging || isResizing) ? 1000 : 'auto',
+      opacity: widget.locked ? 0.85 : 1
+    }
+    
+    if (hasCollision) {
+      baseStyle.animation = 'shake 0.3s ease-in-out'
+    }
+    
+    return baseStyle
+  }
+
+  const getWidgetContentStyle = () => ({
+    overflow: 'hidden',
+    borderRadius: '8px',
+    height: '100%',
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0
+  })
+
+  const getResizeHandleStyle = (direction) => {
+    const baseHandleStyle = {
+      position: 'absolute',
+      zIndex: 10,
+      opacity: 0,
+      transform: 'scale(0.8)',
+      transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      pointerEvents: 'all',
+      background: 'transparent',
+      cursor: 'default',
+      display: widget.locked ? 'none' : 'block'
+    }
+
+    // Add white circle pseudo-element using a span
+    const handleStyles = {
+      n: { ...baseHandleStyle, top: '-20px', left: 0, right: 0, height: '40px', width: '100%', cursor: 'ns-resize', transform: 'scaleY(0.8)' },
+      s: { ...baseHandleStyle, bottom: '-20px', left: 0, right: 0, height: '40px', width: '100%', cursor: 'ns-resize', transform: 'scaleY(0.8)' },
+      e: { ...baseHandleStyle, right: '-20px', top: 0, bottom: 0, width: '40px', height: '100%', cursor: 'ew-resize', transform: 'scaleX(0.8)' },
+      w: { ...baseHandleStyle, left: '-20px', top: 0, bottom: 0, width: '40px', height: '100%', cursor: 'ew-resize', transform: 'scaleX(0.8)' },
+      ne: { ...baseHandleStyle, top: '-20px', right: '-20px', width: '40px', height: '40px', cursor: 'nesw-resize' },
+      nw: { ...baseHandleStyle, top: '-20px', left: '-20px', width: '40px', height: '40px', cursor: 'nwse-resize' },
+      se: { ...baseHandleStyle, bottom: '-20px', right: '-20px', width: '40px', height: '40px', cursor: 'nwse-resize' },
+      sw: { ...baseHandleStyle, bottom: '-20px', left: '-20px', width: '40px', height: '40px', cursor: 'nesw-resize' }
+    }
+
+    return handleStyles[direction] || baseHandleStyle
+  }
+
+  const handleMouseEnter = (e) => {
+    if (!widget.locked && !isDragging && !isResizing) {
+      e.currentTarget.style.borderColor = 'color-mix(in hsl, canvasText, transparent 10%)'
+      e.currentTarget.style.transform = 'translateY(-2px)'
+      e.currentTarget.style.boxShadow = '0 4px 12px color-mix(in hsl, canvasText, transparent 95%)'
+    }
+  }
+
+  const handleMouseLeave = (e) => {
+    if (!widget.locked && !isDragging && !isResizing) {
+      e.currentTarget.style.borderColor = widget.pinned ? 'color-mix(in hsl, canvasText, transparent 30%)' : '#777777'
+      e.currentTarget.style.transform = 'translateY(0)'
+      e.currentTarget.style.boxShadow = 'none'
+    }
+  }
+
+  const handleResizeHandleEnter = (e) => {
+    e.currentTarget.style.opacity = '1'
+    e.currentTarget.style.transform = 'scale(1)'
+  }
+
+  const handleResizeHandleLeave = (e) => {
+    e.currentTarget.style.opacity = '0'
+    e.currentTarget.style.transform = 'scale(0.8)'
+  }
+
   // Handle missing component gracefully
   if (!widget.component) {
     return (
       <div
-        className={`widget ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${hasCollision ? 'collision' : ''} ${widget.locked ? 'locked' : ''} ${widget.pinned ? 'pinned' : ''}`}
-        style={{
-          left: `${widget.x}px`,
-          top: `${widget.y}px`,
-          width: `${widget.width}px`,
-          height: `${widget.height}px`
-        }}
+        className="widget"
+        style={getWidgetStyle()}
         data-widget-id={widget.id}
-        onMouseDown={(e) => onMouseDown(e, widget.id)}
+        onMouseDown={(e) => {
+          if (!widget.locked) {
+            onMouseDown(e, widget.id)
+            e.currentTarget.style.cursor = 'grabbing'
+          }
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        <div className="widget-content" style={{
-          padding: '1rem',
-          color: 'var(--color-canvas-text, #ffffff)',
-          opacity: 0.6,
-          fontSize: '0.875rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          textAlign: 'center'
-        }}>
-          Widget component not found
+        <div style={getWidgetContentStyle()}>
+          <div style={{
+            padding: '1rem',
+            color: 'var(--color-canvas-text, #ffffff)',
+            opacity: 0.6,
+            fontSize: '0.875rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            textAlign: 'center'
+          }}>
+            Widget component not found
+          </div>
         </div>
       </div>
     )
@@ -97,15 +217,17 @@ export default function WidgetItem({
 
   return (
     <div
-      className={`widget ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${hasCollision ? 'collision' : ''} ${widget.locked ? 'locked' : ''} ${widget.pinned ? 'pinned' : ''}`}
-      style={{
-        left: `${widget.x}px`,
-        top: `${widget.y}px`,
-        width: `${widget.width}px`,
-        height: `${widget.height}px`
-      }}
+      className="widget"
+      style={getWidgetStyle()}
       data-widget-id={widget.id}
-      onMouseDown={(e) => onMouseDown(e, widget.id)}
+      onMouseDown={(e) => {
+        if (!widget.locked) {
+          onMouseDown(e, widget.id)
+          e.currentTarget.style.cursor = 'grabbing'
+        }
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {widget.locked && (
         <div style={{
@@ -133,20 +255,34 @@ export default function WidgetItem({
           <PinIcon size={12} />
         </div>
       )}
-      <div className="widget-content">
+      <div style={getWidgetContentStyle()}>
         <WidgetErrorBoundary>
           <Component />
         </WidgetErrorBoundary>
       </div>
       {/* Resize handles */}
-      <div className="resize-handle resize-handle-n" data-handle="n"></div>
-      <div className="resize-handle resize-handle-s" data-handle="s"></div>
-      <div className="resize-handle resize-handle-e" data-handle="e"></div>
-      <div className="resize-handle resize-handle-w" data-handle="w"></div>
-      <div className="resize-handle resize-handle-ne" data-handle="ne"></div>
-      <div className="resize-handle resize-handle-nw" data-handle="nw"></div>
-      <div className="resize-handle resize-handle-se" data-handle="se"></div>
-      <div className="resize-handle resize-handle-sw" data-handle="sw"></div>
+      {['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map(direction => (
+        <div
+          key={direction}
+          style={getResizeHandleStyle(direction)}
+          data-handle={direction}
+          onMouseEnter={handleResizeHandleEnter}
+          onMouseLeave={handleResizeHandleLeave}
+        >
+          <span style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '10px',
+            height: '10px',
+            borderRadius: '50%',
+            background: 'white',
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            pointerEvents: 'none'
+          }}></span>
+        </div>
+      ))}
     </div>
   )
 }

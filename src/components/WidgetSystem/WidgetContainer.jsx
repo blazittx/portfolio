@@ -1,4 +1,3 @@
-import './WidgetContainer.css'
 import WidgetItem from './WidgetItem'
 
 /* eslint-disable react/prop-types */
@@ -17,7 +16,14 @@ export default function WidgetContainer({
     : []
 
   return (
-    <div className="widget-container">
+    <div 
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        zIndex: 1
+      }}
+    >
       {validWidgets.map(widget => {
         try {
           const isDraggingWidget = isDragging && dragStateRef.current?.activeId === widget.id

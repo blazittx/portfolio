@@ -3,22 +3,37 @@ import { useState, useEffect } from 'react'
 export const useContextMenu = () => {
   const [contextMenu, setContextMenu] = useState(null) // { widgetId, x, y }
 
-  // Close context menu on left click outside (not on right-click releases)
+  // Close context menu on click outside or Escape key
   useEffect(() => {
+    if (!contextMenu) return
+
     const handleClickOutside = (e) => {
-      // Only close on left clicks, ignore right-clicks
-      if (e.button === undefined || e.button === 0) {
-        const contextMenuElement = document.querySelector('.context-menu')
-        if (contextMenuElement && !contextMenuElement.contains(e.target)) {
-          setContextMenu(null)
-        }
+      const contextMenuElement = document.querySelector('.context-menu')
+      if (contextMenuElement && !contextMenuElement.contains(e.target)) {
+        setContextMenu(null)
       }
     }
-    document.addEventListener('click', handleClickOutside)
-    return () => {
-      document.removeEventListener('click', handleClickOutside)
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setContextMenu(null)
+      }
     }
-  }, [])
+
+    // Use a small delay to avoid closing immediately when opening
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside, true)
+      document.addEventListener('click', handleClickOutside, true)
+      document.addEventListener('keydown', handleEscape)
+    }, 10)
+
+    return () => {
+      clearTimeout(timeoutId)
+      document.removeEventListener('mousedown', handleClickOutside, true)
+      document.removeEventListener('click', handleClickOutside, true)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [contextMenu])
 
   const openContextMenu = (e, widgetId = null) => {
     // Always prevent default and open menu
