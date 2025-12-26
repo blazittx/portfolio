@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getCookie, setCookie } from '../utils/cookies'
 import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT } from '../constants/grid'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from '../utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import ProfileWidget from '../components/ProfileWidget'
@@ -19,15 +19,16 @@ import SingleGameWidget from '../components/SingleGameWidget'
 
 // Default homepage layout (from user's current setup)
 const DEFAULT_HOMEPAGE_LAYOUT = [
-  {"id":"profile","type":"profile","x":28.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true},
-  {"id":"about","type":"about","x":298.2,"y":26.4,"width":291,"height":111,"locked":false,"pinned":true},
-  {"id":"contact","type":"contact","x":1288.2,"y":746.4,"width":239.79999999999995,"height":111,"locked":false,"pinned":true},
-  {"id":"games","type":"games","x":28.2,"y":161.4,"width":561,"height":696,"locked":false,"pinned":true},
-  {"id":"visitors","type":"visitors","x":1153.2,"y":746.4,"width":111,"height":111,"locked":false,"pinned":true},
-  {"id":"time","type":"time","x":1288.2,"y":26.4,"width":239.79999999999995,"height":111,"locked":false,"pinned":true},
-  {"id":"github","type":"github","x":1153.2,"y":161.4,"width":374.79999999999995,"height":561,"locked":false,"pinned":true},
-  {"id":"skills","type":"skills","x":613.2,"y":791.4,"width":516,"height":66,"locked":false,"pinned":false},
-  {"id":"apikey","type":"apikey","x":1018.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true}
+  {"id":"profile","type":"profile","x":28.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{}},
+  {"id":"about","type":"about","x":298.2,"y":26.4,"width":291,"height":111,"locked":false,"pinned":true,"settings":{}},
+  {"id":"contact","type":"contact","x":613.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{}},
+  {"id":"visitors","type":"visitors","x":883.2,"y":26.4,"width":111,"height":111,"locked":false,"pinned":true,"settings":{}},
+  {"id":"single-game","type":"single-game","x":1018.2,"y":431.4,"width":516,"height":426,"locked":false,"pinned":false,"settings":{"gameId":"pullbackracers"}},
+  {"id":"single-game-3","type":"single-game","x":1018.2,"y":26.4,"width":516,"height":381,"locked":false,"pinned":false,"settings":{"gameId":"gamblelite"}},
+  {"id":"github","type":"github","x":28.2,"y":161.39999999999998,"width":381,"height":696,"locked":false,"pinned":false,"settings":{}},
+  {"id":"games","type":"games","x":433.2,"y":161.4,"width":561,"height":561,"locked":false,"pinned":false,"settings":{}},
+  {"id":"apikey","type":"apikey","x":433.2,"y":746.4,"width":291,"height":111,"locked":false,"pinned":false,"settings":{}},
+  {"id":"time","type":"time","x":748.2,"y":746.4,"width":246,"height":111,"locked":false,"pinned":false,"settings":{}}
 ]
 
 // Component mapping - exported for use in other components
