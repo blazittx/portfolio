@@ -4,6 +4,7 @@ import { useDragAndResize } from '../hooks/useDragAndResize'
 import { useAutosort } from '../hooks/useAutosort'
 import { useContextMenu } from '../hooks/useContextMenu'
 import { useToast } from '../hooks/useToast'
+import { usePageTransition } from '../hooks/usePageTransition'
 import ContextMenu from './WidgetSystem/ContextMenu'
 import GridBackground from './WidgetSystem/GridBackground'
 import GridMask from './WidgetSystem/GridMask'
@@ -24,6 +25,8 @@ export default function GameDetailView({ game, onBack }) {
   const [widgets, setWidgets] = useWidgets('game-detail')
   const initializedRef = useRef(false)
   const previousGameIdRef = useRef(null)
+  const { animateInitial, animateWidgetsIn } = usePageTransition()
+  const isInitialMountRef = useRef(true)
   
   const {
     isDragging,
@@ -325,6 +328,21 @@ export default function GameDetailView({ game, onBack }) {
     setWidgets(gameWidgets)
     initializedRef.current = true
   }, [game, setWidgets, onBack])
+
+  // Initial animation on mount or when widgets are first set
+  useEffect(() => {
+    if (isInitialMountRef.current && widgets.length > 0 && initializedRef.current) {
+      isInitialMountRef.current = false
+      setTimeout(() => {
+        animateInitial()
+      }, 100)
+    } else if (widgets.length > 0 && initializedRef.current && !isInitialMountRef.current) {
+      // Widgets updated, animate them in
+      setTimeout(() => {
+        animateWidgetsIn()
+      }, 50)
+    }
+  }, [widgets, animateInitial, animateWidgetsIn])
 
   const validWidgets = useMemo(() => Array.isArray(widgets) ? widgets : [], [widgets])
   

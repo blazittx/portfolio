@@ -1,10 +1,11 @@
-import { useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback, useMemo, useRef } from 'react'
 import { useWidgets, componentMap } from './hooks/useWidgets'
 import { useDragAndResize } from './hooks/useDragAndResize'
 import { useAutosort } from './hooks/useAutosort'
 import { useContextMenu } from './hooks/useContextMenu'
 import { useView } from './hooks/useView'
 import { useToast } from './hooks/useToast'
+import { usePageTransition } from './hooks/usePageTransition'
 import ContextMenu from './components/WidgetSystem/ContextMenu'
 import GridBackground from './components/WidgetSystem/GridBackground'
 import GridMask from './components/WidgetSystem/GridMask'
@@ -17,8 +18,11 @@ import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
 import { setCookie } from './utils/cookies'
 
 function App() {
-  const { currentView, selectedGame, navigateToGameDetail, navigateToMain, isLoading } = useView()
+  const { currentView, selectedGame, navigateToGameDetail: originalNavigateToGameDetail, navigateToMain: originalNavigateToMain, isLoading } = useView()
   const [widgets, setWidgets] = useWidgets('main')
+  const { transition, animateInitial, animateWidgetsIn } = usePageTransition()
+  const previousViewRef = useRef(currentView)
+  const isInitialMountRef = useRef(true)
   
   // Ensure widgets is always an array
   const validWidgets = useMemo(() => Array.isArray(widgets) ? widgets : [], [widgets])
@@ -148,6 +152,50 @@ function App() {
     const widgetId = widgetElement?.getAttribute('data-widget-id') || null
     openContextMenu(e, widgetId)
   }
+
+  // Wrapped navigation functions with transitions
+  const navigateToGameDetail = useCallback(async (game) => {
+    if (previousViewRef.current === 'main') {
+      const animateIn = await transition()
+      originalNavigateToGameDetail(game)
+      await animateIn()
+    } else {
+      originalNavigateToGameDetail(game)
+    }
+    previousViewRef.current = 'game-detail'
+  }, [transition, originalNavigateToGameDetail])
+
+  const navigateToMain = useCallback(async () => {
+    if (previousViewRef.current === 'game-detail') {
+      const animateIn = await transition()
+      originalNavigateToMain()
+      await animateIn()
+    } else {
+      originalNavigateToMain()
+    }
+    previousViewRef.current = 'main'
+  }, [transition, originalNavigateToMain])
+
+  // Handle view changes for transitions
+  useEffect(() => {
+    if (previousViewRef.current !== currentView) {
+      // View changed, but we already handled the transition in navigation functions
+      // This is for browser back/forward navigation
+      previousViewRef.current = currentView
+      // Animate widgets in after a brief delay
+      setTimeout(() => {
+        animateWidgetsIn()
+      }, 100)
+    }
+  }, [currentView, animateWidgetsIn])
+
+  // Initial animation on mount
+  useEffect(() => {
+    if (isInitialMountRef.current && widgets.length > 0) {
+      isInitialMountRef.current = false
+      animateInitial()
+    }
+  }, [widgets, animateInitial])
 
   // Attach global mouse events
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { Component, useEffect } from 'react'
+import { Component, useEffect, useRef } from 'react'
 
 /* eslint-disable react/prop-types */
 
@@ -63,29 +63,46 @@ export default function WidgetItem({
   wasLastInteractionDrag,
   onGameClick
 }) {
+  const widgetRef = useRef(null)
+  const hasBeenAnimatedRef = useRef(false)
+
   // Add animation styles once
   useEffect(() => {
     if (!document.getElementById('widget-item-styles')) {
       const style = document.createElement('style')
       style.id = 'widget-item-styles'
       style.textContent = `
-        @keyframes fadeInWidget {
-          from {
-            opacity: 0;
-            transform: translateY(10px) scale(0.98);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
           20%, 40%, 60%, 80% { transform: translateX(4px); }
         }
+        /* Widgets start with initial transform for GSAP animations */
+        [data-widget-id] {
+          transform-origin: center center;
+          will-change: opacity, transform;
+        }
       `
       document.head.appendChild(style)
+    }
+  }, [])
+
+  // Mark widget as animated once GSAP has animated it in
+  useEffect(() => {
+    if (widgetRef.current && !hasBeenAnimatedRef.current) {
+      const checkInterval = setInterval(() => {
+        const element = widgetRef.current
+        if (element) {
+          const opacity = window.getComputedStyle(element).opacity
+          if (opacity === '1' || parseFloat(opacity) > 0.9) {
+            hasBeenAnimatedRef.current = true
+            clearInterval(checkInterval)
+          }
+        }
+      }, 100)
+      
+      // Clear after 2 seconds max
+      setTimeout(() => clearInterval(checkInterval), 2000)
     }
   }, [])
 
@@ -96,17 +113,21 @@ export default function WidgetItem({
       border: hasCollision ? '2px solid #ff4444' : (widget.pinned ? '1px solid color-mix(in hsl, canvasText, transparent 30%)' : '1px solid #777777'),
       borderRadius: '4px',
       overflow: 'visible',
-      transition: isDragging || isResizing ? 'none' : 'border-color 0.2s ease, box-shadow 0.2s ease, left 0.2s cubic-bezier(0.4, 0, 0.2, 1), top 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1), height 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      transition: isDragging || isResizing ? 'none' : 'border-color 0.2s ease, box-shadow 0.2s ease, left 0.2s cubic-bezier(0.4, 0, 0.2, 1), top 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1), height 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+      // Disable CSS transitions for opacity/transform during GSAP animations
+      willChange: isDragging || isResizing ? 'auto' : 'opacity, transform',
       cursor: widget.locked ? 'not-allowed' : 'move',
       userSelect: 'none',
       boxShadow: 'none',
-      animation: 'fadeInWidget 0.5s ease-out',
       left: `${widget.x}px`,
       top: `${widget.y}px`,
       width: `${widget.width}px`,
       height: `${widget.height}px`,
       zIndex: (isDragging || isResizing) ? 1000 : 'auto',
-      opacity: widget.locked ? 0.85 : 1
+      // Start invisible only if not already animated (prevents flash on new widgets)
+      opacity: hasBeenAnimatedRef.current ? (widget.locked ? 0.85 : 1) : 0,
+      visibility: hasBeenAnimatedRef.current ? 'visible' : 'hidden',
+      transform: hasBeenAnimatedRef.current ? 'scale(1) translateY(0)' : 'scale(0.8) translateY(20px)'
     }
     
     if (hasCollision) {
@@ -219,6 +240,7 @@ export default function WidgetItem({
 
   return (
     <div
+      ref={widgetRef}
       className="widget"
       style={getWidgetStyle()}
       data-widget-id={widget.id}
