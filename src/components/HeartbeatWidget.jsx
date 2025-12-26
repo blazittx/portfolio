@@ -55,41 +55,38 @@ export default function HeartbeatWidget() {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        gap: '1rem',
-        alignItems: 'center',
-        justifyContent: 'center'
+        gap: '0.75rem'
       }}>
         <h3 style={{
-          fontSize: '1.125rem',
-          fontWeight: 600,
+          fontSize: '0.875rem',
+          fontWeight: 500,
           margin: 0,
           letterSpacing: '-0.01em',
           color: 'canvasText',
-          textAlign: 'center'
+          opacity: 0.5,
+          flexShrink: 0
         }}>
-          my literal heartbeat
+          My literal heartbeat
         </h3>
         
         <div style={{
-          position: 'relative',
-          width: '100%',
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'row',
           alignItems: 'center',
-          gap: '1rem'
+          gap: '0.75rem',
+          flex: 1
         }}>
           {/* Heartbeat visualization */}
           <div style={{
             position: 'relative',
-            width: '120px',
-            height: '80px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flexShrink: 0
           }}>
             {/* Heart icon/beat animation */}
             <div style={{
-              fontSize: '3rem',
+              fontSize: '2rem',
               color: isBeating ? '#ff4444' : 'color-mix(in hsl, canvasText, transparent 60%)',
               transition: 'transform 0.15s ease, color 0.15s ease',
               transform: isBeating ? 'scale(1.2)' : 'scale(1)',
@@ -102,12 +99,13 @@ export default function HeartbeatWidget() {
           {/* BPM display */}
           <div style={{
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.25rem'
+            flexDirection: 'row',
+            alignItems: 'baseline',
+            gap: '0.5rem',
+            flexShrink: 0
           }}>
             <div style={{
-              fontSize: '2.5rem',
+              fontSize: '1.5rem',
               fontWeight: 700,
               color: 'canvasText',
               lineHeight: 1,
@@ -116,7 +114,7 @@ export default function HeartbeatWidget() {
               {bpm}
             </div>
             <div style={{
-              fontSize: '0.875rem',
+              fontSize: '0.75rem',
               color: 'canvasText',
               opacity: 0.6,
               textTransform: 'uppercase',

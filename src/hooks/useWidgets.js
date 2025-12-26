@@ -11,7 +11,6 @@ import ContactWidget from '../components/ContactWidget'
 import GamesWidget from '../components/GamesWidget'
 import VisitorsWidget from '../components/VisitorsWidget'
 import MessageOfTheDayWidget from '../components/MessageOfTheDayWidget'
-import QuoteWidget from '../components/QuoteWidget'
 import TimeWidget from '../components/TimeWidget'
 import GitHubActivityWidget from '../components/GitHubActivityWidget'
 import ApiKeyWidget from '../components/ApiKeyWidget'
@@ -21,16 +20,18 @@ import HeartbeatWidget from '../components/HeartbeatWidget'
 
 // Default homepage layout (from user's current setup)
 const DEFAULT_HOMEPAGE_LAYOUT = [
-  {"id":"profile","type":"profile","x":28.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{}},
-  {"id":"about","type":"about","x":298.2,"y":26.4,"width":291,"height":111,"locked":false,"pinned":true,"settings":{}},
-  {"id":"contact","type":"contact","x":613.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{}},
-  {"id":"visitors","type":"visitors","x":883.2,"y":26.4,"width":111,"height":111,"locked":false,"pinned":true,"settings":{}},
-  {"id":"single-game","type":"single-game","x":1018.2,"y":431.4,"width":516,"height":426,"locked":false,"pinned":false,"settings":{"gameId":"pullbackracers"}},
-  {"id":"single-game-3","type":"single-game","x":1018.2,"y":26.4,"width":516,"height":381,"locked":false,"pinned":false,"settings":{"gameId":"gamblelite"}},
-  {"id":"github","type":"github","x":28.2,"y":161.39999999999998,"width":381,"height":696,"locked":false,"pinned":false,"settings":{}},
-  {"id":"games","type":"games","x":433.2,"y":161.4,"width":561,"height":561,"locked":false,"pinned":false,"settings":{}},
-  {"id":"apikey","type":"apikey","x":433.2,"y":746.4,"width":291,"height":111,"locked":false,"pinned":false,"settings":{}},
-  {"id":"time","type":"time","x":748.2,"y":746.4,"width":246,"height":111,"locked":false,"pinned":false,"settings":{}}
+  {"id":"profile","type":"profile","x":163.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{"expandable":true,"expandScaleX":1,"expandScaleY":2}},
+  {"id":"about","type":"about","x":433.2,"y":26.4,"width":291,"height":111,"locked":false,"pinned":true,"settings":{"adjusted":true}},
+  {"id":"contact","type":"contact","x":748.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{}},
+  {"id":"single-game","type":"single-game","x":1018.2,"y":431.4,"width":516,"height":426,"locked":false,"pinned":true,"settings":{"gameId":"pullbackracers"}},
+  {"id":"single-game-3","type":"single-game","x":1018.2,"y":25.4,"width":516,"height":381,"locked":false,"pinned":true,"settings":{"gameId":"gamblelite"}},
+  {"id":"github","type":"github","x":28.2,"y":161.4,"width":381,"height":561,"locked":false,"pinned":false,"settings":{"adjusted":true}},
+  {"id":"games","type":"games","x":433.2,"y":161.4,"width":561,"height":561,"locked":false,"pinned":false,"settings":{"adjusted":true}},
+  {"id":"apikey","type":"apikey","x":388.2,"y":746.4,"width":336,"height":111,"locked":false,"pinned":false,"settings":{}},
+  {"id":"time","type":"time","x":748.2,"y":746.4,"width":246,"height":111,"locked":false,"pinned":false,"settings":{}},
+  {"id":"profile-picture","type":"profile-picture","x":28.2,"y":26.4,"width":111,"height":111,"locked":false,"pinned":false,"settings":{"expandable":true,"expandScaleX":2,"expandScaleY":2,"expanded":false,"originalWidth":111,"originalHeight":111,"originalX":28.2,"originalY":26.4}},
+  {"id":"visitors","type":"visitors","x":28.2,"y":746.4,"width":111,"height":111,"locked":false,"pinned":false,"settings":{}},
+  {"id":"heartbeat","type":"heartbeat","x":163.2,"y":746.4,"width":201,"height":111,"locked":false,"pinned":false,"settings":{}}
 ]
 
 // Component mapping - exported for use in other components
@@ -42,7 +43,6 @@ export const componentMap = {
   games: GamesWidget,
   visitors: VisitorsWidget,
   motd: MessageOfTheDayWidget,
-  quote: QuoteWidget,
   time: TimeWidget,
   github: GitHubActivityWidget,
   apikey: ApiKeyWidget,

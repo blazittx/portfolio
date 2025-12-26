@@ -12,7 +12,6 @@ export const WIDGET_PREFERRED_PERCENTAGES = {
   games: { width: 0.25, height: 0.80 },   // 25% width, 20% height
   visitors: { width: 0.20, height: 0.15 }, // 20% width, 15% height
   motd: { width: 0.20, height: 0.15 },    // 20% width, 15% height
-  quote: { width: 0.20, height: 0.20 },   // 20% width, 20% height
   time: { width: 0.20, height: 0.15 },     // 20% width, 15% height
   github: { width: 0.30, height: 0.25 },  // 30% width, 25% height
   apikey: { width: 0.25, height: 0.15 }, // 25% width, 15% height

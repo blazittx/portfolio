@@ -7,7 +7,6 @@ export const WIDGET_INFO = {
   games: { name: 'Games', icon: '🎮' },
   visitors: { name: 'Visitors', icon: '👥' },
   motd: { name: 'Message of the Day', icon: '💬' },
-  quote: { name: 'Quote', icon: '💭' },
   time: { name: 'Time', icon: '🕐' },
   github: { name: 'GitHub Activity', icon: '🐙' },
   apikey: { name: 'API Key', icon: '🔑' },

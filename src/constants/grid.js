@@ -31,7 +31,6 @@ export const getWidgetMinSize = (widgetType) => {
     games: { width: 4, height: 3 },
     visitors: { width: 3, height: 2 },
     motd: { width: 3, height: 2 },
-    quote: { width: 3, height: 3 },
     time: { width: 3, height: 2 },
     github: { width: 4, height: 3 },
     apikey: { width: 4, height: 2 },
