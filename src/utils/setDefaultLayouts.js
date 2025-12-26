@@ -20,11 +20,11 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
 // Decoded game detail layout
 export const DEFAULT_GAME_DETAIL_LAYOUT = [
   {"id":"back-button","type":"back-button","x":28.2,"y":26.4,"width":111,"height":66,"locked":true,"pinned":false},
-  {"id":"game-info","type":"game-info","x":163.2,"y":26.4,"width":696,"height":66,"locked":true,"pinned":false},
-  {"id":"game-description","type":"game-description","x":28.2,"y":611.4,"width":516,"height":246,"locked":false,"pinned":true},
-  {"id":"game-image","type":"game-image","x":28.2,"y":116.4,"width":516,"height":471,"locked":false,"pinned":true},
-  {"id":"game-details","type":"game-details","x":883.2,"y":26.4,"width":651,"height":66,"locked":true,"pinned":false},
-  {"id":"game-development-info","type":"game-development-info","x":568.2,"y":116.4,"width":966,"height":741,"locked":false,"pinned":false}
+  {"id":"game-info","type":"game-info","x":163.2,"y":26.4,"width":1371,"height":66,"locked":false,"pinned":true},
+  {"id":"game-description","type":"game-description","x":28.2,"y":521.4,"width":516,"height":201,"locked":false,"pinned":true},
+  {"id":"game-image","type":"game-image","x":28.2,"y":116.4,"width":516,"height":381,"locked":false,"pinned":true},
+  {"id":"game-development-info","type":"game-development-info","x":568.2,"y":116.4,"width":966,"height":741,"locked":false,"pinned":true},
+  {"id":"game-details","type":"game-details","x":28.2,"y":746.4,"width":516,"height":111,"locked":false,"pinned":true}
 ]
 
 // Mobile default layouts
@@ -41,10 +41,11 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
 
 export const DEFAULT_GAME_DETAIL_LAYOUT_MOBILE = [
   {"id":"back-button","type":"back-button","x":28.2,"y":26.4,"width":111,"height":66,"locked":true,"pinned":false},
-  {"id":"game-info","type":"game-info","x":28.2,"y":116.4,"width":291,"height":201,"locked":false,"pinned":true},
-  {"id":"game-description","type":"game-description","x":28.2,"y":701.4,"width":336,"height":201,"locked":false,"pinned":true},
-  {"id":"game-image","type":"game-image","x":28.2,"y":341.4,"width":336,"height":336,"locked":false,"pinned":true},
-  {"id":"game-development-info","type":"game-development-info","x":28.2,"y":926.4,"width":336,"height":1056,"locked":false,"pinned":false}
+  {"id":"game-info","type":"game-info","x":28.2,"y":116.4,"width":336,"height":156,"locked":false,"pinned":true},
+  {"id":"game-description","type":"game-description","x":28.2,"y":656.4,"width":336,"height":201,"locked":false,"pinned":true},
+  {"id":"game-image","type":"game-image","x":28.2,"y":296.4,"width":336,"height":336,"locked":false,"pinned":true},
+  {"id":"game-development-info","type":"game-development-info","x":28.2,"y":881.4,"width":336,"height":741,"locked":false,"pinned":false},
+  {"id":"game-details","type":"game-details","x":28.2,"y":1646.4,"width":336,"height":156,"locked":false,"pinned":false}
 ]
 
 /**

@@ -1,112 +1,111 @@
+import { useMemo } from 'react'
 import BaseWidget from '../BaseWidget'
+import { getTeamMembers } from '../../data/gameDevelopmentInfo'
 
 /* eslint-disable react/prop-types */
 
 export default function GameDetailsWidget({ game }) {
-  const details = []
-  
-  if (game.difficulty) {
-    details.push(
-      <div key="difficulty" style={{
-        fontSize: '0.875rem',
-        color: 'canvasText',
-        opacity: 0.8,
-        whiteSpace: 'nowrap'
-      }}>
-        <span style={{ opacity: 0.6 }}>Difficulty: </span>
-        <span style={{ textTransform: 'capitalize' }}>{game.difficulty}</span>
-      </div>
-    )
-  }
-  
-  if (game.minPlayers || game.maxPlayers) {
-    details.push(
-      <div key="players" style={{
-        fontSize: '0.875rem',
-        color: 'canvasText',
-        opacity: 0.8,
-        whiteSpace: 'nowrap'
-      }}>
-        <span style={{ opacity: 0.6 }}>Players: </span>
-        <span>
-          {game.minPlayers && game.maxPlayers 
-            ? `${game.minPlayers}-${game.maxPlayers}`
-            : game.minPlayers || game.maxPlayers || 'N/A'}
-        </span>
-      </div>
-    )
-  }
-  
-  if (game.githubRepo) {
-    details.push(
-      <a
-        key="github"
-        href={game.githubRepo}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          fontSize: '0.875rem',
+  const teamMembers = useMemo(() => {
+    if (!game?.id) return null
+    return getTeamMembers(game.id)
+  }, [game?.id])
+
+  if (!teamMembers || !Array.isArray(teamMembers) || teamMembers.length === 0) {
+    return (
+      <BaseWidget padding="0.75rem 1rem">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
           color: 'canvasText',
-          opacity: 0.8,
-          textDecoration: 'none',
-          whiteSpace: 'nowrap'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = '1'
-          e.currentTarget.style.textDecoration = 'underline'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = '0.8'
-          e.currentTarget.style.textDecoration = 'none'
-        }}
-      >
-        GitHub →
-      </a>
+          opacity: 0.5,
+          fontSize: '0.875rem'
+        }}>
+          No team members available
+        </div>
+      </BaseWidget>
     )
   }
 
   return (
     <BaseWidget padding="0.75rem 1rem">
       <div style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
         height: '100%',
-        gap: '1.5rem',
-        flexWrap: 'wrap'
+        gap: '0.75rem',
+        overflowY: 'auto',
+        alignContent: 'start'
       }}>
-        <h3 style={{
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          margin: 0,
-          letterSpacing: '-0.01em',
-          color: 'canvasText',
-          opacity: 0.6,
-          flexShrink: 0
-        }}>Details</h3>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: '1.5rem',
-          flex: 1,
-          flexWrap: 'wrap'
-        }}>
-          {details.map((detail, index) => (
-            <div key={detail.key || index} style={{ display: 'flex', alignItems: 'center' }}>
-              {index > 0 && (
+        {teamMembers.map((member, index) => {
+          // Support both old format (string) and new format (object)
+          const name = typeof member === 'string' ? member : member.name
+          const role = typeof member === 'object' && member.role ? member.role : null
+          const linkedin = typeof member === 'object' && member.linkedin ? member.linkedin : null
+
+          return (
+            <div
+              key={index}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem'
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                flexWrap: 'wrap'
+              }}>
+                {linkedin ? (
+                  <a
+                    href={linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      color: 'canvasText',
+                      textDecoration: 'none',
+                      opacity: 0.9,
+                      transition: 'opacity 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '1'
+                      e.currentTarget.style.textDecoration = 'underline'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = '0.9'
+                      e.currentTarget.style.textDecoration = 'none'
+                    }}
+                  >
+                    {name}
+                  </a>
+                ) : (
+                  <span style={{
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    color: 'canvasText',
+                    opacity: 0.9
+                  }}>
+                    {name}
+                  </span>
+                )}
+              </div>
+              {role && (
                 <span style={{
-                  width: '1px',
-                  height: '1rem',
-                  backgroundColor: 'canvasText',
-                  opacity: 0.2,
-                  marginRight: '1.5rem'
-                }} />
+                  fontSize: '0.75rem',
+                  color: 'canvasText',
+                  opacity: 0.6
+                }}>
+                  {role}
+                </span>
               )}
-              {detail}
             </div>
-          ))}
-        </div>
+          )
+        })}
       </div>
     </BaseWidget>
   )
