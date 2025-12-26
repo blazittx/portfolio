@@ -13,6 +13,13 @@ export const WIDGET_INFO = {
   apikey: { name: 'API Key', icon: '🔑' },
   'single-game': { name: 'Single Game', icon: '🎯' },
   'profile-picture': { name: 'Profile Picture', icon: '🖼️' },
+  'back-button': { name: 'Back Button', icon: '⬅️' },
+  'game-info': { name: 'Game Info', icon: 'ℹ️' },
+  'game-description': { name: 'Game Description', icon: '📄' },
+  'game-image': { name: 'Game Image', icon: '🖼️' },
+  'game-details': { name: 'Game Details', icon: '📋' },
+  'game-development-info': { name: 'Development Info', icon: '💻' },
+  heartbeat: { name: 'my literal heartbeat', icon: '❤️' },
 }
 
 export const getWidgetDisplayName = (widgetType) => {

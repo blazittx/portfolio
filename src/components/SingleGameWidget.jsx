@@ -43,6 +43,11 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
   const dropdownRef = useRef(null);
   const fetchedGameIdRef = useRef(null); // Track which gameId we've already fetched
   const isInitialMountRef = useRef(true); // Track if this is the initial mount
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const intervalRef = useRef(null);
+  const thumbnailContainerRef = useRef(null);
+  const thumbnailRefs = useRef({});
 
   // Extract gameId from widget settings to use as stable dependency
   const widgetGameId = widget?.settings?.gameId || null;
@@ -192,6 +197,58 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
       };
     }
   }, [isDropdownOpen]);
+
+  // Reset image index when game changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [game?.id]);
+
+  // Scroll to selected thumbnail when image index changes
+  useEffect(() => {
+    if (!game || !game.image) return;
+    
+    const thumbnailElement = thumbnailRefs.current[currentImageIndex];
+    if (thumbnailElement && thumbnailContainerRef.current && !isHovered) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        thumbnailElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest'
+        });
+      }, 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentImageIndex, game?.id, isHovered]);
+
+  // Auto-scroll images
+  useEffect(() => {
+    if (!game || !game.image) return;
+
+    const images = [game.image, game.image, game.image, game.image, game.image];
+    
+    if (!isHovered) {
+      intervalRef.current = setInterval(() => {
+        setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+      }, 3000); // Auto-scroll every 3 seconds
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHovered, game?.id, game?.image]);
+
+  const handleThumbnailClick = (index) => {
+    setCurrentImageIndex(index);
+  };
 
   if (loading) {
     return (
@@ -524,38 +581,125 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
           
           {game.image && (
             <div style={{
-              position: 'relative',
-              width: '100%',
+              display: 'flex',
+              flexDirection: 'row',
+              gap: '0.5rem',
               flex: 1,
               minHeight: 0,
-              overflow: 'hidden',
-              borderRadius: '4px',
-              background: 'color-mix(in hsl, canvasText, transparent 98%)'
+              position: 'relative'
             }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             >
-              <img 
-                src={game.image} 
-                alt={game.title}
-                draggable="false"
+              {/* Large image on left */}
+              <div style={{
+                position: 'relative',
+                flex: 1,
+                minWidth: 0,
+                minHeight: 0,
+                overflow: 'hidden',
+                borderRadius: '4px',
+                background: 'color-mix(in hsl, canvasText, transparent 98%)'
+              }}>
+                {(() => {
+                  const images = [game.image, game.image, game.image, game.image, game.image];
+                  return (
+                    <img 
+                      src={images[currentImageIndex]} 
+                      alt={`${game.title} - Image ${currentImageIndex + 1}`}
+                      draggable="false"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        userSelect: 'none',
+                        transition: 'opacity 0.3s ease'
+                      }}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src = "https://via.placeholder.com/800x600?text=Game+Image";
+                      }}
+                    />
+                  );
+                })()}
+              </div>
+
+              {/* Thumbnail images on right, vertically stacked */}
+              <div 
+                ref={thumbnailContainerRef}
+                data-thumbnail-container
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                  userSelect: 'none'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  paddingRight: '0.25rem',
+                  flexShrink: 0,
+                  width: '60px',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none'
                 }}
-                loading="lazy"
-                onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/800x600?text=Game+Image";
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              />
+              >
+                {(() => {
+                  const images = [game.image, game.image, game.image, game.image, game.image];
+                  return images.map((image, index) => (
+                    <div
+                      key={index}
+                      ref={(el) => {
+                        if (el) thumbnailRefs.current[index] = el;
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleThumbnailClick(index);
+                      }}
+                      style={{
+                        position: 'relative',
+                        width: '60px',
+                        height: '60px',
+                        flexShrink: 0,
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        border: currentImageIndex === index 
+                          ? '2px solid canvasText' 
+                          : '2px solid transparent',
+                        opacity: currentImageIndex === index ? 1 : 0.7,
+                        transition: 'opacity 0.2s ease, border-color 0.2s ease',
+                        background: 'color-mix(in hsl, canvasText, transparent 98%)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentImageIndex !== index) {
+                          e.currentTarget.style.opacity = '0.9'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentImageIndex !== index) {
+                          e.currentTarget.style.opacity = '0.7'
+                        }
+                      }}
+                    >
+                      <img 
+                        src={image} 
+                        alt={`${game.title} - Thumbnail ${index + 1}`}
+                        draggable="false"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
+                          userSelect: 'none'
+                        }}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/60x60?text=Image";
+                        }}
+                      />
+                    </div>
+                  ));
+                })()}
+              </div>
             </div>
           )}
           

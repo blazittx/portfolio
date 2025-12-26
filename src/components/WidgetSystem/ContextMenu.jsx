@@ -1,4 +1,4 @@
-import { componentMap } from '../../hooks/useWidgets'
+import { componentMap as defaultComponentMap } from '../../hooks/useWidgets'
 import { WIDGET_INFO } from '../../utils/widgets'
 import { useEffect, useRef, useState } from 'react'
 
@@ -18,9 +18,12 @@ const LockIcon = ({ size = 16, color = 'currentColor' }) => (
   </svg>
 )
 
-export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onSetAsDefault, onRevertToDefault, onClose }) {
+export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onSetAsDefault, onRevertToDefault, onClose, componentMap }) {
   const menuRef = useRef(null)
   const [adjustedPosition, setAdjustedPosition] = useState({ x: 0, y: 0 })
+
+  // Use provided componentMap or fall back to default
+  const activeComponentMap = componentMap || defaultComponentMap
 
   useEffect(() => {
     if (!contextMenu) {
@@ -75,7 +78,7 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
   const widget = contextMenu.widgetId ? widgets.find(w => w.id === contextMenu.widgetId) : null
 
   // Get available widget types
-  const availableWidgetTypes = Object.keys(componentMap)
+  const availableWidgetTypes = Object.keys(activeComponentMap)
   
   // Widgets that allow multiple instances
   const allowsMultipleInstances = (type) => type === 'single-game'
@@ -84,8 +87,13 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
   const existingWidgetTypes = new Set(widgets.map(w => w.type || w.id))
   
   // Find missing widgets (or widgets that allow multiple instances)
+  // Exclude back-button from add menu as it's automatically added
   const missingWidgets = availableWidgetTypes
-    .filter(type => allowsMultipleInstances(type) || !existingWidgetTypes.has(type))
+    .filter(type => {
+      // Exclude back-button from manual addition
+      if (type === 'back-button') return false
+      return allowsMultipleInstances(type) || !existingWidgetTypes.has(type)
+    })
     .map(type => ({
       type,
       name: WIDGET_INFO[type]?.name || type,

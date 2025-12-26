@@ -27,6 +27,8 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
   const containerRef = useRef(null);
   const [sizeClass, setSizeClass] = useState('');
   const fetchedGameIdsRef = useRef(null); // Track which gameIds we've already fetched
+  const [imageIndices, setImageIndices] = useState({}); // Track current image index for each game
+  const [shouldSwitchImage, setShouldSwitchImage] = useState(true); // Track whether to switch image or game
 
   // Create a stable key from allWidgets that only changes when relevant data changes
   const allWidgetsKey = useMemo(() => {
@@ -152,15 +154,48 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
     if (!isAutoPlaying || games.length === 0) return;
 
     autoPlayRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % games.length);
-    }, 4000); // Change every 4 seconds
+      if (shouldSwitchImage) {
+        // Switch to next image for current game
+        const currentGame = games[currentIndex];
+        if (currentGame) {
+          const images = [currentGame.image, currentGame.image, currentGame.image, currentGame.image, currentGame.image];
+          const currentImageIndex = imageIndices[currentGame.id] || 0;
+          const nextImageIndex = (currentImageIndex + 1) % images.length;
+          setImageIndices(prev => ({ ...prev, [currentGame.id]: nextImageIndex }));
+        }
+        setShouldSwitchImage(false); // Next time, switch game
+      } else {
+        // Switch to next game
+        setCurrentIndex((prev) => (prev + 1) % games.length);
+        setShouldSwitchImage(true); // Next time, switch image
+      }
+    }, 3000); // Change every 3 seconds
 
     return () => {
       if (autoPlayRef.current) {
         clearInterval(autoPlayRef.current);
       }
     };
-  }, [isAutoPlaying, games.length]);
+  }, [isAutoPlaying, games, currentIndex, shouldSwitchImage, imageIndices]);
+
+  // Initialize image indices for each game
+  useEffect(() => {
+    if (games.length === 0) return;
+    
+    setImageIndices(prev => {
+      const newIndices = { ...prev };
+      let hasNew = false;
+      games.forEach(game => {
+        if (!(game.id in newIndices)) {
+          newIndices[game.id] = 0;
+          hasNew = true;
+        }
+      });
+      return hasNew ? newIndices : prev;
+    });
+  }, [games]);
+
+  // Remove the per-game auto-scroll since we're handling it in the main auto-play loop
 
   useEffect(() => {
     const updateSizeClass = () => {
@@ -374,38 +409,120 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                     </div>
                   </div>
                   <div style={{
-                    position: 'relative',
-                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
                     flex: 1,
                     minHeight: 0,
-                    overflow: 'hidden',
-                    borderRadius: '4px',
-                    background: 'color-mix(in hsl, canvasText, transparent 98%)'
-                  }}>
-                    <img 
-                      src={game.image} 
-                      alt={game.title}
-                      draggable="false"
+                    position: 'relative'
+                  }}
+                  >
+                    {/* Large image on top */}
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      flex: 1,
+                      minHeight: 0,
+                      overflow: 'hidden',
+                      borderRadius: '4px',
+                      background: 'color-mix(in hsl, canvasText, transparent 98%)'
+                    }}>
+                      {(() => {
+                        const images = [game.image, game.image, game.image, game.image, game.image];
+                        const currentImageIndex = imageIndices[game.id] || 0;
+                        return (
+                          <img 
+                            src={images[currentImageIndex]} 
+                            alt={`${game.title} - Image ${currentImageIndex + 1}`}
+                            draggable="false"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              display: 'block',
+                              userSelect: 'none',
+                              transition: 'opacity 0.3s ease'
+                            }}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.target.src = "https://via.placeholder.com/800x600?text=Game+Image";
+                            }}
+                          />
+                        );
+                      })()}
+                    </div>
+
+                    {/* Thumbnail images below, horizontally */}
+                    <div 
+                      data-thumbnail-container
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block',
-                        transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                        userSelect: 'none'
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: '0.5rem',
+                        overflowX: 'hidden',
+                        overflowY: 'hidden',
+                        paddingBottom: '0.25rem',
+                        flexShrink: 0,
+                        flexWrap: 'wrap',
+                        justifyContent: 'flex-start'
                       }}
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.src =
-                          "https://via.placeholder.com/800x600?text=Game+Image";
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.05)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)'
-                      }}
-                    />
+                    >
+                      {(() => {
+                        const images = [game.image, game.image, game.image, game.image, game.image];
+                        const currentImageIndex = imageIndices[game.id] || 0;
+                        return images.map((image, index) => (
+                          <div
+                            key={index}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setImageIndices(prev => ({ ...prev, [game.id]: index }));
+                            }}
+                            style={{
+                              position: 'relative',
+                              width: '60px',
+                              height: '60px',
+                              flexShrink: 0,
+                              borderRadius: '4px',
+                              overflow: 'hidden',
+                              cursor: 'pointer',
+                              border: currentImageIndex === index 
+                                ? '2px solid canvasText' 
+                                : '2px solid transparent',
+                              opacity: currentImageIndex === index ? 1 : 0.7,
+                              transition: 'opacity 0.2s ease, border-color 0.2s ease',
+                              background: 'color-mix(in hsl, canvasText, transparent 98%)'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (currentImageIndex !== index) {
+                                e.currentTarget.style.opacity = '0.9'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (currentImageIndex !== index) {
+                                e.currentTarget.style.opacity = '0.7'
+                              }
+                            }}
+                          >
+                            <img 
+                              src={image} 
+                              alt={`${game.title} - Thumbnail ${index + 1}`}
+                              draggable="false"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                display: 'block',
+                                userSelect: 'none'
+                              }}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.target.src = "https://via.placeholder.com/60x60?text=Image";
+                              }}
+                            />
+                          </div>
+                        ));
+                      })()}
+                    </div>
                   </div>
                   <div style={{
                     display: 'flex',

@@ -18,6 +18,18 @@ import GameInfoWidget from './GameDetailWidgets/GameInfoWidget'
 import GameDescriptionWidget from './GameDetailWidgets/GameDescriptionWidget'
 import GameImageWidget from './GameDetailWidgets/GameImageWidget'
 import GameDetailsWidget from './GameDetailWidgets/GameDetailsWidget'
+import GameDevelopmentInfoWidget from './GameDetailWidgets/GameDevelopmentInfoWidget'
+import { getWidgetMinSize } from '../constants/grid'
+
+// Component map for game detail widgets
+const gameDetailComponentMap = {
+  'back-button': BackButtonWidget,
+  'game-info': GameInfoWidget,
+  'game-description': GameDescriptionWidget,
+  'game-image': GameImageWidget,
+  'game-details': GameDetailsWidget,
+  'game-development-info': GameDevelopmentInfoWidget,
+}
 
 // Default game detail layout (from user's current setup)
 const DEFAULT_GAME_DETAIL_LAYOUT = [
@@ -25,7 +37,8 @@ const DEFAULT_GAME_DETAIL_LAYOUT = [
   {"id":"game-info","type":"game-info","x":613.2,"y":116.4,"width":246,"height":201,"locked":false,"pinned":false},
   {"id":"game-description","type":"game-description","x":1108.2,"y":116.4,"width":419.79999999999995,"height":201,"locked":false,"pinned":false},
   {"id":"game-image","type":"game-image","x":28.2,"y":116.4,"width":561,"height":741,"locked":false,"pinned":false},
-  {"id":"game-details","type":"game-details","x":883.2,"y":116.4,"width":201,"height":201,"locked":false,"pinned":false}
+  {"id":"game-details","type":"game-details","x":883.2,"y":116.4,"width":201,"height":201,"locked":false,"pinned":false},
+  {"id":"game-development-info","type":"game-development-info","x":613.2,"y":341.4,"width":561,"height":516,"locked":false,"pinned":false}
 ]
 
 /* eslint-disable react/prop-types */
@@ -93,6 +106,8 @@ export default function GameDetailView({ game, onBack }) {
             return { ...widget, component: () => <GameImageWidget game={game} /> }
           } else if (widget.id === 'game-details' || widget.type === 'game-details') {
             return { ...widget, component: () => <GameDetailsWidget game={game} /> }
+          } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+            return { ...widget, component: () => <GameDevelopmentInfoWidget game={game} /> }
           } else if (widget.id === 'back-button' || widget.type === 'back-button') {
             return { ...widget, component: () => <BackButtonWidget onBack={onBack} /> }
           }
@@ -128,6 +143,8 @@ export default function GameDetailView({ game, onBack }) {
             component = () => <GameImageWidget game={game} />
           } else if (widget.id === 'game-details' || widget.type === 'game-details') {
             component = () => <GameDetailsWidget game={game} />
+          } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+            component = () => <GameDevelopmentInfoWidget game={game} />
           }
           
           if (!component) {
@@ -206,6 +223,8 @@ export default function GameDetailView({ game, onBack }) {
             component = () => <GameImageWidget game={game} />
           } else if (widget.id === 'game-details' || widget.type === 'game-details') {
             component = () => <GameDetailsWidget game={game} />
+          } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+            component = () => <GameDevelopmentInfoWidget game={game} />
           }
           
           if (!component) {
@@ -373,6 +392,76 @@ export default function GameDetailView({ game, onBack }) {
     closeContextMenu()
   }, [setWidgets, closeContextMenu])
 
+  // Add widget at position
+  const addWidget = useCallback((widgetType, x, y) => {
+    const Component = gameDetailComponentMap[widgetType]
+    if (!Component) {
+      console.warn(`Widget type ${widgetType} not found`)
+      return
+    }
+
+    setWidgets(prev => {
+      // Check if widget already exists (except back-button which can't be added manually)
+      if (widgetType !== 'back-button') {
+        const existingWidget = prev.find(w => (w.type === widgetType || w.id === widgetType))
+        if (existingWidget) {
+          console.warn(`Widget ${widgetType} already exists`)
+          return prev
+        }
+      }
+
+      // Get minimum size for widget
+      const minSize = getWidgetMinSize(widgetType)
+      const width = snapSizeToGrid(minSize.width)
+      const height = snapSizeToGrid(minSize.height)
+
+      // Snap position to grid
+      const snappedX = snapToGrid(x, GRID_OFFSET_X)
+      const snappedY = snapToGrid(y, GRID_OFFSET_Y)
+
+      // Constrain to viewport
+      const constrainedPos = constrainToViewport(snappedX, snappedY, width, height, { x: 0, y: 0 }, false)
+      const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, width, height, minSize.width, minSize.height, { x: 0, y: 0 })
+
+      // Create component function
+      let component = null
+      if (widgetType === 'back-button') {
+        component = () => <BackButtonWidget onBack={onBack} />
+      } else if (widgetType === 'game-info') {
+        component = () => <GameInfoWidget game={game} />
+      } else if (widgetType === 'game-description') {
+        component = () => <GameDescriptionWidget game={game} />
+      } else if (widgetType === 'game-image') {
+        component = () => <GameImageWidget game={game} />
+      } else if (widgetType === 'game-details') {
+        component = () => <GameDetailsWidget game={game} />
+      } else if (widgetType === 'game-development-info') {
+        component = () => <GameDevelopmentInfoWidget game={game} />
+      }
+
+      if (!component) {
+        console.warn(`Component not found for widget type: ${widgetType}`)
+        return prev
+      }
+
+      const newWidget = {
+        id: widgetType,
+        type: widgetType,
+        x: constrainedPos.x,
+        y: constrainedPos.y,
+        width: constrainedSize.width,
+        height: constrainedSize.height,
+        component: component,
+        locked: widgetType === 'back-button',
+        pinned: false
+      }
+
+      return [...prev, newWidget]
+    })
+    
+    closeContextMenu()
+  }, [setWidgets, closeContextMenu, game, onBack])
+
   const setAsDefault = useCallback(() => {
     const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned }) => ({
       id,
@@ -412,6 +501,8 @@ export default function GameDetailView({ game, onBack }) {
             component = () => <GameImageWidget game={game} />
           } else if (widget.id === 'game-details' || widget.type === 'game-details') {
             component = () => <GameDetailsWidget game={game} />
+          } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+            component = () => <GameDevelopmentInfoWidget game={game} />
           }
           
           if (!component) {
@@ -499,6 +590,12 @@ export default function GameDetailView({ game, onBack }) {
     const gameDetailsHeight = snapSizeToGrid(200)
     const constrainedGameDetails = constrainToViewport(gameDetailsX, gameDetailsY, gameDetailsWidth, gameDetailsHeight, { x: 0, y: 0 }, false)
 
+    const gameDevelopmentInfoX = snapToGrid(constrainedGameImage.x, GRID_OFFSET_X)
+    const gameDevelopmentInfoY = snapToGrid(constrainedGameImage.y + gameImageHeight + GRID_SIZE, GRID_OFFSET_Y)
+    const gameDevelopmentInfoWidth = snapSizeToGrid(400)
+    const gameDevelopmentInfoHeight = snapSizeToGrid(300)
+    const constrainedGameDevelopmentInfo = constrainToViewport(gameDevelopmentInfoX, gameDevelopmentInfoY, gameDevelopmentInfoWidth, gameDevelopmentInfoHeight, { x: 0, y: 0 }, false)
+
     const defaultWidgets = [
       {
         id: 'back-button',
@@ -552,6 +649,17 @@ export default function GameDetailView({ game, onBack }) {
         width: gameDetailsWidth,
         height: gameDetailsHeight,
         component: () => <GameDetailsWidget game={game} />,
+        locked: false,
+        pinned: false
+      },
+      {
+        id: 'game-development-info',
+        type: 'game-development-info',
+        x: constrainedGameDevelopmentInfo.x,
+        y: constrainedGameDevelopmentInfo.y,
+        width: gameDevelopmentInfoWidth,
+        height: gameDevelopmentInfoHeight,
+        component: () => <GameDevelopmentInfoWidget game={game} />,
         locked: false,
         pinned: false
       }
@@ -608,10 +716,11 @@ export default function GameDetailView({ game, onBack }) {
         onTogglePin={togglePinWidget}
         onRemoveWidget={removeWidget}
         onSort={autosortWidgets}
-        onAddWidget={() => {}}
+        onAddWidget={addWidget}
         onSetAsDefault={setAsDefault}
         onRevertToDefault={revertToDefault}
         onClose={closeContextMenu}
+        componentMap={gameDetailComponentMap}
       />
       
       <GridBackground centerOffset={centerOffset} />

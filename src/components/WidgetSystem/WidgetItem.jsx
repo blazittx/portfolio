@@ -118,7 +118,7 @@ export default function WidgetItem({
       border: hasCollision ? '2px solid #ff4444' : (isSwapTarget ? '1px solid rgba(74, 158, 255, 0.3)' : (widget.pinned ? '1px solid color-mix(in hsl, canvasText, transparent 55%)' : '1px solid #777777')),
       borderRadius: '4px',
       overflow: 'visible',
-      transition: isDragging || isResizing ? 'none' : 'border-color 0.2s ease, box-shadow 0.2s ease, left 0.2s cubic-bezier(0.4, 0, 0.2, 1), top 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1), height 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+      transition: isDragging || isResizing ? 'none' : 'border-color 0.2s ease, box-shadow 0.2s ease, left 0.4s cubic-bezier(0.4, 0, 0.2, 1), top 0.4s cubic-bezier(0.4, 0, 0.2, 1), width 0.4s cubic-bezier(0.4, 0, 0.2, 1), height 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       // Disable CSS transitions for opacity/transform during GSAP animations
       willChange: isDragging || isResizing ? 'auto' : 'opacity, transform',
       cursor: widget.locked ? 'not-allowed' : 'move',
