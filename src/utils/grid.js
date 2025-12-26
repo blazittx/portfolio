@@ -20,8 +20,9 @@ export const snapSizeToGrid = (size) => {
 }
 
 // Constrain widget position to usable grid area boundaries
-// centerOffset is optional - if not provided, uses { x: 0, y: 0 }
+// centerOffset is optional - kept for API compatibility but not used (widgets are relative to base grid)
 // enforceBounds: if false, only ensures widget doesn't go completely outside viewport (for loading saved layouts)
+// eslint-disable-next-line no-unused-vars
 export const constrainToViewport = (x, y, width, height, centerOffset = { x: 0, y: 0 }, enforceBounds = true) => {
   if (!enforceBounds) {
     // Just ensure widget is visible on screen (for loading saved layouts)
@@ -36,13 +37,14 @@ export const constrainToViewport = (x, y, width, height, centerOffset = { x: 0, 
     }
   }
   
-  // Enforce usable area bounds using raw bounds (for drag/resize operations)
+  // Enforce usable area bounds (for drag/resize operations)
   // Widgets must stay within the raw 34x19 area, accounting for padding
-  const rawBounds = getRawUsableAreaBounds(centerOffset)
-  const minX = rawBounds.minX + WIDGET_PADDING
-  const minY = rawBounds.minY + WIDGET_PADDING
-  const maxX = rawBounds.maxX - WIDGET_PADDING - width
-  const maxY = rawBounds.maxY - WIDGET_PADDING - height
+  // Widget positions are relative to base grid origin (GRID_OFFSET_X, GRID_OFFSET_Y)
+  // So we calculate bounds relative to base grid origin (not including centerOffset)
+  const minX = GRID_OFFSET_X + WIDGET_PADDING
+  const minY = GRID_OFFSET_Y + WIDGET_PADDING
+  const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - width
+  const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - height
   
   return {
     x: Math.max(minX, Math.min(maxX, x)),
@@ -51,12 +53,12 @@ export const constrainToViewport = (x, y, width, height, centerOffset = { x: 0, 
 }
 
 // Constrain widget size to fit within usable grid area
-// centerOffset is optional - if not provided, uses { x: 0, y: 0 }
+// centerOffset is optional - kept for API compatibility but not used (widgets are relative to base grid)
+// eslint-disable-next-line no-unused-vars
 export const constrainSizeToViewport = (x, y, width, height, minWidth = 0, minHeight = 0, centerOffset = { x: 0, y: 0 }) => {
-  const rawBounds = getRawUsableAreaBounds(centerOffset)
-  // Widget must fit within raw bounds, accounting for padding on all sides
-  const maxWidth = rawBounds.maxX - WIDGET_PADDING - x
-  const maxHeight = rawBounds.maxY - WIDGET_PADDING - y
+  // Widget positions are relative to base grid origin, so calculate bounds relative to base grid
+  const maxWidth = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - x
+  const maxHeight = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - y
   
   return {
     width: Math.max(minWidth, Math.min(maxWidth, width)),
@@ -77,10 +79,11 @@ export const snapToGridConstrained = (x, y, width, height, offsetX, offsetY, cen
   // Re-constrain after snapping (snapping might push us outside)
   const reConstrained = constrainToViewport(snappedX, snappedY, width, height, centerOffset)
   
-  // Get raw usable area bounds for max calculations
-  const rawBounds = getRawUsableAreaBounds(centerOffset)
-  const maxX = rawBounds.maxX - WIDGET_PADDING - width
-  const maxY = rawBounds.maxY - WIDGET_PADDING - height
+  // Get usable area bounds relative to base grid origin for max calculations
+  const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - width
+  const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - height
+  const minX = GRID_OFFSET_X + WIDGET_PADDING
+  const minY = GRID_OFFSET_Y + WIDGET_PADDING
   
   // If the re-constrained position is different from snapped, find nearest grid position within bounds
   if (reConstrained.x !== snappedX || reConstrained.y !== snappedY) {
@@ -89,12 +92,12 @@ export const snapToGridConstrained = (x, y, width, height, offsetX, offsetY, cen
     const adjustedX = reConstrained.x - offsetX - WIDGET_PADDING
     const gridUnitsX = Math.floor(adjustedX / GRID_SIZE)
     snappedX = Math.min(maxX, gridUnitsX * GRID_SIZE + offsetX + WIDGET_PADDING)
-    snappedX = Math.max(rawBounds.minX + WIDGET_PADDING, snappedX) // Ensure it's not less than minX
+    snappedX = Math.max(minX, snappedX) // Ensure it's not less than minX
     
     const adjustedY = reConstrained.y - offsetY - WIDGET_PADDING
     const gridUnitsY = Math.floor(adjustedY / GRID_SIZE)
     snappedY = Math.min(maxY, gridUnitsY * GRID_SIZE + offsetY + WIDGET_PADDING)
-    snappedY = Math.max(rawBounds.minY + WIDGET_PADDING, snappedY) // Ensure it's not less than minY
+    snappedY = Math.max(minY, snappedY) // Ensure it's not less than minY
   }
   
   return { x: snappedX, y: snappedY }
@@ -164,18 +167,25 @@ export const getUsableAreaBounds = (centerOffset = { x: 0, y: 0 }) => {
 
 // Check if a widget is within the usable area bounds
 // Widgets must be fully contained within the raw 34x19 area
+// Widget positions are relative to base grid origin, so compare to bounds relative to base grid
+// centerOffset is kept for API compatibility but not used (widgets are relative to base grid)
+// eslint-disable-next-line no-unused-vars
 export const isWithinUsableArea = (x, y, width, height, centerOffset = { x: 0, y: 0 }) => {
-  const rawBounds = getRawUsableAreaBounds(centerOffset)
   const widgetRight = x + width
   const widgetBottom = y + height
   
-  // Widget must be fully within the raw bounds (accounting for padding on all sides)
-  // Widget position includes padding, so we need to check if the widget + its padding fits
+  // Widget must be fully within the 34x19 area (accounting for padding on all sides)
+  // Compare to bounds relative to base grid origin (where widgets are positioned)
+  const minX = GRID_OFFSET_X + WIDGET_PADDING
+  const minY = GRID_OFFSET_Y + WIDGET_PADDING
+  const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING
+  const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING
+  
   return (
-    x >= rawBounds.minX + WIDGET_PADDING &&
-    y >= rawBounds.minY + WIDGET_PADDING &&
-    widgetRight <= rawBounds.maxX - WIDGET_PADDING &&
-    widgetBottom <= rawBounds.maxY - WIDGET_PADDING
+    x >= minX &&
+    y >= minY &&
+    widgetRight <= maxX &&
+    widgetBottom <= maxY
   )
 }
 
