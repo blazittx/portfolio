@@ -10,6 +10,13 @@ const GAME_IDS = [
   "GFOS1992",
 ];
 
+// Manual Steam URL mapping for games
+const STEAM_URLS = {
+  "gamblelite": "https://store.steampowered.com/app/3892270/Gamble_With_Your_Friends",
+  "pullbackracers": "https://store.steampowered.com/app/3720110/PULLBACK_RACERS",
+  "Forgekeepers": "https://store.steampowered.com/app/3254140/Forgekeepers",
+};
+
 // Use Netlify function to proxy API calls (works in both dev and production)
 const getApiUrl = (gameId) => {
   return `/api/games/${gameId}`;
@@ -34,16 +41,20 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
   const [sizeClass, setSizeClass] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const fetchedGameIdRef = useRef(null); // Track which gameId we've already fetched
+  const isInitialMountRef = useRef(true); // Track if this is the initial mount
 
+  // Extract gameId from widget settings to use as stable dependency
+  const widgetGameId = widget?.settings?.gameId || null;
+  
   // Update selectedGameId when widget settings change (only on mount or when settings actually change)
   useEffect(() => {
-    const settingsGameId = widget?.settings?.gameId;
     // Validate that the gameId exists in GAME_IDS before using it
-    if (settingsGameId && GAME_IDS.includes(settingsGameId)) {
-      if (settingsGameId !== selectedGameId) {
-        setSelectedGameId(settingsGameId);
+    if (widgetGameId && GAME_IDS.includes(widgetGameId)) {
+      if (widgetGameId !== selectedGameId) {
+        setSelectedGameId(widgetGameId);
       }
-    } else if (!settingsGameId || !GAME_IDS.includes(settingsGameId)) {
+    } else if (!widgetGameId || !GAME_IDS.includes(widgetGameId)) {
       // If settings are missing or invalid, initialize with default
       // Only update if we don't already have a valid gameId set
       const defaultGameId = GAME_IDS[0];
@@ -59,16 +70,34 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [widget?.settings?.gameId]); // Only depend on settings.gameId, not selectedGameId or onSettingsChange
+  }, [widgetGameId]); // Only depend on the actual gameId value, not the widget object
 
-  // Fetch game data when selectedGameId changes
+  // Fetch game data only on initial mount or when selectedGameId actually changes
   useEffect(() => {
     const fetchGame = async () => {
       if (!selectedGameId) return;
       
+      // Only fetch if:
+      // 1. This is the initial mount, OR
+      // 2. The selectedGameId changed from what we last fetched
+      const isGameIdChange = fetchedGameIdRef.current !== selectedGameId;
+      const shouldFetch = isInitialMountRef.current || isGameIdChange;
+      
+      if (!shouldFetch) {
+        // We already have the data for this gameId, just ensure loading is false
+        if (loading) {
+          setLoading(false);
+        }
+        return;
+      }
+      
+      // Mark that we're past initial mount
+      isInitialMountRef.current = false;
+      
       try {
         setLoading(true);
         setError(null);
+        fetchedGameIdRef.current = selectedGameId; // Mark as fetching
         const apiUrl = getApiUrl(selectedGameId);
         const response = await fetch(apiUrl, {
           method: "GET",
@@ -83,6 +112,8 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
         }
 
         const data = await response.json();
+        // Get Steam URL from manual mapping first, then fall back to API data
+        const steamUrl = STEAM_URLS[selectedGameId] || data.steam_url || data.steam_page_url || null;
         setGame({
           id: data.game_id,
           title: data.game_name,
@@ -96,18 +127,22 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
           difficulty: data.difficulty_level,
           minPlayers: data.min_players,
           maxPlayers: data.max_players,
+          steamUrl: steamUrl,
         });
+        fetchedGameIdRef.current = selectedGameId; // Mark as successfully fetched
       } catch (err) {
         console.error(`Error fetching game ${selectedGameId}:`, err);
         setError(err.message);
         setGame(null);
+        fetchedGameIdRef.current = null; // Reset on error so we can retry
       } finally {
         setLoading(false);
       }
     };
 
     fetchGame();
-  }, [selectedGameId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGameId]); // Only fetch when selectedGameId actually changes, not on every re-render
 
   // Update size class based on container dimensions
   useEffect(() => {
@@ -273,45 +308,127 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
               minWidth: 0,
               position: 'relative'
             }} ref={dropdownRef}>
-              {/* Title as dropdown */}
-              <div
-                data-dropdown-trigger
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsDropdownOpen(!isDropdownOpen);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  cursor: 'pointer',
-                  userSelect: 'none'
-                }}
-              >
-                <h4 style={{
-                  fontSize: sizeClass.includes('short') ? '1rem' : (sizeClass.includes('very-short') ? '0.9375rem' : '1.125rem'),
-                  fontWeight: 600,
-                  margin: sizeClass.includes('very-short') ? '0 0 0 0' : (sizeClass.includes('short') ? '0 0 0.25rem 0' : '0 0 0.375rem 0'),
-                  color: 'canvasText',
-                  letterSpacing: '-0.01em',
-                  lineHeight: 1.3,
-                  flex: 1,
-                  minWidth: 0,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>{game.title}</h4>
-                <span style={{
-                  fontSize: sizeClass.includes('short') ? '0.625rem' : (sizeClass.includes('very-short') ? '0.5625rem' : '0.75rem'),
-                  color: 'canvasText',
-                  opacity: 0.5,
-                  flexShrink: 0,
-                  transition: 'transform 0.2s',
-                  transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  display: 'inline-block',
-                  lineHeight: 1,
-                  marginTop: '0.125rem'
-                }}>▼</span>
+              {/* Title as dropdown with chips */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+              }}>
+                <div
+                  data-dropdown-trigger
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDropdownOpen(!isDropdownOpen);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    flexWrap: 'wrap'
+                  }}
+                >
+                  <h4 style={{
+                    fontSize: sizeClass.includes('short') ? '1rem' : (sizeClass.includes('very-short') ? '0.9375rem' : '1.125rem'),
+                    fontWeight: 600,
+                    margin: 0,
+                    color: 'canvasText',
+                    letterSpacing: '-0.01em',
+                    lineHeight: 1.3,
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>{game.title}</h4>
+                  {/* Chips next to title */}
+                  <div style={{
+                    display: sizeClass.includes('very-short') ? 'none' : 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.375rem',
+                    alignItems: 'center',
+                    flexShrink: 0
+                  }}>
+                    {/* Star Project chip */}
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
+                      borderRadius: '12px',
+                      background: 'color-mix(in hsl, canvasText, transparent 90%)',
+                      border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
+                      fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                      fontWeight: 500,
+                      color: 'canvasText',
+                      opacity: 0.9,
+                      whiteSpace: 'nowrap',
+                      userSelect: 'none'
+                    }}>
+                      ⭐ Star Project
+                    </div>
+                    {/* Steam link chip */}
+                    {game.steamUrl && (
+                      <a
+                        href={game.steamUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
+                          borderRadius: '12px',
+                          background: 'color-mix(in hsl, canvasText, transparent 90%)',
+                          border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
+                          fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                          fontWeight: 500,
+                          color: 'canvasText',
+                          opacity: 0.9,
+                          textDecoration: 'none',
+                          whiteSpace: 'nowrap',
+                          transition: 'opacity 0.2s, transform 0.2s',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = '1';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = '0.9';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        <svg
+                          width={sizeClass.includes('short') ? '12' : '14'}
+                          height={sizeClass.includes('short') ? '12' : '14'}
+                          viewBox="0 0 32 32"
+                          fill="currentColor"
+                          style={{
+                            display: 'block',
+                            flexShrink: 0,
+                            opacity: 0.9
+                          }}
+                        >
+                          <path d="M18.102 12.129c0-0 0-0 0-0.001 0-1.564 1.268-2.831 2.831-2.831s2.831 1.268 2.831 2.831c0 1.564-1.267 2.831-2.831 2.831-0 0-0 0-0.001 0h0c-0 0-0 0-0.001 0-1.563 0-2.83-1.267-2.83-2.83 0-0 0-0 0-0.001v0zM24.691 12.135c0-2.081-1.687-3.768-3.768-3.768s-3.768 1.687-3.768 3.768c0 2.081 1.687 3.768 3.768 3.768v0c2.080-0.003 3.765-1.688 3.768-3.767v-0zM10.427 23.76l-1.841-0.762c0.524 1.078 1.611 1.808 2.868 1.808 1.317 0 2.448-0.801 2.93-1.943l0.008-0.021c0.155-0.362 0.246-0.784 0.246-1.226 0-1.757-1.424-3.181-3.181-3.181-0.405 0-0.792 0.076-1.148 0.213l0.022-0.007 1.903 0.787c0.852 0.364 1.439 1.196 1.439 2.164 0 1.296-1.051 2.347-2.347 2.347-0.324 0-0.632-0.066-0.913-0.184l0.015 0.006zM15.974 1.004c-7.857 0.001-14.301 6.046-14.938 13.738l-0.004 0.054 8.038 3.322c0.668-0.462 1.495-0.737 2.387-0.737 0.001 0 0.002 0 0.002 0h-0c0.079 0 0.156 0.005 0.235 0.008l3.575-5.176v-0.074c0.003-3.12 2.533-5.648 5.653-5.648 3.122 0 5.653 2.531 5.653 5.653s-2.531 5.653-5.653 5.653h-0.131l-5.094 3.638c0 0.065 0.005 0.131 0.005 0.199 0 0.001 0 0.002 0 0.003 0 2.342-1.899 4.241-4.241 4.241-2.047 0-3.756-1.451-4.153-3.38l-0.005-0.027-5.755-2.383c1.841 6.345 7.601 10.905 14.425 10.905 8.281 0 14.994-6.713 14.994-14.994s-6.713-14.994-14.994-14.994c-0 0-0.001 0-0.001 0h0z"></path>
+                        </svg>
+                        <span>Steam</span>
+                      </a>
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: sizeClass.includes('short') ? '0.625rem' : (sizeClass.includes('very-short') ? '0.5625rem' : '0.75rem'),
+                    color: 'canvasText',
+                    opacity: 0.5,
+                    flexShrink: 0,
+                    transition: 'transform 0.2s',
+                    transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    display: 'inline-block',
+                    lineHeight: 1,
+                    marginTop: '0.125rem'
+                  }}>▼</span>
+                </div>
               </div>
               
               {/* Dropdown menu */}
@@ -375,7 +492,8 @@ export default function SingleGameWidget({ widgetId, wasLastInteractionDrag, onG
                 gap: '0.5rem',
                 fontSize: '0.75rem',
                 opacity: 0.7,
-                color: 'canvasText'
+                color: 'canvasText',
+                marginTop: sizeClass.includes('very-short') ? '0' : (sizeClass.includes('short') ? '0.25rem' : '0.375rem')
               }}>
                 {game.teamIcon && (
                   <img

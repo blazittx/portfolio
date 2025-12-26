@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import BaseWidget from "./BaseWidget";
 
 const GAME_IDS = [
@@ -26,26 +26,61 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
   const autoPlayRef = useRef(null);
   const containerRef = useRef(null);
   const [sizeClass, setSizeClass] = useState('');
+  const fetchedGameIdsRef = useRef(null); // Track which gameIds we've already fetched
 
-  // Fetch games from API
+  // Create a stable key from allWidgets that only changes when relevant data changes
+  const allWidgetsKey = useMemo(() => {
+    if (!Array.isArray(allWidgets)) return '';
+    return allWidgets
+      .map(w => `${w.id}-${w.type}-${w.settings?.gameId || ''}`)
+      .sort()
+      .join('|');
+  }, [allWidgets]);
+
+  // Memoize the list of game IDs from single-game widgets to prevent unnecessary re-fetches
+  // Only recalculate when the actual gameIds change, not when the array reference changes
+  const singleGameWidgetGameIdsString = useMemo(() => {
+    if (!Array.isArray(allWidgets)) return '';
+    const gameIds = allWidgets
+      .filter(widget => widget.type === 'single-game' && widget.settings?.gameId)
+      .map(widget => widget.settings.gameId)
+      .filter(gameId => GAME_IDS.includes(gameId)) // Only include valid game IDs
+      .sort(); // Sort for consistent comparison
+    return gameIds.join(',');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allWidgetsKey]); // Intentionally depend on stable key, not allWidgets array
+
+  // Memoize the gameIds to fetch
+  const gameIdsToFetch = useMemo(() => {
+    const excludedIds = singleGameWidgetGameIdsString ? singleGameWidgetGameIdsString.split(',') : [];
+    return GAME_IDS.filter(gameId => !excludedIds.includes(gameId)).sort();
+  }, [singleGameWidgetGameIdsString]);
+
+  // Create a stable string key for the gameIds to fetch
+  const gameIdsToFetchKey = gameIdsToFetch.join(',');
+
+  // Fetch games from API - only when gameIdsToFetch actually changes
   useEffect(() => {
     const fetchGames = async () => {
+      // Skip if we've already fetched these exact gameIds
+      if (fetchedGameIdsRef.current === gameIdsToFetchKey) {
+        if (loading) {
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Skip if no games to fetch
+      if (gameIdsToFetch.length === 0) {
+        setGames([]);
+        setLoading(false);
+        fetchedGameIdsRef.current = '';
+        return;
+      }
+
       try {
         setLoading(true);
-        // Get list of game IDs that are displayed in single-game widgets
-        const getSingleGameWidgetGameIds = () => {
-          if (!Array.isArray(allWidgets)) return [];
-          return allWidgets
-            .filter(widget => widget.type === 'single-game' && widget.settings?.gameId)
-            .map(widget => widget.settings.gameId)
-            .filter(gameId => GAME_IDS.includes(gameId)); // Only include valid game IDs
-        };
-        
-        // Get game IDs that are already displayed in single-game widgets
-        const singleGameWidgetGameIds = getSingleGameWidgetGameIds();
-        
-        // Filter out games that are displayed in single-game widgets
-        const gameIdsToFetch = GAME_IDS.filter(gameId => !singleGameWidgetGameIds.includes(gameId));
+        fetchedGameIdsRef.current = gameIdsToFetchKey; // Mark as fetching
         
         const gamePromises = gameIdsToFetch.map(async (gameId) => {
           try {
@@ -100,15 +135,18 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
           (game) => game !== null
         );
         setGames(fetchedGames);
+        fetchedGameIdsRef.current = gameIdsToFetchKey; // Mark as successfully fetched
       } catch (error) {
         console.error("Error fetching games:", error);
+        fetchedGameIdsRef.current = null; // Reset on error so we can retry
       } finally {
         setLoading(false);
       }
     };
 
     fetchGames();
-  }, [allWidgets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameIdsToFetchKey]); // Only depend on the stable string key, not array references
 
   useEffect(() => {
     if (!isAutoPlaying || games.length === 0) return;
