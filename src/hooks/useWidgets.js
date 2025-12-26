@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getCookie, setCookie } from '../utils/cookies'
 import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT } from '../constants/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from '../utils/grid'
+import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import ProfileWidget from '../components/ProfileWidget'
 import AboutWidget from '../components/AboutWidget'
@@ -14,6 +15,7 @@ import QuoteWidget from '../components/QuoteWidget'
 import TimeWidget from '../components/TimeWidget'
 import GitHubActivityWidget from '../components/GitHubActivityWidget'
 import ApiKeyWidget from '../components/ApiKeyWidget'
+import SingleGameWidget from '../components/SingleGameWidget'
 
 // Default homepage layout (from user's current setup)
 const DEFAULT_HOMEPAGE_LAYOUT = [
@@ -40,7 +42,8 @@ export const componentMap = {
   quote: QuoteWidget,
   time: TimeWidget,
   github: GitHubActivityWidget,
-  apikey: ApiKeyWidget
+  apikey: ApiKeyWidget,
+  'single-game': SingleGameWidget
 }
 
 export const useWidgets = (view = 'main') => {
@@ -66,8 +69,9 @@ export const useWidgets = (view = 'main') => {
           try {
             // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
             const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-            const component = componentMap[widget.type] || componentMap[widget.id]
+            
+            // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
+            const component = componentMap[widget.type]
             
             // Only include widgets with valid components
             if (!component) {
@@ -75,15 +79,27 @@ export const useWidgets = (view = 'main') => {
               return null
             }
             
+            // Initialize default settings for widgets that need them
+            let settings = widget.settings || {}
+            if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
+              settings = { gameId: 'pullbackracers' }
+            }
+            
+            // Preserve EXACT saved sizes and positions - don't modify them at all
+            // Only ensure they're valid numbers
+            const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
+            const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+            
             return {
               ...widget,
               x: constrainedPos.x,
               y: constrainedPos.y,
-              width: constrainedSize.width,
-              height: constrainedSize.height,
+              width: finalWidth,
+              height: finalHeight,
               component: component,
               locked: widget.locked || false,
-              pinned: widget.pinned || false
+              pinned: widget.pinned || false,
+              settings: settings
             }
           } catch (error) {
             console.error(`Error restoring widget ${widget.id}:`, error)
@@ -92,26 +108,7 @@ export const useWidgets = (view = 'main') => {
         })
         .filter(widget => widget !== null)
       
-      // Check if games widget exists in saved layout, if not add it
-      const hasGamesWidget = restoredWidgets.some(w => w.id === 'games' || w.type === 'games')
-      if (!hasGamesWidget) {
-        // Add games widget at a safe position
-        const gamesWidth = snapSizeToGrid(270)
-        const gamesHeight = snapSizeToGrid(180)
-        const gamesX = snapToGrid(20, GRID_OFFSET_X)
-        const gamesY = snapToGrid(20, GRID_OFFSET_Y)
-        
-        restoredWidgets.push({
-          id: 'games',
-          type: 'games',
-          x: gamesX,
-          y: gamesY,
-          width: gamesWidth,
-          height: gamesHeight,
-          component: GamesWidget
-        })
-      }
-      
+        // Don't auto-add widgets - respect what the user has saved
         return restoredWidgets
       }
       
@@ -124,8 +121,9 @@ export const useWidgets = (view = 'main') => {
           try {
             // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
             const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-            const component = componentMap[widget.type] || componentMap[widget.id]
+            
+            // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
+            const component = componentMap[widget.type]
             
             // Only include widgets with valid components
             if (!component) {
@@ -133,15 +131,27 @@ export const useWidgets = (view = 'main') => {
               return null
             }
             
+            // Initialize default settings for widgets that need them
+            let settings = widget.settings || {}
+            if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
+              settings = { gameId: 'pullbackracers' }
+            }
+            
+            // Preserve EXACT saved sizes and positions - don't modify them at all
+            // Only ensure they're valid numbers
+            const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
+            const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+            
             return {
               ...widget,
               x: constrainedPos.x,
               y: constrainedPos.y,
-              width: constrainedSize.width,
-              height: constrainedSize.height,
+              width: finalWidth,
+              height: finalHeight,
               component: component,
               locked: widget.locked || false,
-              pinned: widget.pinned || false
+              pinned: widget.pinned || false,
+              settings: settings
             }
           } catch (error) {
             console.error(`Error restoring widget ${widget.id}:`, error)
@@ -150,26 +160,7 @@ export const useWidgets = (view = 'main') => {
         })
         .filter(widget => widget !== null)
       
-        // Check if games widget exists in default layout, if not add it
-        const hasGamesWidget = restoredWidgets.some(w => w.id === 'games' || w.type === 'games')
-        if (!hasGamesWidget) {
-          // Add games widget at a safe position
-          const gamesWidth = snapSizeToGrid(270)
-          const gamesHeight = snapSizeToGrid(180)
-          const gamesX = snapToGrid(20, GRID_OFFSET_X)
-          const gamesY = snapToGrid(20, GRID_OFFSET_Y)
-          
-          restoredWidgets.push({
-            id: 'games',
-            type: 'games',
-            x: gamesX,
-            y: gamesY,
-            width: gamesWidth,
-            height: gamesHeight,
-            component: GamesWidget
-          })
-        }
-        
+        // Don't auto-add widgets - respect what the user has saved
         return restoredWidgets
       }
       
@@ -180,8 +171,9 @@ export const useWidgets = (view = 'main') => {
           try {
             // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
             const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-            const component = componentMap[widget.type] || componentMap[widget.id]
+            
+            // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
+            const component = componentMap[widget.type]
             
             // Only include widgets with valid components
             if (!component) {
@@ -189,15 +181,27 @@ export const useWidgets = (view = 'main') => {
               return null
             }
             
+            // Initialize default settings for widgets that need them
+            let settings = widget.settings || {}
+            if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
+              settings = { gameId: 'pullbackracers' }
+            }
+            
+            // Preserve EXACT saved sizes and positions - don't modify them at all
+            // Only ensure they're valid numbers
+            const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
+            const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+            
             return {
               ...widget,
               x: constrainedPos.x,
               y: constrainedPos.y,
-              width: constrainedSize.width,
-              height: constrainedSize.height,
+              width: finalWidth,
+              height: finalHeight,
               component: component,
               locked: widget.locked || false,
-              pinned: widget.pinned || false
+              pinned: widget.pinned || false,
+              settings: settings
             }
           } catch (error) {
             console.error(`Error creating widget ${widget.id}:`, error)
@@ -233,7 +237,7 @@ export const useWidgets = (view = 'main') => {
     }
     
     // Only save position and size data, not component references
-    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned }) => ({
+    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned, settings }) => ({
       id,
       type,
       x,
@@ -241,7 +245,8 @@ export const useWidgets = (view = 'main') => {
       width,
       height,
       locked: locked || false,
-      pinned: pinned || false
+      pinned: pinned || false,
+      settings: settings || {}
     }))
     setCookie(cookieName, layoutToSave)
   }, [widgets, cookieName, view])

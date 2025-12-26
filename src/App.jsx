@@ -7,7 +7,6 @@ import { useContextMenu } from './hooks/useContextMenu'
 import { useView } from './hooks/useView'
 import { useToast } from './hooks/useToast'
 import { usePageTransition } from './hooks/usePageTransition'
-import { useScreenFill } from './hooks/useScreenFill'
 import ContextMenu from './components/WidgetSystem/ContextMenu'
 import GridBackground from './components/WidgetSystem/GridBackground'
 import GridMask from './components/WidgetSystem/GridMask'
@@ -15,7 +14,7 @@ import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
 import Toaster from './components/Toaster'
 import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, GRID_SIZE } from './constants/grid'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from './utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, calculateCenterOffset } from './utils/grid'
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
 import { setCookie, getCookie } from './utils/cookies'
@@ -82,13 +81,6 @@ function App() {
   const autosortWidgets = useAutosort(widgets, setWidgets, centerOffset)
   const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu()
   const { toasts, showToast, removeToast } = useToast()
-  
-  // Screen fill hook - only enable when not dragging/resizing
-  useScreenFill(
-    widgets, 
-    setWidgets, 
-    !isDragging && !isResizing && currentView === 'main'
-  )
 
   // Toggle lock on widget (unpins if pinned)
   const toggleLockWidget = useCallback((widgetId) => {
@@ -120,9 +112,19 @@ function App() {
     closeContextMenu()
   }, [setWidgets, closeContextMenu])
 
+  // Update widget settings
+  const updateWidgetSettings = useCallback((widgetId, newSettings) => {
+    setWidgets(prev => prev.map(w => {
+      if (w.id === widgetId) {
+        return { ...w, settings: { ...(w.settings || {}), ...newSettings } }
+      }
+      return w
+    }))
+  }, [setWidgets])
+
   // Set current layout as default
   const setAsDefault = useCallback(() => {
-    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned }) => ({
+    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned, settings }) => ({
       id,
       type,
       x,
@@ -130,7 +132,8 @@ function App() {
       width,
       height,
       locked: locked || false,
-      pinned: pinned || false
+      pinned: pinned || false,
+      settings: settings || {}
     }))
     setCookie(COOKIE_NAME_DEFAULT, layoutToSave)
     showToast('Current layout saved as default!')
@@ -147,23 +150,36 @@ function App() {
           try {
             // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
             const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-            const component = componentMap[widget.type] || componentMap[widget.id]
+            
+            // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
+            const component = componentMap[widget.type]
             
             if (!component) {
               console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
               return null
             }
             
+            // Initialize default settings for widgets that need them
+            let settings = widget.settings || {}
+            if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
+              settings = { gameId: 'pullbackracers' }
+            }
+            
+            // Preserve EXACT saved sizes and positions - don't modify them at all
+            // Only ensure they're valid numbers
+            const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
+            const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+            
             return {
               ...widget,
               x: constrainedPos.x,
               y: constrainedPos.y,
-              width: constrainedSize.width,
-              height: constrainedSize.height,
+              width: finalWidth,
+              height: finalHeight,
               component: component,
               locked: widget.locked || false,
-              pinned: widget.pinned || false
+              pinned: widget.pinned || false,
+              settings: settings
             }
           } catch (error) {
             console.error(`Error restoring widget ${widget.id}:`, error)
@@ -172,25 +188,7 @@ function App() {
         })
         .filter(widget => widget !== null)
       
-      // Check if games widget exists in default layout, if not add it
-      const hasGamesWidget = restoredWidgets.some(w => w.id === 'games' || w.type === 'games')
-      if (!hasGamesWidget) {
-        const gamesWidth = snapSizeToGrid(270)
-        const gamesHeight = snapSizeToGrid(180)
-        const gamesX = snapToGrid(20, GRID_OFFSET_X)
-        const gamesY = snapToGrid(20, GRID_OFFSET_Y)
-        
-        restoredWidgets.push({
-          id: 'games',
-          type: 'games',
-          x: gamesX,
-          y: gamesY,
-          width: gamesWidth,
-          height: gamesHeight,
-          component: GamesWidget
-        })
-      }
-      
+      // Don't auto-add widgets - respect what the user has saved
       setWidgets(restoredWidgets)
       showToast('Layout reverted to default!')
       return
@@ -301,10 +299,34 @@ function App() {
     // Use flushSync to ensure the state update happens synchronously
     flushSync(() => {
       setWidgets(prev => {
-        const existingWidget = prev.find(w => (w.type === widgetType || w.id === widgetType))
-        if (existingWidget) {
-          console.warn(`Widget ${widgetType} already exists`)
-          return prev
+        // For widgets that allow multiple instances (like single-game), generate unique IDs
+        // For other widgets, check if they already exist
+        const allowsMultipleInstances = widgetType === 'single-game'
+        
+        if (!allowsMultipleInstances) {
+          const existingWidget = prev.find(w => (w.type === widgetType || w.id === widgetType))
+          if (existingWidget) {
+            console.warn(`Widget ${widgetType} already exists`)
+            return prev
+          }
+        }
+
+        // Generate unique ID for widgets that allow multiple instances
+        let widgetId = widgetType
+        if (allowsMultipleInstances) {
+          // Find the highest number used for this widget type
+          const existingWidgets = prev.filter(w => w.type === widgetType)
+          let maxNumber = 0
+          existingWidgets.forEach(w => {
+            const match = w.id.match(new RegExp(`^${widgetType}-(\\d+)$`))
+            if (match) {
+              const num = parseInt(match[1], 10)
+              if (num > maxNumber) {
+                maxNumber = num
+              }
+            }
+          })
+          widgetId = `${widgetType}-${maxNumber + 1}`
         }
 
         // Get minimum size for widget
@@ -349,9 +371,15 @@ function App() {
           null // No widget to exclude
         )
 
+        // Initialize settings based on widget type
+        let settings = {}
+        if (widgetType === 'single-game') {
+          settings = { gameId: 'pullbackracers' } // Default to first game
+        }
+
         // Create new widget - ensure all properties are set and create a new object
         const newWidget = {
-          id: widgetType,
+          id: widgetId,
           type: widgetType,
           x: validPosition.x,
           y: validPosition.y,
@@ -359,7 +387,8 @@ function App() {
           height: height,
           component: Component,
           locked: false,
-          pinned: false
+          pinned: false,
+          settings: settings
         }
 
         // Create a new array with the new widget to ensure React detects the change
@@ -374,7 +403,7 @@ function App() {
     
     // Close the context menu after state update
     closeContextMenu()
-  }, [setWidgets, closeContextMenu, animateWidgetsIn])
+  }, [setWidgets, closeContextMenu, animateWidgetsIn, centerOffset])
 
   // Handle mouse down (only for left-click drag, right-click handled by contextmenu)
   const handleMouseDownWithContext = (e, id) => {
@@ -551,6 +580,7 @@ function App() {
         wasLastInteractionDrag={wasLastInteractionDrag}
         onGameClick={navigateToGameDetail}
         centerOffset={centerOffset}
+        onUpdateWidgetSettings={updateWidgetSettings}
       />
       <Toaster toasts={toasts} onRemove={removeToast} />
     </div>

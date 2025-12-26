@@ -25,12 +25,15 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
   // Get available widget types
   const availableWidgetTypes = Object.keys(componentMap)
   
+  // Widgets that allow multiple instances
+  const allowsMultipleInstances = (type) => type === 'single-game'
+  
   // Get widgets currently on the grid
   const existingWidgetTypes = new Set(widgets.map(w => w.type || w.id))
   
-  // Find missing widgets
+  // Find missing widgets (or widgets that allow multiple instances)
   const missingWidgets = availableWidgetTypes
-    .filter(type => !existingWidgetTypes.has(type))
+    .filter(type => allowsMultipleInstances(type) || !existingWidgetTypes.has(type))
     .map(type => ({
       type,
       name: WIDGET_INFO[type]?.name || type,

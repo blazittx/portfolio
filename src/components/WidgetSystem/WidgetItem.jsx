@@ -63,7 +63,8 @@ export default function WidgetItem({
   isDraggingOverSwapTarget,
   onMouseDown,
   wasLastInteractionDrag,
-  onGameClick
+  onGameClick,
+  onUpdateWidgetSettings
 }) {
   const widgetRef = useRef(null)
   const hasBeenAnimatedRef = useRef(false)
@@ -321,6 +322,10 @@ export default function WidgetItem({
             widgetId={widget.id}
             wasLastInteractionDrag={wasLastInteractionDrag}
             onGameClick={onGameClick}
+            widget={{
+              ...widget,
+              onSettingsChange: onUpdateWidgetSettings ? (settings) => onUpdateWidgetSettings(widget.id, settings) : undefined
+            }}
           />
         </WidgetErrorBoundary>
       </div>

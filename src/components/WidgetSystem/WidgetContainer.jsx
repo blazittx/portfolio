@@ -12,7 +12,8 @@ export default function WidgetContainer({
   onMouseDown,
   wasLastInteractionDrag,
   onGameClick,
-  centerOffset = { x: 0, y: 0 }
+  centerOffset = { x: 0, y: 0 },
+  onUpdateWidgetSettings
 }) {
   // Ensure widgets is an array and filter out invalid widgets
   const validWidgets = Array.isArray(widgets) 
@@ -54,6 +55,7 @@ export default function WidgetContainer({
               onMouseDown={onMouseDown}
               wasLastInteractionDrag={wasLastInteractionDrag}
               onGameClick={onGameClick}
+              onUpdateWidgetSettings={onUpdateWidgetSettings}
             />
           )
         } catch (error) {
