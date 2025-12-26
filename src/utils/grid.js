@@ -21,7 +21,22 @@ export const snapSizeToGrid = (size) => {
 
 // Constrain widget position to usable grid area boundaries
 // centerOffset is optional - if not provided, uses { x: 0, y: 0 }
-export const constrainToViewport = (x, y, width, height, centerOffset = { x: 0, y: 0 }) => {
+// enforceBounds: if false, only ensures widget doesn't go completely outside viewport (for loading saved layouts)
+export const constrainToViewport = (x, y, width, height, centerOffset = { x: 0, y: 0 }, enforceBounds = true) => {
+  if (!enforceBounds) {
+    // Just ensure widget is visible on screen (for loading saved layouts)
+    const minX = 0
+    const minY = 0
+    const maxX = window.innerWidth - width
+    const maxY = window.innerHeight - height
+    
+    return {
+      x: Math.max(minX, Math.min(maxX, x)),
+      y: Math.max(minY, Math.min(maxY, y))
+    }
+  }
+  
+  // Enforce usable area bounds (for drag/resize operations)
   const bounds = getUsableAreaBounds(centerOffset)
   const maxX = bounds.maxX - width
   const maxY = bounds.maxY - height

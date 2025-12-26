@@ -64,8 +64,9 @@ export const useWidgets = (view = 'main') => {
         const restoredWidgets = savedLayout
         .map(widget => {
           try {
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+            // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
+            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
             const component = componentMap[widget.type] || componentMap[widget.id]
             
             // Only include widgets with valid components
@@ -121,8 +122,9 @@ export const useWidgets = (view = 'main') => {
         const restoredWidgets = defaultLayout
         .map(widget => {
           try {
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+            // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
+            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
             const component = componentMap[widget.type] || componentMap[widget.id]
             
             // Only include widgets with valid components
@@ -176,8 +178,9 @@ export const useWidgets = (view = 'main') => {
       return DEFAULT_HOMEPAGE_LAYOUT
         .map(widget => {
           try {
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+            // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
+            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
             const component = componentMap[widget.type] || componentMap[widget.id]
             
             // Only include widgets with valid components

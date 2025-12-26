@@ -130,8 +130,9 @@ function App() {
       const restoredWidgets = defaultLayout
         .map(widget => {
           try {
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, centerOffset)
-            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, centerOffset)
+            // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
+            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
             const component = componentMap[widget.type] || componentMap[widget.id]
             
             if (!component) {
@@ -521,7 +522,7 @@ function App() {
       
       <GridBackground centerOffset={centerOffset} />
       
-      <GridMask widgets={widgets} centerOffset={centerOffset} isDragging={isDragging} isResizing={isResizing} />
+      <GridMask widgets={widgets} centerOffset={centerOffset} isDragging={isDragging} isResizing={isResizing} dragStateRef={dragStateRef} />
       
       <WidgetContainer
         widgets={validWidgets}

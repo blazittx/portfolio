@@ -112,8 +112,9 @@ export default function GameDetailView({ game, onBack }) {
       // Restore from saved layout
       const restoredWidgets = savedLayout.map(widget => {
         try {
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, centerOffset)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, centerOffset)
+          // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
+          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
           
           // Map widget types to components
           let component = null
@@ -157,7 +158,7 @@ export default function GameDetailView({ game, onBack }) {
         const backButtonHeight = snapSizeToGrid(60)
         const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
         const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, centerOffset)
+        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
         
         restoredWidgets.unshift({
           id: 'back-button',
@@ -189,8 +190,9 @@ export default function GameDetailView({ game, onBack }) {
       // Restore from default layout
       const restoredWidgets = defaultLayout.map(widget => {
         try {
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, centerOffset)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, centerOffset)
+          // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
+          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
           
           // Map widget types to components
           let component = null
@@ -234,7 +236,7 @@ export default function GameDetailView({ game, onBack }) {
         const backButtonHeight = snapSizeToGrid(60)
         const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
         const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, centerOffset)
+        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
         
         restoredWidgets.unshift({
           id: 'back-button',
@@ -394,8 +396,9 @@ export default function GameDetailView({ game, onBack }) {
       // Restore from default layout
       const restoredWidgets = defaultLayout.map(widget => {
         try {
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, centerOffset)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, centerOffset)
+          // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
+          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
           
           // Map widget types to components
           let component = null
@@ -439,7 +442,7 @@ export default function GameDetailView({ game, onBack }) {
         const backButtonHeight = snapSizeToGrid(60)
         const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
         const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, centerOffset)
+        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
         
         restoredWidgets.unshift({
           id: 'back-button',
@@ -470,31 +473,31 @@ export default function GameDetailView({ game, onBack }) {
     const backButtonHeight = snapSizeToGrid(60)
     const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
     const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-    const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight)
+    const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
 
     const gameInfoX = snapToGrid(constrainedBackButton.x + backButtonWidth + GRID_SIZE, GRID_OFFSET_X)
     const gameInfoY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
     const gameInfoWidth = snapSizeToGrid(250)
     const gameInfoHeight = snapSizeToGrid(180)
-    const constrainedGameInfo = constrainToViewport(gameInfoX, gameInfoY, gameInfoWidth, gameInfoHeight)
+    const constrainedGameInfo = constrainToViewport(gameInfoX, gameInfoY, gameInfoWidth, gameInfoHeight, { x: 0, y: 0 }, false)
 
     const gameDescriptionX = snapToGrid(constrainedGameInfo.x + gameInfoWidth + GRID_SIZE, GRID_OFFSET_X)
     const gameDescriptionY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
     const gameDescriptionWidth = snapSizeToGrid(300)
     const gameDescriptionHeight = snapSizeToGrid(250)
-    const constrainedGameDescription = constrainToViewport(gameDescriptionX, gameDescriptionY, gameDescriptionWidth, gameDescriptionHeight)
+    const constrainedGameDescription = constrainToViewport(gameDescriptionX, gameDescriptionY, gameDescriptionWidth, gameDescriptionHeight, { x: 0, y: 0 }, false)
 
     const gameImageX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
     const gameImageY = snapToGrid(constrainedBackButton.y + backButtonHeight + GRID_SIZE, GRID_OFFSET_Y)
     const gameImageWidth = snapSizeToGrid(400)
     const gameImageHeight = snapSizeToGrid(300)
-    const constrainedGameImage = constrainToViewport(gameImageX, gameImageY, gameImageWidth, gameImageHeight)
+    const constrainedGameImage = constrainToViewport(gameImageX, gameImageY, gameImageWidth, gameImageHeight, { x: 0, y: 0 }, false)
 
     const gameDetailsX = snapToGrid(constrainedGameImage.x + gameImageWidth + GRID_SIZE, GRID_OFFSET_X)
     const gameDetailsY = snapToGrid(constrainedGameImage.y, GRID_OFFSET_Y)
     const gameDetailsWidth = snapSizeToGrid(200)
     const gameDetailsHeight = snapSizeToGrid(200)
-    const constrainedGameDetails = constrainToViewport(gameDetailsX, gameDetailsY, gameDetailsWidth, gameDetailsHeight)
+    const constrainedGameDetails = constrainToViewport(gameDetailsX, gameDetailsY, gameDetailsWidth, gameDetailsHeight, { x: 0, y: 0 }, false)
 
     const defaultWidgets = [
       {
@@ -613,7 +616,7 @@ export default function GameDetailView({ game, onBack }) {
       
       <GridBackground centerOffset={centerOffset} />
       
-      <GridMask widgets={widgets} centerOffset={centerOffset} isDragging={isDragging} isResizing={isResizing} />
+      <GridMask widgets={widgets} centerOffset={centerOffset} isDragging={isDragging} isResizing={isResizing} dragStateRef={dragStateRef} />
       
       <WidgetContainer
         widgets={validWidgets}
