@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from '../utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, snapToGridConstrained } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { hasCollisionWithOthers, findNearestValidPosition, findValidSize } from '../utils/collision'
@@ -240,10 +240,10 @@ export const useDragAndResize = (widgets, setWidgets) => {
           const finalWidth = constrainedSize.width
           const finalHeight = constrainedSize.height
           
-          // Constrain position to viewport
-          const constrainedPos = constrainToViewport(finalX, finalY, finalWidth, finalHeight)
-          finalX = constrainedPos.x
-          finalY = constrainedPos.y
+          // Constrain position to viewport and ensure it's on grid
+          const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y)
+          finalX = snappedPos.x
+          finalY = snappedPos.y
           
           // Show collision/shake animation if size was corrected
           if (needsSizeCorrection) {
@@ -301,10 +301,10 @@ export const useDragAndResize = (widgets, setWidgets) => {
               adjustedY = snapToGrid(adjustedY, GRID_OFFSET_Y)
             }
             
-            // Constrain adjusted position to viewport
-            const constrainedAdjustedPos = constrainToViewport(adjustedX, adjustedY, validSize.width, validSize.height)
-            adjustedX = constrainedAdjustedPos.x
-            adjustedY = constrainedAdjustedPos.y
+            // Constrain adjusted position to viewport and ensure it's on grid
+            const snappedAdjustedPos = snapToGridConstrained(adjustedX, adjustedY, validSize.width, validSize.height, GRID_OFFSET_X, GRID_OFFSET_Y)
+            adjustedX = snappedAdjustedPos.x
+            adjustedY = snappedAdjustedPos.y
             
             // Check if adjusted position still has collision
             const adjustedRect = {
@@ -386,13 +386,10 @@ export const useDragAndResize = (widgets, setWidgets) => {
       setWidgets(prev => {
         const widget = prev.find(w => w.id === activeId)
         if (widget) {
-          let snappedX = snapToGrid(widget.x, GRID_OFFSET_X)
-          let snappedY = snapToGrid(widget.y, GRID_OFFSET_Y)
-          
-          // Constrain to viewport
-          const constrained = constrainToViewport(snappedX, snappedY, widget.width, widget.height)
-          snappedX = constrained.x
-          snappedY = constrained.y
+          // Use snapToGridConstrained to ensure widget stays on grid and within viewport
+          const snapped = snapToGridConstrained(widget.x, widget.y, widget.width, widget.height, GRID_OFFSET_X, GRID_OFFSET_Y)
+          let snappedX = snapped.x
+          let snappedY = snapped.y
           
           // Check for collisions
           const snappedRect = {

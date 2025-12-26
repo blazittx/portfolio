@@ -17,7 +17,7 @@ const LockIcon = ({ size = 16, color = 'currentColor' }) => (
   </svg>
 )
 
-export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onSetAsDefault, onClose }) {
+export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onSetAsDefault, onRevertToDefault, onClose }) {
   if (!contextMenu) return null
 
   const widget = contextMenu.widgetId ? widgets.find(w => w.id === contextMenu.widgetId) : null
@@ -282,6 +282,37 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
         }}
       >
         ⭐ Set as Default
+      </button>
+      <button
+        style={{
+          width: '100%',
+          padding: '0.5rem 1rem',
+          background: 'none',
+          border: 'none',
+          color: 'canvasText',
+          fontSize: '0.875rem',
+          textAlign: 'left',
+          cursor: 'pointer',
+          transition: 'background 0.2s',
+          fontFamily: 'inherit',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}
+        onClick={() => {
+          if (onRevertToDefault) {
+            onRevertToDefault()
+          }
+          onClose()
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'color-mix(in hsl, canvasText, transparent 90%)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'none'
+        }}
+      >
+        ↺ Revert to Default
       </button>
     </div>
   )

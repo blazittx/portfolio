@@ -31,6 +31,7 @@ export const getWidgetMinSize = (widgetType) => {
     motd: { width: 3, height: 2 },
     quote: { width: 3, height: 3 },
     time: { width: 3, height: 2 },
+    github: { width: 4, height: 3 },
   };
 
   const gridUnits = minSizesInGridUnits[widgetType] || { width: 2, height: 2 };

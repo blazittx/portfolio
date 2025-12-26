@@ -20,7 +20,7 @@ document.documentElement.style.setProperty('overflow', 'hidden')
 document.body.style.setProperty('height', '100vh')
 document.body.style.setProperty('width', '100vw')
 document.body.style.setProperty('overflow', 'hidden')
-document.body.style.setProperty('font-family', 'system-ui, -apple-system, sans-serif')
+document.body.style.setProperty('font-family', '"JetBrains Mono", monospace')
 
 // Apply box-sizing to all elements
 const style = document.createElement('style')

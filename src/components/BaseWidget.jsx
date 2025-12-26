@@ -20,6 +20,21 @@ export default function BaseWidget({ children, className = '', padding = '4px 0 
             transform: translateY(0);
           }
         }
+        /* Prevent text selection in widgets */
+        [data-base-widget], [data-base-widget] * {
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+        }
+        /* Allow text selection in input and textarea elements */
+        [data-base-widget] input,
+        [data-base-widget] textarea {
+          user-select: text;
+          -webkit-user-select: text;
+          -moz-user-select: text;
+          -ms-user-select: text;
+        }
         /* Custom scrollbar styling */
         [data-base-widget] * {
           scrollbar-width: thin;

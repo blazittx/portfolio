@@ -9,6 +9,7 @@ export const WIDGET_INFO = {
   motd: { name: 'Message of the Day', icon: '💬' },
   quote: { name: 'Quote', icon: '💭' },
   time: { name: 'Time', icon: '🕐' },
+  github: { name: 'GitHub Activity', icon: '🐙' },
 }
 
 export const getWidgetDisplayName = (widgetType) => {

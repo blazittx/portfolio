@@ -27,6 +27,8 @@ export default function GameDetailView({ game, onBack }) {
   const previousGameIdRef = useRef(null)
   const { animateInitial, animateWidgetsIn } = usePageTransition()
   const isInitialMountRef = useRef(true)
+  const previousWidgetsLengthRef = useRef(0)
+  const previousWidgetIdsRef = useRef([])
   
   const {
     isDragging,
@@ -333,14 +335,31 @@ export default function GameDetailView({ game, onBack }) {
   useEffect(() => {
     if (isInitialMountRef.current && widgets.length > 0 && initializedRef.current) {
       isInitialMountRef.current = false
+      previousWidgetsLengthRef.current = widgets.length
+      previousWidgetIdsRef.current = widgets.map(w => w.id)
       setTimeout(() => {
         animateInitial()
       }, 100)
     } else if (widgets.length > 0 && initializedRef.current && !isInitialMountRef.current) {
-      // Widgets updated, animate them in
-      setTimeout(() => {
-        animateWidgetsIn()
-      }, 50)
+      // Only animate if widgets were actually added/removed (length or IDs changed)
+      // Don't animate on position/component updates
+      const currentWidgetIds = widgets.map(w => w.id).sort()
+      const previousWidgetIds = previousWidgetIdsRef.current.sort()
+      const lengthChanged = widgets.length !== previousWidgetsLengthRef.current
+      const idsChanged = JSON.stringify(currentWidgetIds) !== JSON.stringify(previousWidgetIds)
+      
+      if (lengthChanged || idsChanged) {
+        // Widgets were added or removed, animate them in
+        previousWidgetsLengthRef.current = widgets.length
+        previousWidgetIdsRef.current = widgets.map(w => w.id)
+        setTimeout(() => {
+          animateWidgetsIn()
+        }, 50)
+      } else {
+        // Just update the refs without animating
+        previousWidgetsLengthRef.current = widgets.length
+        previousWidgetIdsRef.current = widgets.map(w => w.id)
+      }
     }
   }, [widgets, animateInitial, animateWidgetsIn])
 
@@ -392,6 +411,178 @@ export default function GameDetailView({ game, onBack }) {
     showToast('Current layout saved as default!')
   }, [widgets, showToast])
 
+  // Revert to default layout
+  const revertToDefault = useCallback(() => {
+    // Try to load default layout from cookie
+    const defaultLayout = getCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL)
+    if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
+      // Restore from default layout
+      const restoredWidgets = defaultLayout.map(widget => {
+        try {
+          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
+          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+          
+          // Map widget types to components
+          let component = null
+          if (widget.id === 'back-button' || widget.type === 'back-button') {
+            component = () => <BackButtonWidget onBack={onBack} />
+          } else if (widget.id === 'game-info' || widget.type === 'game-info') {
+            component = () => <GameInfoWidget game={game} />
+          } else if (widget.id === 'game-description' || widget.type === 'game-description') {
+            component = () => <GameDescriptionWidget game={game} />
+          } else if (widget.id === 'game-image' || widget.type === 'game-image') {
+            component = () => <GameImageWidget game={game} />
+          } else if (widget.id === 'game-details' || widget.type === 'game-details') {
+            component = () => <GameDetailsWidget game={game} />
+          }
+          
+          if (!component) {
+            console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+            return null
+          }
+          
+          return {
+            ...widget,
+            x: constrainedPos.x,
+            y: constrainedPos.y,
+            width: constrainedSize.width,
+            height: constrainedSize.height,
+            component: component,
+            locked: widget.locked || false,
+            pinned: widget.pinned || false
+          }
+        } catch (error) {
+          console.error(`Error restoring widget ${widget.id}:`, error)
+          return null
+        }
+      }).filter(widget => widget !== null)
+      
+      // Ensure back button exists and is locked
+      const hasBackButton = restoredWidgets.some(w => w.id === 'back-button')
+      if (!hasBackButton) {
+        const backButtonWidth = snapSizeToGrid(120)
+        const backButtonHeight = snapSizeToGrid(60)
+        const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
+        const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
+        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight)
+        
+        restoredWidgets.unshift({
+          id: 'back-button',
+          type: 'back-button',
+          x: constrainedBackButton.x,
+          y: constrainedBackButton.y,
+          width: backButtonWidth,
+          height: backButtonHeight,
+          component: () => <BackButtonWidget onBack={onBack} />,
+          locked: true,
+          pinned: false
+        })
+      } else {
+        const backButton = restoredWidgets.find(w => w.id === 'back-button')
+        if (backButton) {
+          backButton.locked = true
+          backButton.component = () => <BackButtonWidget onBack={onBack} />
+        }
+      }
+      
+      setWidgets(restoredWidgets)
+      showToast('Layout reverted to default!')
+      return
+    }
+    
+    // If no default layout, use hardcoded default
+    const backButtonWidth = snapSizeToGrid(120)
+    const backButtonHeight = snapSizeToGrid(60)
+    const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
+    const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
+    const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight)
+
+    const gameInfoX = snapToGrid(constrainedBackButton.x + backButtonWidth + GRID_SIZE, GRID_OFFSET_X)
+    const gameInfoY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
+    const gameInfoWidth = snapSizeToGrid(250)
+    const gameInfoHeight = snapSizeToGrid(180)
+    const constrainedGameInfo = constrainToViewport(gameInfoX, gameInfoY, gameInfoWidth, gameInfoHeight)
+
+    const gameDescriptionX = snapToGrid(constrainedGameInfo.x + gameInfoWidth + GRID_SIZE, GRID_OFFSET_X)
+    const gameDescriptionY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
+    const gameDescriptionWidth = snapSizeToGrid(300)
+    const gameDescriptionHeight = snapSizeToGrid(250)
+    const constrainedGameDescription = constrainToViewport(gameDescriptionX, gameDescriptionY, gameDescriptionWidth, gameDescriptionHeight)
+
+    const gameImageX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
+    const gameImageY = snapToGrid(constrainedBackButton.y + backButtonHeight + GRID_SIZE, GRID_OFFSET_Y)
+    const gameImageWidth = snapSizeToGrid(400)
+    const gameImageHeight = snapSizeToGrid(300)
+    const constrainedGameImage = constrainToViewport(gameImageX, gameImageY, gameImageWidth, gameImageHeight)
+
+    const gameDetailsX = snapToGrid(constrainedGameImage.x + gameImageWidth + GRID_SIZE, GRID_OFFSET_X)
+    const gameDetailsY = snapToGrid(constrainedGameImage.y, GRID_OFFSET_Y)
+    const gameDetailsWidth = snapSizeToGrid(200)
+    const gameDetailsHeight = snapSizeToGrid(200)
+    const constrainedGameDetails = constrainToViewport(gameDetailsX, gameDetailsY, gameDetailsWidth, gameDetailsHeight)
+
+    const defaultWidgets = [
+      {
+        id: 'back-button',
+        type: 'back-button',
+        x: constrainedBackButton.x,
+        y: constrainedBackButton.y,
+        width: backButtonWidth,
+        height: backButtonHeight,
+        component: () => <BackButtonWidget onBack={onBack} />,
+        locked: true,
+        pinned: false
+      },
+      {
+        id: 'game-info',
+        type: 'game-info',
+        x: constrainedGameInfo.x,
+        y: constrainedGameInfo.y,
+        width: gameInfoWidth,
+        height: gameInfoHeight,
+        component: () => <GameInfoWidget game={game} />,
+        locked: false,
+        pinned: false
+      },
+      {
+        id: 'game-description',
+        type: 'game-description',
+        x: constrainedGameDescription.x,
+        y: constrainedGameDescription.y,
+        width: gameDescriptionWidth,
+        height: gameDescriptionHeight,
+        component: () => <GameDescriptionWidget game={game} />,
+        locked: false,
+        pinned: false
+      },
+      {
+        id: 'game-image',
+        type: 'game-image',
+        x: constrainedGameImage.x,
+        y: constrainedGameImage.y,
+        width: gameImageWidth,
+        height: gameImageHeight,
+        component: () => <GameImageWidget game={game} />,
+        locked: false,
+        pinned: false
+      },
+      {
+        id: 'game-details',
+        type: 'game-details',
+        x: constrainedGameDetails.x,
+        y: constrainedGameDetails.y,
+        width: gameDetailsWidth,
+        height: gameDetailsHeight,
+        component: () => <GameDetailsWidget game={game} />,
+        locked: false,
+        pinned: false
+      }
+    ]
+
+    setWidgets(defaultWidgets)
+    showToast('Layout reverted to default!')
+  }, [setWidgets, showToast, game, onBack])
+
   const handleMouseDownWithContext = (e, id) => {
     if (e.button !== 2) {
       handleMouseDown(e, id)
@@ -441,6 +632,7 @@ export default function GameDetailView({ game, onBack }) {
         onSort={autosortWidgets}
         onAddWidget={() => {}}
         onSetAsDefault={setAsDefault}
+        onRevertToDefault={revertToDefault}
         onClose={closeContextMenu}
       />
       

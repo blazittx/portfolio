@@ -8,12 +8,14 @@ export default function ProfileWidget() {
   useEffect(() => {
     const updateSizeClass = () => {
       if (!containerRef.current) return
-      const { height } = containerRef.current.getBoundingClientRect()
+      const { width, height } = containerRef.current.getBoundingClientRect()
       const isShort = height < 150
       const isVeryShort = height < 100
+      const isNarrow = width < 200
       let classes = []
       if (isShort) classes.push('short')
       if (isVeryShort) classes.push('very-short')
+      if (isNarrow) classes.push('narrow')
       setSizeClass(classes.join(' '))
     }
     updateSizeClass()
@@ -24,60 +26,74 @@ export default function ProfileWidget() {
     return () => resizeObserver.disconnect()
   }, [])
 
-  const getHeaderStyle = () => {
-    const base = {
-      marginBottom: 'auto',
-      flexShrink: 0,
-      minHeight: 'fit-content',
-      paddingRight: '4px'
+  const getContentStyle = () => {
+    return {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+      textAlign: 'left',
+      width: '100%',
+      height: '100%',
+      gap: '0.5rem'
     }
-    if (sizeClass.includes('short') || sizeClass.includes('very-short')) {
-      base.marginBottom = sizeClass.includes('very-short') ? '0.5rem' : '0.75rem'
-    }
-    return base
   }
 
   const getH2Style = () => {
     const base = {
-      fontSize: '1.75rem',
+      fontSize: '2.25rem',
       fontWeight: 600,
-      margin: '0 0 0.5rem 0',
+      margin: 0,
       letterSpacing: '-0.02em',
       color: 'canvasText',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap'
+      lineHeight: 1.2
+    }
+    
+    if (sizeClass.includes('narrow')) {
+      base.fontSize = '1.75rem'
     }
     if (sizeClass.includes('short')) {
-      base.fontSize = '1.5rem'
-      base.marginBottom = '0.25rem'
+      base.fontSize = '1.875rem'
+      if (sizeClass.includes('narrow')) {
+        base.fontSize = '1.5rem'
+      }
     }
     if (sizeClass.includes('very-short')) {
-      base.fontSize = '1.25rem'
+      base.fontSize = '1.5rem'
+      if (sizeClass.includes('narrow')) {
+        base.fontSize = '1.25rem'
+      }
     }
+    
     return base
   }
 
   const getLabelStyle = () => {
     const base = {
-      fontSize: '0.875rem',
-      opacity: 0.5,
+      fontSize: '1rem',
+      opacity: 0.6,
       color: 'canvasText',
       textTransform: 'uppercase',
-      letterSpacing: '0.05em',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap'
+      letterSpacing: '0.1em',
+      lineHeight: 1.4
+    }
+    
+    if (sizeClass.includes('narrow')) {
+      base.fontSize = '0.875rem'
     }
     if (sizeClass.includes('short') || sizeClass.includes('very-short')) {
-      base.fontSize = '0.75rem'
+      base.fontSize = '0.875rem'
+      if (sizeClass.includes('narrow')) {
+        base.fontSize = '0.75rem'
+      }
     }
+    
     return base
   }
 
   return (
     <BaseWidget padding="1.25rem">
-      <div ref={containerRef} style={getHeaderStyle()}>
+      <div ref={containerRef} style={getContentStyle()}>
         <h2 style={getH2Style()}>Doruk Sasmaz</h2>
         <span style={getLabelStyle()}>Game Programmer</span>
       </div>

@@ -43,3 +43,40 @@ export const constrainSizeToViewport = (x, y, width, height, minWidth = 0, minHe
   }
 }
 
+// Snap to grid while ensuring the result stays within viewport boundaries
+// This prevents widgets from getting stuck at edges
+export const snapToGridConstrained = (x, y, width, height, offsetX, offsetY) => {
+  // Calculate viewport boundaries
+  const minX = offsetX + WIDGET_PADDING
+  const minY = offsetY + WIDGET_PADDING
+  const maxX = window.innerWidth - width - WIDGET_PADDING
+  const maxY = window.innerHeight - height - WIDGET_PADDING
+  
+  // First, constrain to viewport
+  const constrained = constrainToViewport(x, y, width, height)
+  
+  // Snap to grid
+  let snappedX = snapToGrid(constrained.x, offsetX)
+  let snappedY = snapToGrid(constrained.y, offsetY)
+  
+  // Re-constrain after snapping (snapping might push us outside)
+  const reConstrained = constrainToViewport(snappedX, snappedY, width, height)
+  
+  // If the re-constrained position is different from snapped, find nearest grid position within bounds
+  if (reConstrained.x !== snappedX || reConstrained.y !== snappedY) {
+    // Find the largest grid-aligned position that fits within maxX/maxY
+    // This ensures we snap to a valid grid position that's still within viewport
+    const adjustedX = reConstrained.x - offsetX - WIDGET_PADDING
+    const gridUnitsX = Math.floor(adjustedX / GRID_SIZE)
+    snappedX = Math.min(maxX, gridUnitsX * GRID_SIZE + offsetX + WIDGET_PADDING)
+    snappedX = Math.max(minX, snappedX) // Ensure it's not less than minX
+    
+    const adjustedY = reConstrained.y - offsetY - WIDGET_PADDING
+    const gridUnitsY = Math.floor(adjustedY / GRID_SIZE)
+    snappedY = Math.min(maxY, gridUnitsY * GRID_SIZE + offsetY + WIDGET_PADDING)
+    snappedY = Math.max(minY, snappedY) // Ensure it's not less than minY
+  }
+  
+  return { x: snappedX, y: snappedY }
+}
+

@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useMemo, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { useWidgets, componentMap } from './hooks/useWidgets'
 import { useDragAndResize } from './hooks/useDragAndResize'
 import { useAutosort } from './hooks/useAutosort'
@@ -12,10 +13,16 @@ import GridMask from './components/WidgetSystem/GridMask'
 import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
 import Toaster from './components/Toaster'
-import { getWidgetMinSize, COOKIE_NAME_DEFAULT } from './constants/grid'
-import { snapToGrid, snapSizeToGrid, constrainToViewport } from './utils/grid'
+import { getWidgetMinSize, COOKIE_NAME_DEFAULT, GRID_SIZE } from './constants/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from './utils/grid'
+import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
-import { setCookie } from './utils/cookies'
+import { setCookie, getCookie } from './utils/cookies'
+import ProfileWidget from './components/ProfileWidget'
+import AboutWidget from './components/AboutWidget'
+import SkillsWidget from './components/SkillsWidget'
+import ContactWidget from './components/ContactWidget'
+import GamesWidget from './components/GamesWidget'
 
 function App() {
   const { currentView, selectedGame, navigateToGameDetail: originalNavigateToGameDetail, navigateToMain: originalNavigateToMain, isLoading } = useView()
@@ -88,6 +95,159 @@ function App() {
     showToast('Current layout saved as default!')
   }, [widgets, showToast])
 
+  // Revert to default layout
+  const revertToDefault = useCallback(() => {
+    // Try to load default layout from cookie
+    const defaultLayout = getCookie(COOKIE_NAME_DEFAULT)
+    if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
+      // Restore from default layout
+      const restoredWidgets = defaultLayout
+        .map(widget => {
+          try {
+            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
+            const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
+            const component = componentMap[widget.type] || componentMap[widget.id]
+            
+            if (!component) {
+              console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+              return null
+            }
+            
+            return {
+              ...widget,
+              x: constrainedPos.x,
+              y: constrainedPos.y,
+              width: constrainedSize.width,
+              height: constrainedSize.height,
+              component: component,
+              locked: widget.locked || false,
+              pinned: widget.pinned || false
+            }
+          } catch (error) {
+            console.error(`Error restoring widget ${widget.id}:`, error)
+            return null
+          }
+        })
+        .filter(widget => widget !== null)
+      
+      // Check if games widget exists in default layout, if not add it
+      const hasGamesWidget = restoredWidgets.some(w => w.id === 'games' || w.type === 'games')
+      if (!hasGamesWidget) {
+        const gamesWidth = snapSizeToGrid(270)
+        const gamesHeight = snapSizeToGrid(180)
+        const gamesX = snapToGrid(20, GRID_OFFSET_X)
+        const gamesY = snapToGrid(20, GRID_OFFSET_Y)
+        
+        restoredWidgets.push({
+          id: 'games',
+          type: 'games',
+          x: gamesX,
+          y: gamesY,
+          width: gamesWidth,
+          height: gamesHeight,
+          component: GamesWidget
+        })
+      }
+      
+      setWidgets(restoredWidgets)
+      showToast('Layout reverted to default!')
+      return
+    }
+    
+    // If no default layout, use hardcoded default
+    const baseX = snapToGrid(100, GRID_OFFSET_X)
+    const baseY = snapToGrid(100, GRID_OFFSET_Y)
+    
+    const profileSize = getWidgetMinSize('profile')
+    const profileWidth = snapSizeToGrid(profileSize.width)
+    const profileHeight = snapSizeToGrid(profileSize.height)
+    
+    const aboutSize = getWidgetMinSize('about')
+    const aboutWidth = snapSizeToGrid(aboutSize.width)
+    const aboutHeight = snapSizeToGrid(aboutSize.height)
+    
+    const skillsSize = getWidgetMinSize('skills')
+    const skillsWidth = snapSizeToGrid(skillsSize.width)
+    const skillsHeight = snapSizeToGrid(skillsSize.height)
+    
+    const contactSize = getWidgetMinSize('contact')
+    const contactWidth = snapSizeToGrid(contactSize.width)
+    const contactHeight = snapSizeToGrid(contactSize.height)
+    
+    const gamesSize = getWidgetMinSize('games')
+    const gamesWidth = snapSizeToGrid(gamesSize.width)
+    const gamesHeight = snapSizeToGrid(gamesSize.height)
+    
+    const aboutX = baseX + profileWidth + GRID_SIZE
+    const aboutXSnapped = snapToGrid(aboutX, GRID_OFFSET_X)
+    
+    const skillsY = baseY + profileHeight + GRID_SIZE
+    const skillsYSnapped = snapToGrid(skillsY, GRID_OFFSET_Y)
+    
+    const skillsX = aboutXSnapped
+    const contactX = skillsX
+    const contactY = skillsYSnapped + skillsHeight + GRID_SIZE
+    const contactYSnapped = snapToGrid(contactY, GRID_OFFSET_Y)
+    
+    const gamesX = baseX
+    const gamesXSnapped = snapToGrid(gamesX, GRID_OFFSET_X)
+    const gamesY = skillsYSnapped
+    const gamesYSnapped = snapToGrid(gamesY, GRID_OFFSET_Y)
+    
+    const defaultWidgets = [
+      {
+        id: 'profile',
+        type: 'profile',
+        x: baseX,
+        y: baseY,
+        width: profileWidth,
+        height: profileHeight,
+        component: ProfileWidget,
+        locked: false,
+        pinned: false
+      },
+      {
+        id: 'about',
+        type: 'about',
+        x: aboutXSnapped,
+        y: baseY,
+        width: aboutWidth,
+        height: aboutHeight,
+        component: AboutWidget
+      },
+      {
+        id: 'skills',
+        type: 'skills',
+        x: skillsX,
+        y: skillsYSnapped,
+        width: skillsWidth,
+        height: skillsHeight,
+        component: SkillsWidget
+      },
+      {
+        id: 'contact',
+        type: 'contact',
+        x: contactX,
+        y: contactYSnapped,
+        width: contactWidth,
+        height: contactHeight,
+        component: ContactWidget
+      },
+      {
+        id: 'games',
+        type: 'games',
+        x: gamesXSnapped,
+        y: gamesYSnapped,
+        width: gamesWidth,
+        height: gamesHeight,
+        component: GamesWidget
+      }
+    ]
+    
+    setWidgets(defaultWidgets)
+    showToast('Layout reverted to default!')
+  }, [setWidgets, showToast])
+
   // Add widget at position
   const addWidget = useCallback((widgetType, x, y) => {
     const Component = componentMap[widgetType]
@@ -96,40 +256,78 @@ function App() {
       return
     }
 
-    // Check if widget already exists
-    setWidgets(prev => {
-      const existingWidget = prev.find(w => (w.type === widgetType || w.id === widgetType))
-      if (existingWidget) {
-        console.warn(`Widget ${widgetType} already exists`)
-        return prev
-      }
+    // Use flushSync to ensure the state update happens synchronously
+    flushSync(() => {
+      setWidgets(prev => {
+        const existingWidget = prev.find(w => (w.type === widgetType || w.id === widgetType))
+        if (existingWidget) {
+          console.warn(`Widget ${widgetType} already exists`)
+          return prev
+        }
 
-      // Get minimum size for widget
-      const minSize = getWidgetMinSize(widgetType)
-      const width = snapSizeToGrid(minSize.width)
-      const height = snapSizeToGrid(minSize.height)
+        // Get minimum size for widget
+        const minSize = getWidgetMinSize(widgetType)
+        const width = snapSizeToGrid(minSize.width)
+        const height = snapSizeToGrid(minSize.height)
 
-      // Snap position to grid and constrain to viewport
-      const snappedX = snapToGrid(x, GRID_OFFSET_X)
-      const snappedY = snapToGrid(y, GRID_OFFSET_Y)
-      const constrained = constrainToViewport(snappedX, snappedY, width, height)
+        // Check if the click position is within reasonable bounds
+        // If not, use a default position near existing widgets or at a safe location
+        let targetX = x
+        let targetY = y
+        
+        // If position is way off-screen or invalid, find a better default
+        if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) {
+          // Try to find a position near existing widgets
+          if (prev.length > 0) {
+            // Find the rightmost widget and place new widget to its right
+            const rightmostWidget = prev.reduce((rightmost, w) => 
+              (w.x + w.width) > (rightmost.x + rightmost.width) ? w : rightmost
+            )
+            targetX = rightmostWidget.x + rightmostWidget.width + GRID_SIZE
+            targetY = rightmostWidget.y
+          } else {
+            // No widgets exist, use a safe default position
+            targetX = snapToGrid(100, GRID_OFFSET_X)
+            targetY = snapToGrid(100, GRID_OFFSET_Y)
+          }
+        }
 
-      // Create new widget
-      const newWidget = {
-        id: widgetType,
-        type: widgetType,
-        x: constrained.x,
-        y: constrained.y,
-        width: width,
-        height: height,
-        component: Component,
-        locked: false,
-        pinned: false
-      }
+        // Snap position to grid and constrain to viewport
+        const snappedX = snapToGrid(targetX, GRID_OFFSET_X)
+        const snappedY = snapToGrid(targetY, GRID_OFFSET_Y)
+        const constrained = constrainToViewport(snappedX, snappedY, width, height)
 
-      return [...prev, newWidget]
+        // Find nearest valid position that doesn't collide with existing widgets
+        const validPosition = findNearestValidPosition(
+          constrained.x,
+          constrained.y,
+          width,
+          height,
+          prev,
+          null // No widget to exclude
+        )
+
+        // Create new widget - ensure all properties are set and create a new object
+        const newWidget = {
+          id: widgetType,
+          type: widgetType,
+          x: validPosition.x,
+          y: validPosition.y,
+          width: width,
+          height: height,
+          component: Component,
+          locked: false,
+          pinned: false
+        }
+
+        // Create a new array with the new widget to ensure React detects the change
+        return [...prev, newWidget]
+      })
     })
-  }, [setWidgets])
+    
+    // Close the context menu after state update
+    closeContextMenu()
+  }, [setWidgets, closeContextMenu])
 
   // Handle mouse down (only for left-click drag, right-click handled by contextmenu)
   const handleMouseDownWithContext = (e, id) => {
@@ -253,6 +451,7 @@ function App() {
         onSort={autosortWidgets}
         onAddWidget={addWidget}
         onSetAsDefault={setAsDefault}
+        onRevertToDefault={revertToDefault}
         onClose={closeContextMenu}
       />
       

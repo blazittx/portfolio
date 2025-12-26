@@ -16,11 +16,13 @@ export default function GameImageWidget({ game }) {
         <img 
           src={game.image} 
           alt={game.title}
+          draggable="false"
           style={{
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            display: 'block'
+            display: 'block',
+            userSelect: 'none'
           }}
           loading="lazy"
           onError={(e) => {

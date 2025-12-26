@@ -110,7 +110,7 @@ export default function WidgetItem({
     const baseStyle = {
       position: 'absolute',
       background: 'hsl(0 0% 4%)',
-      border: hasCollision ? '2px solid #ff4444' : (widget.pinned ? '1px solid color-mix(in hsl, canvasText, transparent 30%)' : '1px solid #777777'),
+      border: hasCollision ? '2px solid #ff4444' : (widget.pinned ? '1px solid color-mix(in hsl, canvasText, transparent 55%)' : '1px solid #777777'),
       borderRadius: '4px',
       overflow: 'visible',
       transition: isDragging || isResizing ? 'none' : 'border-color 0.2s ease, box-shadow 0.2s ease, left 0.2s cubic-bezier(0.4, 0, 0.2, 1), top 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1), height 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -185,7 +185,7 @@ export default function WidgetItem({
 
   const handleMouseLeave = (e) => {
     if (!widget.locked && !isDragging && !isResizing) {
-      e.currentTarget.style.borderColor = widget.pinned ? 'color-mix(in hsl, canvasText, transparent 30%)' : '#777777'
+      e.currentTarget.style.borderColor = widget.pinned ? 'color-mix(in hsl, canvasText, transparent 55%)' : '#777777'
       e.currentTarget.style.transform = 'translateY(0)'
       e.currentTarget.style.boxShadow = 'none'
     }
@@ -201,6 +201,15 @@ export default function WidgetItem({
     e.currentTarget.style.transform = 'scale(0.8)'
   }
 
+  const handleClick = (e) => {
+    // Prevent default behavior to avoid page reloads when clicking on widget container
+    // Only prevent if NOT clicking on interactive elements (links, buttons, etc.)
+    const isInteractiveElement = e.target.closest('a, button, input, select, textarea, [role="button"]')
+    if (!isInteractiveElement) {
+      e.preventDefault()
+    }
+  }
+
   // Handle missing component gracefully
   if (!widget.component) {
     return (
@@ -214,6 +223,7 @@ export default function WidgetItem({
             e.currentTarget.style.cursor = 'grabbing'
           }
         }}
+        onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -250,13 +260,13 @@ export default function WidgetItem({
           e.currentTarget.style.cursor = 'grabbing'
         }
       }}
+      onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {widget.locked && (
         <div style={{
           position: 'absolute',
-          top: '4px',
           right: '4px',
           opacity: 0.6,
           pointerEvents: 'none',
@@ -269,7 +279,6 @@ export default function WidgetItem({
       {widget.pinned && !widget.locked && (
         <div style={{
           position: 'absolute',
-          top: '4px',
           right: '4px',
           opacity: 0.6,
           pointerEvents: 'none',

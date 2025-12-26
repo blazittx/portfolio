@@ -302,12 +302,14 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                           <img
                             src={game.teamIcon}
                             alt={game.tech}
+                            draggable="false"
                             style={{
                               width: '16px',
                               height: '16px',
                               borderRadius: '2px',
                               objectFit: 'cover',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              userSelect: 'none'
                             }}
                             onError={(e) => {
                               e.target.style.display = "none";
@@ -334,12 +336,14 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                     <img 
                       src={game.image} 
                       alt={game.title}
+                      draggable="false"
                       style={{
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
                         display: 'block',
-                        transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                        transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                        userSelect: 'none'
                       }}
                       loading="lazy"
                       onError={(e) => {

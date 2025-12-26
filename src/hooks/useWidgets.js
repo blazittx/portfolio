@@ -12,6 +12,7 @@ import VisitorsWidget from '../components/VisitorsWidget'
 import MessageOfTheDayWidget from '../components/MessageOfTheDayWidget'
 import QuoteWidget from '../components/QuoteWidget'
 import TimeWidget from '../components/TimeWidget'
+import GitHubActivityWidget from '../components/GitHubActivityWidget'
 
 // Component mapping - exported for use in other components
 export const componentMap = {
@@ -23,7 +24,8 @@ export const componentMap = {
   visitors: VisitorsWidget,
   motd: MessageOfTheDayWidget,
   quote: QuoteWidget,
-  time: TimeWidget
+  time: TimeWidget,
+  github: GitHubActivityWidget
 }
 
 export const useWidgets = (view = 'main') => {

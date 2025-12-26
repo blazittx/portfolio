@@ -33,12 +33,14 @@ export default function GameInfoWidget({ game }) {
             <img
               src={game.teamIcon}
               alt={game.tech}
+              draggable="false"
               style={{
                 width: '20px',
                 height: '20px',
                 borderRadius: '2px',
                 objectFit: 'cover',
-                flexShrink: 0
+                flexShrink: 0,
+                userSelect: 'none'
               }}
               onError={(e) => {
                 e.target.style.display = "none";
