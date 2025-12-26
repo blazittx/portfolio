@@ -1,0 +1,45 @@
+import './WidgetContainer.css'
+import WidgetItem from './WidgetItem'
+
+/* eslint-disable react/prop-types */
+export default function WidgetContainer({ 
+  widgets, 
+  isDragging, 
+  isResizing, 
+  collisionWidgetId, 
+  dragStateRef, 
+  resizeStateRef, 
+  onMouseDown 
+}) {
+  // Ensure widgets is an array and filter out invalid widgets
+  const validWidgets = Array.isArray(widgets) 
+    ? widgets.filter(widget => widget && widget.id)
+    : []
+
+  return (
+    <div className="widget-container">
+      {validWidgets.map(widget => {
+        try {
+          const isDraggingWidget = isDragging && dragStateRef.current?.activeId === widget.id
+          const isResizingWidget = isResizing && resizeStateRef.current?.activeId === widget.id
+          const hasCollision = collisionWidgetId === widget.id
+          
+          return (
+            <WidgetItem
+              key={widget.id}
+              widget={widget}
+              isDragging={isDraggingWidget}
+              isResizing={isResizingWidget}
+              hasCollision={hasCollision}
+              onMouseDown={onMouseDown}
+            />
+          )
+        } catch (error) {
+          console.error(`Error rendering widget ${widget.id}:`, error)
+          return null
+        }
+      })}
+    </div>
+  )
+}
+

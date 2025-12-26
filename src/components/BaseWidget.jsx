@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './Widget.css'
 
-export default function BaseWidget({ children, className = '' }) {
+export default function BaseWidget({ children, className = '', padding = '4px 0 4px 4px', style = {} }) {
   const containerRef = useRef(null)
   const [sizeClass, setSizeClass] = useState('')
 
@@ -38,8 +38,18 @@ export default function BaseWidget({ children, className = '' }) {
     }
   }, [])
 
+  // Merge padding with custom styles (custom styles take precedence)
+  const mergedStyle = {
+    padding,
+    ...style
+  }
+
   return (
-    <div ref={containerRef} className={`base-widget ${className} ${sizeClass}`}>
+    <div 
+      ref={containerRef} 
+      className={`base-widget ${className} ${sizeClass}`}
+      style={mergedStyle}
+    >
       {children}
     </div>
   )

@@ -3,7 +3,7 @@ import './Widget.css'
 
 export default function AboutWidget() {
   return (
-    <BaseWidget className="widget-about">
+    <BaseWidget className="widget-about" padding="1rem">
       <h3>About</h3>
       <p>
         Passionate about creating elegant solutions to complex problems. 
