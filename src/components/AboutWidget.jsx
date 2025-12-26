@@ -85,8 +85,7 @@ export default function AboutWidget() {
       >
         <h3 style={getH3Style()}>About</h3>
         <p style={getPStyle()}>
-          Passionate about creating elegant solutions to complex problems. 
-          I enjoy working at the intersection of design and technology.
+          I'm a game programmer with a passion for creating immersive and engaging multiplayer games.
         </p>
       </div>
     </BaseWidget>
