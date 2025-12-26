@@ -122,15 +122,162 @@ export default function GameDetailView({ game, onBack }) {
     }
     
     // On mobile, always use default layout - ignore saved cookies
-    // Only initialize layout if we don't have widgets yet
-    if (!mobile && savedLayout && Array.isArray(savedLayout) && savedLayout.length > 0) {
-      // Restore from saved layout
+    // On desktop, try saved layout first, then default layout
+    if (mobile) {
+      // Mobile: Always use default layout (from cookie or hardcoded)
+      if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
+        // Restore from default layout - use exact positions without constraining
+        const restoredWidgets = defaultLayout.map(widget => {
+          try {
+            // Map widget types to components
+            let component = null
+            if (widget.id === 'back-button' || widget.type === 'back-button') {
+              component = () => <BackButtonWidget onBack={onBack} />
+            } else if (widget.id === 'game-info' || widget.type === 'game-info') {
+              component = () => <GameInfoWidget game={game} />
+            } else if (widget.id === 'game-description' || widget.type === 'game-description') {
+              component = () => <GameDescriptionWidget game={game} />
+            } else if (widget.id === 'game-image' || widget.type === 'game-image') {
+              component = () => <GameImageWidget game={game} />
+            } else if (widget.id === 'game-details' || widget.type === 'game-details') {
+              component = () => <GameDetailsWidget game={game} />
+            } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+              component = () => <GameDevelopmentInfoWidget game={game} />
+            }
+            
+            if (!component) {
+              console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+              return null
+            }
+            
+            // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+            return {
+              ...widget,
+              x: widget.x,
+              y: widget.y,
+              width: widget.width,
+              height: widget.height,
+              component: component,
+              locked: widget.locked || false,
+              pinned: widget.pinned || false
+            }
+          } catch (error) {
+            console.error(`Error restoring widget ${widget.id}:`, error)
+            return null
+          }
+        }).filter(widget => widget !== null)
+        
+        // Ensure back button exists and is locked
+        const hasBackButton = restoredWidgets.some(w => w.id === 'back-button')
+        if (!hasBackButton) {
+          const backButtonWidth = snapSizeToGrid(120)
+          const backButtonHeight = snapSizeToGrid(60)
+          const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
+          const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
+          
+          restoredWidgets.unshift({
+            id: 'back-button',
+            type: 'back-button',
+            x: backButtonX,
+            y: backButtonY,
+            width: backButtonWidth,
+            height: backButtonHeight,
+            component: () => <BackButtonWidget onBack={onBack} />,
+            locked: true,
+            pinned: false
+          })
+        } else {
+          const backButton = restoredWidgets.find(w => w.id === 'back-button')
+          if (backButton) {
+            backButton.locked = true
+            backButton.component = () => <BackButtonWidget onBack={onBack} />
+          }
+        }
+        
+        setWidgets(restoredWidgets)
+        initializedRef.current = true
+        return
+      }
+      
+      // If no mobile default cookie, use hardcoded mobile default
+      const layoutToUse = DEFAULT_GAME_DETAIL_LAYOUT_MOBILE
+      if (layoutToUse && Array.isArray(layoutToUse) && layoutToUse.length > 0) {
+        const restoredWidgets = layoutToUse.map(widget => {
+          try {
+            let component = null
+            if (widget.id === 'back-button' || widget.type === 'back-button') {
+              component = () => <BackButtonWidget onBack={onBack} />
+            } else if (widget.id === 'game-info' || widget.type === 'game-info') {
+              component = () => <GameInfoWidget game={game} />
+            } else if (widget.id === 'game-description' || widget.type === 'game-description') {
+              component = () => <GameDescriptionWidget game={game} />
+            } else if (widget.id === 'game-image' || widget.type === 'game-image') {
+              component = () => <GameImageWidget game={game} />
+            } else if (widget.id === 'game-details' || widget.type === 'game-details') {
+              component = () => <GameDetailsWidget game={game} />
+            } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+              component = () => <GameDevelopmentInfoWidget game={game} />
+            }
+            
+            if (!component) {
+              console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
+              return null
+            }
+            
+            return {
+              ...widget,
+              x: widget.x,
+              y: widget.y,
+              width: widget.width,
+              height: widget.height,
+              component: component,
+              locked: widget.locked || false,
+              pinned: widget.pinned || false
+            }
+          } catch (error) {
+            console.error(`Error restoring widget ${widget.id}:`, error)
+            return null
+          }
+        }).filter(widget => widget !== null)
+        
+        // Ensure back button exists and is locked
+        const hasBackButton = restoredWidgets.some(w => w.id === 'back-button')
+        if (!hasBackButton) {
+          const backButtonWidth = snapSizeToGrid(120)
+          const backButtonHeight = snapSizeToGrid(60)
+          const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
+          const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
+          
+          restoredWidgets.unshift({
+            id: 'back-button',
+            type: 'back-button',
+            x: backButtonX,
+            y: backButtonY,
+            width: backButtonWidth,
+            height: backButtonHeight,
+            component: () => <BackButtonWidget onBack={onBack} />,
+            locked: true,
+            pinned: false
+          })
+        } else {
+          const backButton = restoredWidgets.find(w => w.id === 'back-button')
+          if (backButton) {
+            backButton.locked = true
+            backButton.component = () => <BackButtonWidget onBack={onBack} />
+          }
+        }
+        
+        setWidgets(restoredWidgets)
+        initializedRef.current = true
+        return
+      }
+    }
+    
+    // Desktop: Try saved layout first
+    if (savedLayout && Array.isArray(savedLayout) && savedLayout.length > 0) {
+      // Restore from saved layout - use exact positions without constraining
       const restoredWidgets = savedLayout.map(widget => {
         try {
-          // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
-          const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-          const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height, 0, 0, { x: 0, y: 0 })
-          
           // Map widget types to components
           let component = null
           if (widget.id === 'back-button' || widget.type === 'back-button') {
@@ -152,12 +299,13 @@ export default function GameDetailView({ game, onBack }) {
             return null
           }
           
+          // Use EXACT saved sizes and positions - don't constrain or modify
           return {
             ...widget,
-            x: constrainedPos.x,
-            y: constrainedPos.y,
-            width: constrainedSize.width,
-            height: constrainedSize.height,
+            x: widget.x,
+            y: widget.y,
+            width: widget.width,
+            height: widget.height,
             component: component,
             locked: widget.locked || false,
             pinned: widget.pinned || false
@@ -175,13 +323,12 @@ export default function GameDetailView({ game, onBack }) {
         const backButtonHeight = snapSizeToGrid(60)
         const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
         const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
         
         restoredWidgets.unshift({
           id: 'back-button',
           type: 'back-button',
-          x: constrainedBackButton.x,
-          y: constrainedBackButton.y,
+          x: backButtonX,
+          y: backButtonY,
           width: backButtonWidth,
           height: backButtonHeight,
           component: () => <BackButtonWidget onBack={onBack} />,
@@ -189,7 +336,6 @@ export default function GameDetailView({ game, onBack }) {
           pinned: false
         })
       } else {
-        // Ensure back button is locked and has correct component
         const backButton = restoredWidgets.find(w => w.id === 'back-button')
         if (backButton) {
           backButton.locked = true
@@ -202,7 +348,7 @@ export default function GameDetailView({ game, onBack }) {
       return
     }
     
-    // If no saved layout, try to load default layout
+    // Desktop: If no saved layout, try to load default layout
     if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
       // Restore from default layout - use exact positions without constraining
       const restoredWidgets = defaultLayout.map(widget => {
@@ -252,13 +398,12 @@ export default function GameDetailView({ game, onBack }) {
         const backButtonHeight = snapSizeToGrid(60)
         const backButtonX = snapToGrid(GRID_OFFSET_X, GRID_OFFSET_X)
         const backButtonY = snapToGrid(GRID_OFFSET_Y, GRID_OFFSET_Y)
-        const constrainedBackButton = constrainToViewport(backButtonX, backButtonY, backButtonWidth, backButtonHeight, { x: 0, y: 0 }, false)
         
         restoredWidgets.unshift({
           id: 'back-button',
           type: 'back-button',
-          x: constrainedBackButton.x,
-          y: constrainedBackButton.y,
+          x: backButtonX,
+          y: backButtonY,
           width: backButtonWidth,
           height: backButtonHeight,
           component: () => <BackButtonWidget onBack={onBack} />,
@@ -279,12 +424,10 @@ export default function GameDetailView({ game, onBack }) {
       return
     }
 
-    // Use hardcoded default layout from user's current setup
-    const gameWidgets = DEFAULT_GAME_DETAIL_LAYOUT.map(widget => {
+    // Use hardcoded default layout - use exact positions without constraining
+    const layoutToUse = mobile ? DEFAULT_GAME_DETAIL_LAYOUT_MOBILE : DEFAULT_GAME_DETAIL_LAYOUT
+    const gameWidgets = layoutToUse.map(widget => {
       try {
-        const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height)
-        const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, widget.width, widget.height)
-        
         // Map widget types to components
         let component = null
         if (widget.id === 'back-button' || widget.type === 'back-button') {
@@ -297,6 +440,8 @@ export default function GameDetailView({ game, onBack }) {
           component = () => <GameImageWidget game={game} />
         } else if (widget.id === 'game-details' || widget.type === 'game-details') {
           component = () => <GameDetailsWidget game={game} />
+        } else if (widget.id === 'game-development-info' || widget.type === 'game-development-info') {
+          component = () => <GameDevelopmentInfoWidget game={game} />
         }
         
         if (!component) {
@@ -304,12 +449,13 @@ export default function GameDetailView({ game, onBack }) {
           return null
         }
         
+        // Use EXACT saved sizes and positions from default layout - don't constrain or modify
         return {
           ...widget,
-          x: constrainedPos.x,
-          y: constrainedPos.y,
-          width: constrainedSize.width,
-          height: constrainedSize.height,
+          x: widget.x,
+          y: widget.y,
+          width: widget.width,
+          height: widget.height,
           component: component,
           locked: widget.locked || false,
           pinned: widget.pinned || false
