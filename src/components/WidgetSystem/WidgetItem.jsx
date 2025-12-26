@@ -59,7 +59,9 @@ export default function WidgetItem({
   isDragging, 
   isResizing, 
   hasCollision, 
-  onMouseDown 
+  onMouseDown,
+  wasLastInteractionDrag,
+  onGameClick
 }) {
   // Add animation styles once
   useEffect(() => {
@@ -257,7 +259,11 @@ export default function WidgetItem({
       )}
       <div style={getWidgetContentStyle()}>
         <WidgetErrorBoundary>
-          <Component />
+          <Component 
+            widgetId={widget.id}
+            wasLastInteractionDrag={wasLastInteractionDrag}
+            onGameClick={onGameClick}
+          />
         </WidgetErrorBoundary>
       </div>
       {/* Resize handles */}

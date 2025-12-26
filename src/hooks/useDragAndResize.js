@@ -13,7 +13,9 @@ export const useDragAndResize = (widgets, setWidgets) => {
     startX: 0,
     startY: 0,
     widgetStartX: 0,
-    widgetStartY: 0
+    widgetStartY: 0,
+    hasMoved: false, // Track if mouse actually moved (drag vs click)
+    moveThreshold: 5 // Pixels to move before considering it a drag
   })
   const resizeStateRef = useRef({
     activeId: null,
@@ -55,7 +57,9 @@ export const useDragAndResize = (widgets, setWidgets) => {
         startX: e.clientX,
         startY: e.clientY,
         widgetStartX: widget.x,
-        widgetStartY: widget.y
+        widgetStartY: widget.y,
+        hasMoved: false,
+        moveThreshold: 5
       }
       setIsDragging(true)
     }
@@ -65,6 +69,16 @@ export const useDragAndResize = (widgets, setWidgets) => {
   }
 
   const handleMouseMove = useCallback((e) => {
+    // Track if dragging has actually moved (for click vs drag detection)
+    if (dragStateRef.current.activeId) {
+      const deltaX = Math.abs(e.clientX - dragStateRef.current.startX)
+      const deltaY = Math.abs(e.clientY - dragStateRef.current.startY)
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+      if (distance > dragStateRef.current.moveThreshold) {
+        dragStateRef.current.hasMoved = true
+      }
+    }
+
     // Handle resizing - allow free movement during resize
     if (resizeStateRef.current.activeId) {
       const { handle, startX, startY, widgetStartX, widgetStartY, widgetStartWidth, widgetStartHeight } = resizeStateRef.current
@@ -145,6 +159,12 @@ export const useDragAndResize = (widgets, setWidgets) => {
   const handleMouseUp = useCallback(() => {
     // Clear collision state
     setCollisionWidgetId(null)
+    
+    // Check if it was a drag or click (for widgets that need to differentiate)
+    let wasDrag = false
+    if (dragStateRef.current.activeId) {
+      wasDrag = dragStateRef.current.hasMoved
+    }
     
     // Handle resize end
     if (resizeStateRef.current.activeId) {
@@ -424,9 +444,21 @@ export const useDragAndResize = (widgets, setWidgets) => {
         }
         return prev
       })
+      const wasDrag = dragStateRef.current.hasMoved
+      const widgetId = dragStateRef.current.activeId
       dragStateRef.current.activeId = null
+      dragStateRef.current.hasMoved = false
+      
+      // Store result for widgets to check
+      dragStateRef.current.lastWasDrag = wasDrag
+      dragStateRef.current.lastWidgetId = widgetId
     }
   }, [setWidgets])
+
+  // Helper to check if the last interaction was a drag
+  const wasLastInteractionDrag = useCallback((widgetId) => {
+    return dragStateRef.current.lastWasDrag === true && dragStateRef.current.lastWidgetId === widgetId
+  }, [])
 
   return {
     isDragging,
@@ -436,7 +468,8 @@ export const useDragAndResize = (widgets, setWidgets) => {
     resizeStateRef,
     handleMouseDown,
     handleMouseMove,
-    handleMouseUp
+    handleMouseUp,
+    wasLastInteractionDrag
   }
 }
 

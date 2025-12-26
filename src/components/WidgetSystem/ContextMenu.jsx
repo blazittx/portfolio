@@ -17,7 +17,7 @@ const LockIcon = ({ size = 16, color = 'currentColor' }) => (
   </svg>
 )
 
-export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onClose }) {
+export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onSetAsDefault, onClose }) {
   if (!contextMenu) return null
 
   const widget = contextMenu.widgetId ? widgets.find(w => w.id === contextMenu.widgetId) : null
@@ -201,9 +201,24 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
               {icon} {name}
             </button>
           ))}
+          <div 
+            style={{
+              height: '1px',
+              background: 'color-mix(in hsl, canvasText, transparent 10%)',
+              margin: '0.25rem 0'
+            }}
+          ></div>
         </>
       )}
-      {(widget || missingWidgets.length > 0) && <div className="context-menu-divider"></div>}
+      {(widget && missingWidgets.length === 0) && (
+        <div 
+          style={{
+            height: '1px',
+            background: 'color-mix(in hsl, canvasText, transparent 10%)',
+            margin: '0.25rem 0'
+          }}
+        ></div>
+      )}
       <button
         style={{
           width: '100%',
@@ -229,6 +244,44 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
         }}
       >
         ↻ Sort
+      </button>
+      <div 
+        style={{
+          height: '1px',
+          background: 'color-mix(in hsl, canvasText, transparent 10%)',
+          margin: '0.25rem 0'
+        }}
+      ></div>
+      <button
+        style={{
+          width: '100%',
+          padding: '0.5rem 1rem',
+          background: 'none',
+          border: 'none',
+          color: 'canvasText',
+          fontSize: '0.875rem',
+          textAlign: 'left',
+          cursor: 'pointer',
+          transition: 'background 0.2s',
+          fontFamily: 'inherit',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}
+        onClick={() => {
+          if (onSetAsDefault) {
+            onSetAsDefault()
+          }
+          onClose()
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'color-mix(in hsl, canvasText, transparent 90%)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'none'
+        }}
+      >
+        ⭐ Set as Default
       </button>
     </div>
   )

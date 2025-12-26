@@ -8,7 +8,9 @@ export default function WidgetContainer({
   collisionWidgetId, 
   dragStateRef, 
   resizeStateRef, 
-  onMouseDown 
+  onMouseDown,
+  wasLastInteractionDrag,
+  onGameClick
 }) {
   // Ensure widgets is an array and filter out invalid widgets
   const validWidgets = Array.isArray(widgets) 
@@ -38,6 +40,8 @@ export default function WidgetContainer({
               isResizing={isResizingWidget}
               hasCollision={hasCollision}
               onMouseDown={onMouseDown}
+              wasLastInteractionDrag={wasLastInteractionDrag}
+              onGameClick={onGameClick}
             />
           )
         } catch (error) {

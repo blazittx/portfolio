@@ -1,25 +1,42 @@
-export const GRID_SIZE = 45
-export const GRID_OFFSET_X = GRID_SIZE * 0.36  // 16.2px
-export const GRID_OFFSET_Y = GRID_SIZE * 0.32  // 14.4px
-export const WIDGET_PADDING = 12  // Padding from grid lines - increase this value for more distance
-export const COOKIE_NAME = 'widgetLayout'
+export const GRID_SIZE = 45;
+export const GRID_OFFSET_X = GRID_SIZE * 0.36; // 16.2px
+export const GRID_OFFSET_Y = GRID_SIZE * 0.32; // 14.4px
+export const WIDGET_PADDING = 12; // Padding from grid lines - increase this value for more distance
+export const COOKIE_NAME = "widgetLayout";
+export const COOKIE_NAME_GAME_DETAIL = "widgetLayoutGameDetail";
+export const COOKIE_NAME_DEFAULT = "widgetLayoutDefault";
+export const COOKIE_NAME_DEFAULT_GAME_DETAIL = "widgetLayoutDefaultGameDetail";
+
+// Convert grid units to pixel size (accounting for padding)
+// gridUnits: number of grid cells (e.g., 2 = 2 grid units wide)
+// Returns: pixel size that fits within those grid units
+export const gridUnitsToPixels = (gridUnits) => {
+  // Formula: (gridUnits * GRID_SIZE) - (WIDGET_PADDING * 2)
+  // This accounts for padding on both sides
+  return gridUnits * GRID_SIZE - WIDGET_PADDING * 2;
+};
 
 // Get minimum size for a widget type based on content requirements
+// Now accepts grid units instead of pixel values
 export const getWidgetMinSize = (widgetType) => {
-  // Minimum sizes that allow meaningful content display
+  // Minimum sizes in grid units (width, height)
   // These are based on content needs: headers, text, lists, etc.
-  const minSizes = {
-    profile: { width: 180, height: 120 },  // Header + basic info
-    about: { width: 150, height: 100 },     // Text content
-    skills: { width: 120, height: 80 },      // A few skill tags
-    contact: { width: 120, height: 60 },    // At least one contact link
-    games: { width: 180, height: 150 },      // Game card with image
-    visitors: { width: 120, height: 100 },    // Visitor count display
-    motd: { width: 150, height: 100 },       // Message of the day
-    quote: { width: 150, height: 120 },      // Quote with author
-    time: { width: 140, height: 100 }        // Time and date display
-  }
-  
-  return minSizes[widgetType] || { width: 100, height: 80 } // Default fallback
-}
+  const minSizesInGridUnits = {
+    profile: { width: 4, height: 3 },
+    about: { width: 3, height: 2 },
+    skills: { width: 3, height: 2 },
+    contact: { width: 6, height: 2 },
+    games: { width: 4, height: 3 },
+    visitors: { width: 3, height: 2 },
+    motd: { width: 3, height: 2 },
+    quote: { width: 3, height: 3 },
+    time: { width: 3, height: 2 },
+  };
 
+  const gridUnits = minSizesInGridUnits[widgetType] || { width: 2, height: 2 };
+
+  return {
+    width: gridUnitsToPixels(gridUnits.width),
+    height: gridUnitsToPixels(gridUnits.height),
+  };
+};

@@ -3,16 +3,22 @@ import { useWidgets, componentMap } from './hooks/useWidgets'
 import { useDragAndResize } from './hooks/useDragAndResize'
 import { useAutosort } from './hooks/useAutosort'
 import { useContextMenu } from './hooks/useContextMenu'
+import { useView } from './hooks/useView'
+import { useToast } from './hooks/useToast'
 import ContextMenu from './components/WidgetSystem/ContextMenu'
 import GridBackground from './components/WidgetSystem/GridBackground'
 import GridMask from './components/WidgetSystem/GridMask'
 import WidgetContainer from './components/WidgetSystem/WidgetContainer'
-import { getWidgetMinSize } from './constants/grid'
+import GameDetailView from './components/GameDetailView'
+import Toaster from './components/Toaster'
+import { getWidgetMinSize, COOKIE_NAME_DEFAULT } from './constants/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport } from './utils/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
+import { setCookie } from './utils/cookies'
 
 function App() {
-  const [widgets, setWidgets] = useWidgets()
+  const { currentView, selectedGame, navigateToGameDetail, navigateToMain, isLoading } = useView()
+  const [widgets, setWidgets] = useWidgets('main')
   
   // Ensure widgets is always an array
   const validWidgets = useMemo(() => Array.isArray(widgets) ? widgets : [], [widgets])
@@ -24,11 +30,13 @@ function App() {
     resizeStateRef,
     handleMouseDown,
     handleMouseMove,
-    handleMouseUp
+    handleMouseUp,
+    wasLastInteractionDrag
   } = useDragAndResize(widgets, setWidgets)
   
   const autosortWidgets = useAutosort(widgets, setWidgets)
   const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu()
+  const { toasts, showToast, removeToast } = useToast()
 
   // Toggle lock on widget (unpins if pinned)
   const toggleLockWidget = useCallback((widgetId) => {
@@ -59,6 +67,22 @@ function App() {
     setWidgets(prev => prev.filter(w => w.id !== widgetId))
     closeContextMenu()
   }, [setWidgets, closeContextMenu])
+
+  // Set current layout as default
+  const setAsDefault = useCallback(() => {
+    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned }) => ({
+      id,
+      type,
+      x,
+      y,
+      width,
+      height,
+      locked: locked || false,
+      pinned: pinned || false
+    }))
+    setCookie(COOKIE_NAME_DEFAULT, layoutToSave)
+    showToast('Current layout saved as default!')
+  }, [widgets, showToast])
 
   // Add widget at position
   const addWidget = useCallback((widgetType, x, y) => {
@@ -139,6 +163,29 @@ function App() {
     }
   }, [handleMouseMove, handleMouseUp])
 
+  // Show loading state while fetching game from URL
+  if (isLoading) {
+    return (
+      <div style={{
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'canvasText',
+        fontSize: '1rem',
+        opacity: 0.7
+      }}>
+        Loading...
+      </div>
+    )
+  }
+
+  // Show game detail view if selected
+  if (currentView === 'game-detail' && selectedGame) {
+    return <GameDetailView game={selectedGame} onBack={navigateToMain} />
+  }
+
   return (
     <div 
       style={{
@@ -157,6 +204,7 @@ function App() {
         onRemoveWidget={removeWidget}
         onSort={autosortWidgets}
         onAddWidget={addWidget}
+        onSetAsDefault={setAsDefault}
         onClose={closeContextMenu}
       />
       
@@ -172,7 +220,10 @@ function App() {
         dragStateRef={dragStateRef}
         resizeStateRef={resizeStateRef}
         onMouseDown={handleMouseDownWithContext}
+        wasLastInteractionDrag={wasLastInteractionDrag}
+        onGameClick={navigateToGameDetail}
       />
+      <Toaster toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }

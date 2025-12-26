@@ -21,7 +21,8 @@ const getApiUrl = (gameId) => {
   return `https://api.diabolical.studio/rest-api/games/${gameId}`;
 };
 
-export default function GamesWidget() {
+/* eslint-disable react/prop-types */
+export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameClick }) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -242,7 +243,23 @@ export default function GamesWidget() {
                   opacity: isActive ? 1 : 0,
                   transform: isActive ? 'translateX(0)' : 'translateX(20px)',
                   transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                  pointerEvents: isActive ? 'all' : 'none'
+                  pointerEvents: isActive ? 'all' : 'none',
+                  cursor: 'pointer'
+                }}
+                onMouseUp={(e) => {
+                  // Only navigate if it wasn't a drag (check after mouse up)
+                  if (onGameClick && e.button === 0) {
+                    // Small delay to let drag system update
+                    setTimeout(() => {
+                      const wasDrag = wasLastInteractionDrag && typeof wasLastInteractionDrag === 'function' 
+                        ? wasLastInteractionDrag(widgetId) 
+                        : false
+                      
+                      if (!wasDrag) {
+                        onGameClick(game)
+                      }
+                    }, 10)
+                  }
                 }}
               >
                 <div style={{
