@@ -1,9 +1,11 @@
 import BaseWidget from './BaseWidget'
 import { useEffect, useRef, useState } from 'react'
 
-export default function ProfileWidget() {
+/* eslint-disable react/prop-types */
+export default function ProfileWidget({ widget }) {
   const containerRef = useRef(null)
   const [sizeClass, setSizeClass] = useState('')
+  const isExpanded = widget?.settings?.expanded || false
 
   useEffect(() => {
     const updateSizeClass = () => {
@@ -35,7 +37,7 @@ export default function ProfileWidget() {
       textAlign: 'left',
       width: '100%',
       height: '100%',
-      gap: '0.5rem'
+      gap: '0.2rem'
     }
   }
 
@@ -91,11 +93,41 @@ export default function ProfileWidget() {
     return base
   }
 
+  const getSubtitleStyle = () => {
+    const base = {
+      fontSize: '0.65rem',
+      opacity: 0.5,
+      color: 'canvasText',
+      textTransform: 'uppercase',
+      letterSpacing: '0.1em',
+      lineHeight: 1.4,
+      marginTop: '0.25rem'
+    }
+    
+    if (sizeClass.includes('narrow')) {
+      base.fontSize = '0.65rem'
+    }
+    if (sizeClass.includes('short') || sizeClass.includes('very-short')) {
+      base.fontSize = '0.65rem'
+      if (sizeClass.includes('narrow')) {
+        base.fontSize = '0.65rem'
+      }
+    }
+    
+    return base
+  }
+
   return (
     <BaseWidget padding="1.25rem">
       <div ref={containerRef} style={getContentStyle()}>
         <h2 style={getH2Style()}>Doruk Sasmaz</h2>
         <span style={getLabelStyle()}>Game Programmer</span>
+        {isExpanded && (
+          <>
+            <span style={getSubtitleStyle()}>Game Designer</span>
+            <span style={getSubtitleStyle()}>Web Developer</span>
+          </>
+        )}
       </div>
     </BaseWidget>
   )

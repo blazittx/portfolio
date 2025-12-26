@@ -87,6 +87,10 @@ export const useWidgets = (view = 'main') => {
             if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
               settings = { gameId: 'pullbackracers' }
             }
+            // Initialize expandable settings
+            if (widget.type === 'profile-picture' && !settings.expandable) {
+              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
+            }
             
             // Preserve EXACT saved sizes and positions - don't modify them at all
             // Only ensure they're valid numbers
@@ -139,6 +143,10 @@ export const useWidgets = (view = 'main') => {
             if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
               settings = { gameId: 'pullbackracers' }
             }
+            // Initialize expandable settings
+            if (widget.type === 'profile-picture' && !settings.expandable) {
+              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
+            }
             
             // Preserve EXACT saved sizes and positions - don't modify them at all
             // Only ensure they're valid numbers
@@ -188,6 +196,14 @@ export const useWidgets = (view = 'main') => {
             let settings = widget.settings || {}
             if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
               settings = { gameId: 'pullbackracers' }
+            }
+            // Initialize expandable settings
+            if (widget.type === 'profile-picture' && !settings.expandable) {
+              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
+            }
+            // Initialize expandable settings
+            if (widget.type === 'profile-picture' && !settings.expandable) {
+              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
             }
             
             // Preserve EXACT saved sizes and positions - don't modify them at all

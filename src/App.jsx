@@ -122,30 +122,50 @@ function App() {
     }))
   }, [setWidgets])
 
-  // Expand/collapse profile picture widget
-  const toggleProfilePictureExpand = useCallback((widgetId) => {
+  // Generalized expand/collapse widget function
+  // Widgets can enable this by setting settings.expandable = true
+  // Configure scale with settings.expandScaleX and settings.expandScaleY (default: 2 for both)
+  const toggleWidgetExpand = useCallback((widgetId) => {
     setWidgets(prev => {
-      const profilePicWidget = prev.find(w => w.id === widgetId && w.type === 'profile-picture')
-      if (!profilePicWidget) return prev
+      const widget = prev.find(w => w.id === widgetId)
+      if (!widget || !widget.settings?.expandable) return prev
 
-      const isExpanded = profilePicWidget.settings?.expanded || false
-      const EXPAND_SCALE = 2
+      const isExpanded = widget.settings?.expanded || false
+      const scaleX = widget.settings?.expandScaleX ?? 2
+      const scaleY = widget.settings?.expandScaleY ?? 2
 
       if (!isExpanded) {
         // EXPAND
-        const { width: originalWidth, height: originalHeight, x: originalX, y: originalY } = profilePicWidget
+        const { width: originalWidth, height: originalHeight, x: originalX, y: originalY } = widget
         
-        let expandedWidth = snapSizeToGrid(originalWidth * EXPAND_SCALE)
-        let expandedHeight = snapSizeToGrid(originalHeight * EXPAND_SCALE)
+        let expandedWidth = snapSizeToGrid(originalWidth * scaleX)
+        let expandedHeight = snapSizeToGrid(originalHeight * scaleY)
         let expandedX = originalX - (expandedWidth - originalWidth) / 2
         let expandedY = originalY - (expandedHeight - originalHeight) / 2
 
-        const sizeConstrained = constrainSizeToViewport(expandedX, expandedY, expandedWidth, expandedHeight, getWidgetMinSize('profile-picture').width, getWidgetMinSize('profile-picture').height)
+        const sizeConstrained = constrainSizeToViewport(expandedX, expandedY, expandedWidth, expandedHeight, getWidgetMinSize(widget.type).width, getWidgetMinSize(widget.type).height)
         expandedWidth = sizeConstrained.width
         expandedHeight = sizeConstrained.height
         
         const constrained = constrainToViewport(expandedX, expandedY, expandedWidth, expandedHeight, { x: 0, y: 0 }, true)
         const expandedRect = { x: constrained.x, y: constrained.y, width: expandedWidth, height: expandedHeight }
+
+        // If expanding profile-picture, calculate profile widget expansion
+        let profileExpandedRect = null
+        if (widget.type === 'profile-picture') {
+          const profileWidget = prev.find(pw => pw.type === 'profile' && pw.id !== widgetId)
+          if (profileWidget && !profileWidget.settings?.expanded) {
+            const { width: profOrigW, height: profOrigH, x: profOrigX, y: profOrigY } = profileWidget
+            let profExpandedHeight = snapSizeToGrid(profOrigH * 2)
+            let profExpandedY = profOrigY - (profExpandedHeight - profOrigH) / 2
+            
+            const profSizeConstrained = constrainSizeToViewport(profOrigX, profExpandedY, profOrigW, profExpandedHeight, getWidgetMinSize('profile').width, getWidgetMinSize('profile').height)
+            profExpandedHeight = profSizeConstrained.height
+            
+            const profConstrained = constrainToViewport(profOrigX, profExpandedY, profOrigW, profExpandedHeight, { x: 0, y: 0 }, true)
+            profileExpandedRect = { x: profConstrained.x, y: profConstrained.y, width: profOrigW, height: profExpandedHeight }
+          }
+        }
 
         return prev.map(w => {
           if (w.id === widgetId) {
@@ -157,21 +177,123 @@ function App() {
           }
 
           const widgetRect = { x: w.x, y: w.y, width: w.width, height: w.height }
-          const collides = !(widgetRect.x + widgetRect.width <= expandedRect.x || expandedRect.x + expandedRect.width <= widgetRect.x ||
-                            widgetRect.y + widgetRect.height <= expandedRect.y || expandedRect.y + expandedRect.height <= widgetRect.y)
-          if (!collides) return w
+          // Check collision with expanded profile picture
+          const collidesWithPic = !(widgetRect.x + widgetRect.width <= expandedRect.x || expandedRect.x + expandedRect.width <= widgetRect.x ||
+                                   widgetRect.y + widgetRect.height <= expandedRect.y || expandedRect.y + expandedRect.height <= widgetRect.y)
+          // Check collision with expanded profile widget (if it exists)
+          const collidesWithProfile = profileExpandedRect && !(widgetRect.x + widgetRect.width <= profileExpandedRect.x || profileExpandedRect.x + profileExpandedRect.width <= widgetRect.x ||
+                                                              widgetRect.y + widgetRect.height <= profileExpandedRect.y || profileExpandedRect.y + profileExpandedRect.height <= widgetRect.y)
+          
+          // Special handling for profile widget when profile-picture expands
+          if (widget.type === 'profile-picture' && w.type === 'profile' && !w.settings?.expanded) {
+            const { width: profOrigW, height: profOrigH, x: profOrigX, y: profOrigY } = w
+            let adjustedX = profOrigX
+            let adjustedY = profOrigY
+            let adjustedWidth = profOrigW
+            let adjustedHeight = profOrigH
+            
+            // First, adjust if colliding with expanded profile picture
+            if (collidesWithPic) {
+              const widgetRight = widgetRect.x + widgetRect.width
+              const widgetBottom = widgetRect.y + widgetRect.height
+              const expandedRight = expandedRect.x + expandedRect.width
+              const expandedBottom = expandedRect.y + expandedRect.height
+              const overlapsH = widgetRect.x < expandedRight && widgetRight > expandedRect.x
+              const overlapsV = widgetRect.y < expandedBottom && widgetBottom > expandedRect.y
+              const widgetCenterY = widgetRect.y + widgetRect.height / 2
+              const expandedCenterY = expandedRect.y + expandedRect.height / 2
+              const isBelow = overlapsH && (widgetRect.y >= expandedBottom - GRID_SIZE || widgetCenterY > expandedCenterY)
+              const isToLeft = overlapsV && widgetRight > expandedRect.x && widgetRect.x < expandedRect.x && !isBelow
+              const isToRight = overlapsV && widgetRect.x < expandedRight && widgetRight > expandedRight && !isBelow
+
+              if (isBelow) {
+                const overlapTop = Math.max(0, expandedBottom - widgetRect.y)
+                const minH = getWidgetMinSize(w.type).height
+                const heightReduction = overlapTop > 0 ? overlapTop + GRID_SIZE : 
+                  (widgetRect.y - expandedBottom < GRID_SIZE ? GRID_SIZE - (widgetRect.y - expandedBottom) + profOrigH * 0.1 : profOrigH * 0.15)
+                adjustedHeight = Math.max(minH, snapSizeToGrid(profOrigH - heightReduction))
+                adjustedY = snapToGrid(profOrigY + (profOrigH - adjustedHeight), GRID_OFFSET_Y)
+                const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - adjustedHeight
+                if (adjustedY + adjustedHeight > GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) {
+                  adjustedY = Math.max(GRID_OFFSET_Y + WIDGET_PADDING, maxY)
+                  if (adjustedY + adjustedHeight > GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) {
+                    adjustedHeight = Math.max(minH, snapSizeToGrid((GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) - adjustedY))
+                  }
+                }
+              }
+
+              if (isToLeft) {
+                const minW = getWidgetMinSize(w.type).width
+                const overlap = widgetRight - expandedRect.x
+                const widthReduction = widgetRect.x >= expandedRect.x ? GRID_SIZE + profOrigW * 0.1 : overlap + GRID_SIZE
+                adjustedWidth = Math.max(minW, snapSizeToGrid(profOrigW - widthReduction))
+                adjustedX = profOrigX
+                const minX = GRID_OFFSET_X + WIDGET_PADDING
+                if (adjustedX < minX) {
+                  adjustedX = minX
+                  adjustedWidth = Math.max(minW, snapSizeToGrid(profOrigX + profOrigW - minX - GRID_SIZE))
+                }
+                adjustedX = snapToGrid(adjustedX, GRID_OFFSET_X)
+              }
+
+              if (isToRight) {
+                const minW = getWidgetMinSize(w.type).width
+                const overlap = expandedRight - widgetRect.x
+                const widthReduction = widgetRight <= expandedRight ? GRID_SIZE + profOrigW * 0.1 : overlap + GRID_SIZE
+                adjustedWidth = Math.max(minW, snapSizeToGrid(profOrigW - widthReduction))
+                adjustedX = snapToGrid(profOrigX + (profOrigW - adjustedWidth), GRID_OFFSET_X)
+                const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - adjustedWidth
+                if (adjustedX + adjustedWidth > GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) {
+                  adjustedX = Math.min(GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - adjustedWidth, maxX)
+                  if (adjustedX + adjustedWidth > GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) {
+                    adjustedWidth = Math.max(minW, snapSizeToGrid((GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) - adjustedX))
+                  }
+                }
+              }
+
+              const finalSize = constrainSizeToViewport(adjustedX, adjustedY, adjustedWidth, adjustedHeight, getWidgetMinSize(w.type).width, getWidgetMinSize(w.type).height)
+              const finalPos = constrainToViewport(adjustedX, adjustedY, finalSize.width, finalSize.height, { x: 0, y: 0 }, true)
+              adjustedX = finalPos.x
+              adjustedY = finalPos.y
+              adjustedWidth = finalSize.width
+              adjustedHeight = finalSize.height
+            }
+            
+            // Then expand vertically 2x
+            let profExpandedHeight = snapSizeToGrid(adjustedHeight * 2)
+            let profExpandedY = adjustedY - (profExpandedHeight - adjustedHeight) / 2
+            
+            const profSizeConstrained = constrainSizeToViewport(adjustedX, profExpandedY, adjustedWidth, profExpandedHeight, getWidgetMinSize('profile').width, getWidgetMinSize('profile').height)
+            profExpandedHeight = profSizeConstrained.height
+            
+            const profConstrained = constrainToViewport(adjustedX, profExpandedY, adjustedWidth, profExpandedHeight, { x: 0, y: 0 }, true)
+            
+            return {
+              ...w,
+              x: profConstrained.x,
+              y: profConstrained.y,
+              width: adjustedWidth,
+              height: profExpandedHeight,
+              settings: { ...(w.settings || {}), expanded: true, originalWidth: profOrigW, originalHeight: profOrigH, originalX: profOrigX, originalY: profOrigY, adjusted: collidesWithPic }
+            }
+          }
+          
+          if (!collidesWithPic && !collidesWithProfile) return w
+          
+          // Use the expanded rect that causes collision (prioritize profile picture)
+          const collisionRect = collidesWithPic ? expandedRect : (profileExpandedRect || expandedRect)
 
           // Determine adjustment direction
           const widgetRight = widgetRect.x + widgetRect.width
           const widgetBottom = widgetRect.y + widgetRect.height
-          const expandedRight = expandedRect.x + expandedRect.width
-          const expandedBottom = expandedRect.y + expandedRect.height
-          const overlapsH = widgetRect.x < expandedRight && widgetRight > expandedRect.x
-          const overlapsV = widgetRect.y < expandedBottom && widgetBottom > expandedRect.y
+          const expandedRight = collisionRect.x + collisionRect.width
+          const expandedBottom = collisionRect.y + collisionRect.height
+          const overlapsH = widgetRect.x < expandedRight && widgetRight > collisionRect.x
+          const overlapsV = widgetRect.y < expandedBottom && widgetBottom > collisionRect.y
           const widgetCenterY = widgetRect.y + widgetRect.height / 2
-          const profileCenterY = expandedRect.y + expandedRect.height / 2
-          const isBelow = overlapsH && (widgetRect.y >= expandedBottom - GRID_SIZE || widgetCenterY > profileCenterY)
-          const isToLeft = overlapsV && widgetRight > expandedRect.x && widgetRect.x < expandedRect.x && !isBelow
+          const expandedCenterY = collisionRect.y + collisionRect.height / 2
+          const isBelow = overlapsH && (widgetRect.y >= expandedBottom - GRID_SIZE || widgetCenterY > expandedCenterY)
+          const isToLeft = overlapsV && widgetRight > collisionRect.x && widgetRect.x < collisionRect.x && !isBelow
           const isToRight = overlapsV && widgetRect.x < expandedRight && widgetRight > expandedRight && !isBelow
 
           const { width: origW, height: origH, x: origX, y: origY } = w
@@ -195,8 +317,8 @@ function App() {
 
           if (isToLeft) {
             const minW = getWidgetMinSize(w.type).width
-            const overlap = widgetRight - expandedRect.x
-            const widthReduction = widgetRect.x >= expandedRect.x ? GRID_SIZE + origW * 0.1 : overlap + GRID_SIZE
+            const overlap = widgetRight - collisionRect.x
+            const widthReduction = widgetRect.x >= collisionRect.x ? GRID_SIZE + origW * 0.1 : overlap + GRID_SIZE
             newWidth = Math.max(minW, snapSizeToGrid(origW - widthReduction))
             newX = origX
             const minX = GRID_OFFSET_X + WIDGET_PADDING
@@ -236,12 +358,25 @@ function App() {
         })
       } else {
         // COLLAPSE
-        const { originalWidth, originalHeight, originalX, originalY } = profilePicWidget.settings || {}
-        const restore = { x: originalX || profilePicWidget.x, y: originalY || profilePicWidget.y, width: originalWidth || profilePicWidget.width, height: originalHeight || profilePicWidget.height }
+        const { originalWidth, originalHeight, originalX, originalY } = widget.settings || {}
+        const restore = { x: originalX || widget.x, y: originalY || widget.y, width: originalWidth || widget.width, height: originalHeight || widget.height }
 
         return prev.map(w => {
           if (w.id === widgetId) {
             return { ...w, ...restore, settings: { ...(w.settings || {}), expanded: false } }
+          }
+          // If collapsing profile-picture, also collapse profile widget
+          if (widget.type === 'profile-picture' && w.type === 'profile' && w.settings?.expanded) {
+            const { originalWidth: profW, originalHeight: profH, originalX: profX, originalY: profY } = w.settings || {}
+            const profRestore = { x: profX || w.x, y: profY || w.y, width: profW || w.width, height: profH || w.height }
+            const newSettings = { ...(w.settings || {}) }
+            delete newSettings.expanded
+            delete newSettings.originalWidth
+            delete newSettings.originalHeight
+            delete newSettings.originalX
+            delete newSettings.originalY
+            delete newSettings.adjusted
+            return { ...w, ...profRestore, settings: Object.keys(newSettings).length > 0 ? newSettings : undefined }
           }
           if (w.settings?.adjusted) {
             const { originalWidth: rW, originalHeight: rH, originalX: rX, originalY: rY, ...rest } = w.settings
@@ -301,6 +436,10 @@ function App() {
             let settings = widget.settings || {}
             if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
               settings = { gameId: 'pullbackracers' }
+            }
+            // Initialize expandable settings
+            if (widget.type === 'profile-picture' && !settings.expandable) {
+              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
             }
             
             // Preserve EXACT saved sizes and positions - don't modify them at all
@@ -720,7 +859,7 @@ function App() {
         onGameClick={navigateToGameDetail}
         centerOffset={centerOffset}
         onUpdateWidgetSettings={updateWidgetSettings}
-        onToggleProfilePictureExpand={toggleProfilePictureExpand}
+        onToggleWidgetExpand={toggleWidgetExpand}
       />
       <Toaster toasts={toasts} onRemove={removeToast} />
     </div>

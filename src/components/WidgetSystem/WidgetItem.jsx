@@ -66,7 +66,7 @@ export default function WidgetItem({
   wasLastInteractionDrag,
   onGameClick,
   onUpdateWidgetSettings,
-  onToggleProfilePictureExpand
+  onToggleWidgetExpand
 }) {
   const widgetRef = useRef(null)
   const hasBeenAnimatedRef = useRef(false)
@@ -327,7 +327,7 @@ export default function WidgetItem({
             widget={{
               ...widget,
               onSettingsChange: onUpdateWidgetSettings ? (settings) => onUpdateWidgetSettings(widget.id, settings) : undefined,
-              onToggleExpand: onToggleProfilePictureExpand ? () => onToggleProfilePictureExpand(widget.id) : undefined
+              onToggleExpand: (onToggleWidgetExpand && widget.settings?.expandable) ? () => onToggleWidgetExpand(widget.id) : undefined
             }}
             allWidgets={allWidgets}
           />
