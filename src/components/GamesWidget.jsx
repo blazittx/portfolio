@@ -14,7 +14,7 @@ const GAME_IDS = [
 // In development, Vite proxy handles /api routes
 // In production, Netlify redirects /api/games/* to the function
 const getApiUrl = (gameId) => {
-  return `/api/games/${gameId}`;
+    return `/api/games/${gameId}`;
 };
 
 /* eslint-disable react/prop-types */

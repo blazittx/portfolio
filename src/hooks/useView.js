@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 // Uses Netlify function to proxy API calls (works in both dev and production)
 const fetchGameById = async (gameId) => {
   const getApiUrl = (id) => {
-    return `/api/games/${id}`
+      return `/api/games/${id}`
   }
 
   try {
