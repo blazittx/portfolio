@@ -60,6 +60,7 @@ export default function WidgetItem({
   isResizing, 
   hasCollision,
   isSwapTarget,
+  isDraggingOverSwapTarget,
   onMouseDown,
   wasLastInteractionDrag,
   onGameClick
@@ -111,7 +112,7 @@ export default function WidgetItem({
     const baseStyle = {
       position: 'absolute',
       background: 'hsl(0 0% 4%)',
-      border: hasCollision ? '2px solid #ff4444' : (isSwapTarget ? '2px solid #4a9eff' : (widget.pinned ? '1px solid color-mix(in hsl, canvasText, transparent 55%)' : '1px solid #777777')),
+      border: hasCollision ? '2px solid #ff4444' : (isSwapTarget ? '1px solid rgba(74, 158, 255, 0.3)' : (widget.pinned ? '1px solid color-mix(in hsl, canvasText, transparent 55%)' : '1px solid #777777')),
       borderRadius: '4px',
       overflow: 'visible',
       transition: isDragging || isResizing ? 'none' : 'border-color 0.2s ease, box-shadow 0.2s ease, left 0.2s cubic-bezier(0.4, 0, 0.2, 1), top 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1), height 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -119,14 +120,15 @@ export default function WidgetItem({
       willChange: isDragging || isResizing ? 'auto' : 'opacity, transform',
       cursor: widget.locked ? 'not-allowed' : 'move',
       userSelect: 'none',
-      boxShadow: isSwapTarget ? '0 0 20px rgba(74, 158, 255, 0.5)' : 'none',
+      boxShadow: 'none',
       left: `${widget.x}px`,
       top: `${widget.y}px`,
       width: `${widget.width}px`,
       height: `${widget.height}px`,
       zIndex: (isDragging || isResizing) ? 1000 : (isSwapTarget ? 1001 : 'auto'),
       // Start invisible only if not already animated (prevents flash on new widgets)
-      opacity: hasBeenAnimatedRef.current ? (widget.locked ? 0.85 : 1) : 0,
+      // Dim the dragged widget when hovering over a swap target
+      opacity: hasBeenAnimatedRef.current ? (isDraggingOverSwapTarget ? 0.4 : (widget.locked ? 0.85 : 1)) : 0,
       visibility: hasBeenAnimatedRef.current ? 'visible' : 'hidden',
       transform: hasBeenAnimatedRef.current ? 'scale(1) translateY(0)' : 'scale(0.8) translateY(20px)'
     }
@@ -294,25 +296,23 @@ export default function WidgetItem({
       {isSwapTarget && (
         <div style={{
           position: 'absolute',
-          top: '-4px',
-          left: '-4px',
-          right: '-4px',
-          bottom: '-4px',
-          background: 'rgba(74, 158, 255, 0.25)',
-          borderRadius: '6px',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          borderRadius: '4px',
           pointerEvents: 'none',
           zIndex: 1002,
-          border: '3px dashed rgba(74, 158, 255, 0.8)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#4a9eff',
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          textShadow: '0 0 8px rgba(74, 158, 255, 0.8)',
-          boxShadow: '0 0 30px rgba(74, 158, 255, 0.6), inset 0 0 20px rgba(74, 158, 255, 0.2)'
+          color: '#ffffff',
+          fontSize: '1.25rem',
+          fontWeight: 500,
+          letterSpacing: '0.05em'
         }}>
-          Swap target
+          SWAP
         </div>
       )}
       <div style={getWidgetContentStyle()}>

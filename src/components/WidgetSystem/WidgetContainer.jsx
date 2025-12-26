@@ -40,6 +40,7 @@ export default function WidgetContainer({
           const isResizingWidget = isResizing && resizeStateRef.current?.activeId === widget.id
           const hasCollision = collisionWidgetId === widget.id
           const isSwapTarget = swapTargetId === widget.id
+          const isDraggingOverSwapTarget = isDraggingWidget && swapTargetId !== null
           
           return (
             <WidgetItem
@@ -49,6 +50,7 @@ export default function WidgetContainer({
               isResizing={isResizingWidget}
               hasCollision={hasCollision}
               isSwapTarget={isSwapTarget}
+              isDraggingOverSwapTarget={isDraggingOverSwapTarget}
               onMouseDown={onMouseDown}
               wasLastInteractionDrag={wasLastInteractionDrag}
               onGameClick={onGameClick}
