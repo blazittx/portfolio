@@ -13,7 +13,8 @@ export default function WidgetContainer({
   wasLastInteractionDrag,
   onGameClick,
   centerOffset = { x: 0, y: 0 },
-  onUpdateWidgetSettings
+  onUpdateWidgetSettings,
+  onToggleProfilePictureExpand
 }) {
   // Ensure widgets is an array and filter out invalid widgets
   const validWidgets = Array.isArray(widgets) 
@@ -57,6 +58,7 @@ export default function WidgetContainer({
               wasLastInteractionDrag={wasLastInteractionDrag}
               onGameClick={onGameClick}
               onUpdateWidgetSettings={onUpdateWidgetSettings}
+              onToggleProfilePictureExpand={onToggleProfilePictureExpand}
             />
           )
         } catch (error) {

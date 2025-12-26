@@ -36,6 +36,7 @@ export const getWidgetMinSize = (widgetType) => {
     github: { width: 4, height: 3 },
     apikey: { width: 4, height: 2 },
     'single-game': { width: 4, height: 3 },
+    'profile-picture': { width: 2, height: 2 },
   };
 
   const gridUnits = minSizesInGridUnits[widgetType] || { width: 2, height: 2 };

@@ -13,8 +13,8 @@ import GridMask from './components/WidgetSystem/GridMask'
 import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
 import Toaster from './components/Toaster'
-import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, GRID_SIZE } from './constants/grid'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, calculateCenterOffset } from './utils/grid'
+import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, GRID_SIZE, USABLE_GRID_HEIGHT, USABLE_GRID_WIDTH, WIDGET_PADDING } from './constants/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from './utils/grid'
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
 import { setCookie, getCookie } from './utils/cookies'
@@ -120,6 +120,144 @@ function App() {
       }
       return w
     }))
+  }, [setWidgets])
+
+  // Expand/collapse profile picture widget
+  const toggleProfilePictureExpand = useCallback((widgetId) => {
+    setWidgets(prev => {
+      const profilePicWidget = prev.find(w => w.id === widgetId && w.type === 'profile-picture')
+      if (!profilePicWidget) return prev
+
+      const isExpanded = profilePicWidget.settings?.expanded || false
+      const EXPAND_SCALE = 2
+
+      if (!isExpanded) {
+        // EXPAND
+        const { width: originalWidth, height: originalHeight, x: originalX, y: originalY } = profilePicWidget
+        
+        let expandedWidth = snapSizeToGrid(originalWidth * EXPAND_SCALE)
+        let expandedHeight = snapSizeToGrid(originalHeight * EXPAND_SCALE)
+        let expandedX = originalX - (expandedWidth - originalWidth) / 2
+        let expandedY = originalY - (expandedHeight - originalHeight) / 2
+
+        const sizeConstrained = constrainSizeToViewport(expandedX, expandedY, expandedWidth, expandedHeight, getWidgetMinSize('profile-picture').width, getWidgetMinSize('profile-picture').height)
+        expandedWidth = sizeConstrained.width
+        expandedHeight = sizeConstrained.height
+        
+        const constrained = constrainToViewport(expandedX, expandedY, expandedWidth, expandedHeight, { x: 0, y: 0 }, true)
+        const expandedRect = { x: constrained.x, y: constrained.y, width: expandedWidth, height: expandedHeight }
+
+        return prev.map(w => {
+          if (w.id === widgetId) {
+            return {
+              ...w,
+              ...expandedRect,
+              settings: { ...(w.settings || {}), expanded: true, originalWidth, originalHeight, originalX, originalY }
+            }
+          }
+
+          const widgetRect = { x: w.x, y: w.y, width: w.width, height: w.height }
+          const collides = !(widgetRect.x + widgetRect.width <= expandedRect.x || expandedRect.x + expandedRect.width <= widgetRect.x ||
+                            widgetRect.y + widgetRect.height <= expandedRect.y || expandedRect.y + expandedRect.height <= widgetRect.y)
+          if (!collides) return w
+
+          // Determine adjustment direction
+          const widgetRight = widgetRect.x + widgetRect.width
+          const widgetBottom = widgetRect.y + widgetRect.height
+          const expandedRight = expandedRect.x + expandedRect.width
+          const expandedBottom = expandedRect.y + expandedRect.height
+          const overlapsH = widgetRect.x < expandedRight && widgetRight > expandedRect.x
+          const overlapsV = widgetRect.y < expandedBottom && widgetBottom > expandedRect.y
+          const widgetCenterY = widgetRect.y + widgetRect.height / 2
+          const profileCenterY = expandedRect.y + expandedRect.height / 2
+          const isBelow = overlapsH && (widgetRect.y >= expandedBottom - GRID_SIZE || widgetCenterY > profileCenterY)
+          const isToLeft = overlapsV && widgetRight > expandedRect.x && widgetRect.x < expandedRect.x && !isBelow
+          const isToRight = overlapsV && widgetRect.x < expandedRight && widgetRight > expandedRight && !isBelow
+
+          const { width: origW, height: origH, x: origX, y: origY } = w
+          let newX = origX, newY = origY, newWidth = origW, newHeight = origH
+
+          if (isBelow) {
+            const overlapTop = Math.max(0, expandedBottom - widgetRect.y)
+            const minH = getWidgetMinSize(w.type).height
+            const heightReduction = overlapTop > 0 ? overlapTop + GRID_SIZE : 
+              (widgetRect.y - expandedBottom < GRID_SIZE ? GRID_SIZE - (widgetRect.y - expandedBottom) + origH * 0.1 : origH * 0.15)
+            newHeight = Math.max(minH, snapSizeToGrid(origH - heightReduction))
+            newY = snapToGrid(origY + (origH - newHeight), GRID_OFFSET_Y)
+            const maxY = GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING - newHeight
+            if (newY + newHeight > GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) {
+              newY = Math.max(GRID_OFFSET_Y + WIDGET_PADDING, maxY)
+              if (newY + newHeight > GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) {
+                newHeight = Math.max(minH, snapSizeToGrid((GRID_OFFSET_Y + (USABLE_GRID_HEIGHT * GRID_SIZE) - WIDGET_PADDING) - newY))
+              }
+            }
+          }
+
+          if (isToLeft) {
+            const minW = getWidgetMinSize(w.type).width
+            const overlap = widgetRight - expandedRect.x
+            const widthReduction = widgetRect.x >= expandedRect.x ? GRID_SIZE + origW * 0.1 : overlap + GRID_SIZE
+            newWidth = Math.max(minW, snapSizeToGrid(origW - widthReduction))
+            newX = origX
+            const minX = GRID_OFFSET_X + WIDGET_PADDING
+            if (newX < minX) {
+              newX = minX
+              newWidth = Math.max(minW, snapSizeToGrid(origX + origW - minX - GRID_SIZE))
+            }
+            newX = snapToGrid(newX, GRID_OFFSET_X)
+          }
+
+          if (isToRight) {
+            const minW = getWidgetMinSize(w.type).width
+            const overlap = expandedRight - widgetRect.x
+            const widthReduction = widgetRight <= expandedRight ? GRID_SIZE + origW * 0.1 : overlap + GRID_SIZE
+            newWidth = Math.max(minW, snapSizeToGrid(origW - widthReduction))
+            newX = snapToGrid(origX + (origW - newWidth), GRID_OFFSET_X)
+            const maxX = GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - newWidth
+            if (newX + newWidth > GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) {
+              newX = Math.min(GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING - newWidth, maxX)
+              if (newX + newWidth > GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) {
+                newWidth = Math.max(minW, snapSizeToGrid((GRID_OFFSET_X + (USABLE_GRID_WIDTH * GRID_SIZE) - WIDGET_PADDING) - newX))
+              }
+            }
+          }
+
+          const finalSize = constrainSizeToViewport(newX, newY, newWidth, newHeight, getWidgetMinSize(w.type).width, getWidgetMinSize(w.type).height)
+          const finalPos = constrainToViewport(newX, newY, finalSize.width, finalSize.height, { x: 0, y: 0 }, true)
+
+          return {
+            ...w,
+            x: finalPos.x,
+            y: finalPos.y,
+            width: finalSize.width,
+            height: finalSize.height,
+            settings: { ...(w.settings || {}), originalWidth: origW, originalHeight: origH, originalX: origX, originalY: origY, adjusted: true }
+          }
+        })
+      } else {
+        // COLLAPSE
+        const { originalWidth, originalHeight, originalX, originalY } = profilePicWidget.settings || {}
+        const restore = { x: originalX || profilePicWidget.x, y: originalY || profilePicWidget.y, width: originalWidth || profilePicWidget.width, height: originalHeight || profilePicWidget.height }
+
+        return prev.map(w => {
+          if (w.id === widgetId) {
+            return { ...w, ...restore, settings: { ...(w.settings || {}), expanded: false } }
+          }
+          if (w.settings?.adjusted) {
+            const { originalWidth: rW, originalHeight: rH, originalX: rX, originalY: rY, ...rest } = w.settings
+            return {
+              ...w,
+              x: rX || w.x,
+              y: rY || w.y,
+              width: rW || w.width,
+              height: rH || w.height,
+              settings: Object.keys(rest).length > 0 ? rest : undefined
+            }
+          }
+          return w
+        })
+      }
+    })
   }, [setWidgets])
 
   // Set current layout as default
@@ -582,6 +720,7 @@ function App() {
         onGameClick={navigateToGameDetail}
         centerOffset={centerOffset}
         onUpdateWidgetSettings={updateWidgetSettings}
+        onToggleProfilePictureExpand={toggleProfilePictureExpand}
       />
       <Toaster toasts={toasts} onRemove={removeToast} />
     </div>

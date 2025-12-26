@@ -12,6 +12,7 @@ export const WIDGET_INFO = {
   github: { name: 'GitHub Activity', icon: '🐙' },
   apikey: { name: 'API Key', icon: '🔑' },
   'single-game': { name: 'Single Game', icon: '🎯' },
+  'profile-picture': { name: 'Profile Picture', icon: '🖼️' },
 }
 
 export const getWidgetDisplayName = (widgetType) => {

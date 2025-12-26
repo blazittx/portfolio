@@ -1,5 +1,6 @@
 import { componentMap } from '../../hooks/useWidgets'
 import { WIDGET_INFO } from '../../utils/widgets'
+import { useEffect, useRef, useState } from 'react'
 
 /* eslint-disable react/prop-types */
 
@@ -18,6 +19,57 @@ const LockIcon = ({ size = 16, color = 'currentColor' }) => (
 )
 
 export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onSetAsDefault, onRevertToDefault, onClose }) {
+  const menuRef = useRef(null)
+  const [adjustedPosition, setAdjustedPosition] = useState({ x: 0, y: 0 })
+
+  useEffect(() => {
+    if (!contextMenu) {
+      setAdjustedPosition({ x: 0, y: 0 })
+      return
+    }
+
+    // Use requestAnimationFrame to ensure the menu is rendered before measuring
+    const adjustPosition = () => {
+      if (!menuRef.current) {
+        requestAnimationFrame(adjustPosition)
+        return
+      }
+
+      const menu = menuRef.current
+      const menuRect = menu.getBoundingClientRect()
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      
+      let adjustedX = contextMenu.x
+      let adjustedY = contextMenu.y
+
+      // Adjust horizontal position if menu would overflow right edge
+      if (adjustedX + menuRect.width > viewportWidth) {
+        adjustedX = Math.max(8, viewportWidth - menuRect.width - 8) // 8px padding from edge
+      }
+
+      // Adjust horizontal position if menu would overflow left edge
+      if (adjustedX < 0) {
+        adjustedX = 8 // 8px padding from edge
+      }
+
+      // Adjust vertical position if menu would overflow bottom edge
+      if (adjustedY + menuRect.height > viewportHeight) {
+        adjustedY = Math.max(8, viewportHeight - menuRect.height - 8) // 8px padding from edge
+      }
+
+      // Adjust vertical position if menu would overflow top edge
+      if (adjustedY < 0) {
+        adjustedY = 8 // 8px padding from edge
+      }
+
+      setAdjustedPosition({ x: adjustedX, y: adjustedY })
+    }
+
+    // Small delay to ensure menu is rendered
+    requestAnimationFrame(adjustPosition)
+  }, [contextMenu])
+
   if (!contextMenu) return null
 
   const widget = contextMenu.widgetId ? widgets.find(w => w.id === contextMenu.widgetId) : null
@@ -42,6 +94,7 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
 
   return (
     <div 
+      ref={menuRef}
       className="context-menu"
       style={{
         position: 'fixed',
@@ -53,8 +106,8 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
         minWidth: '120px',
         boxShadow: '0 4px 12px color-mix(in hsl, canvasText, transparent 95%)',
         backdropFilter: 'blur(10px)',
-        left: `${contextMenu.x}px`,
-        top: `${contextMenu.y}px`
+        left: `${adjustedPosition.x || contextMenu.x}px`,
+        top: `${adjustedPosition.y || contextMenu.y}px`
       }}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}

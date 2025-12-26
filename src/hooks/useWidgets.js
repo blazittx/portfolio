@@ -16,6 +16,7 @@ import TimeWidget from '../components/TimeWidget'
 import GitHubActivityWidget from '../components/GitHubActivityWidget'
 import ApiKeyWidget from '../components/ApiKeyWidget'
 import SingleGameWidget from '../components/SingleGameWidget'
+import ProfilePictureWidget from '../components/ProfilePictureWidget'
 
 // Default homepage layout (from user's current setup)
 const DEFAULT_HOMEPAGE_LAYOUT = [
@@ -44,7 +45,8 @@ export const componentMap = {
   time: TimeWidget,
   github: GitHubActivityWidget,
   apikey: ApiKeyWidget,
-  'single-game': SingleGameWidget
+  'single-game': SingleGameWidget,
+  'profile-picture': ProfilePictureWidget
 }
 
 export const useWidgets = (view = 'main') => {
