@@ -80,3 +80,43 @@ export const snapToGridConstrained = (x, y, width, height, offsetX, offsetY) => 
   return { x: snappedX, y: snappedY }
 }
 
+// Calculate the horizontal offset needed to center the widget layout
+// Returns the offset in pixels that should be applied to center all widgets
+export const calculateCenterOffset = (widgets) => {
+  if (!widgets || widgets.length === 0) {
+    return 0
+  }
+  
+  // Calculate the bounding box of all widgets
+  let minX = Infinity
+  let maxX = -Infinity
+  
+  widgets.forEach(widget => {
+    if (widget && typeof widget.x === 'number' && typeof widget.width === 'number') {
+      minX = Math.min(minX, widget.x)
+      maxX = Math.max(maxX, widget.x + widget.width)
+    }
+  })
+  
+  // If no valid widgets found, return 0
+  if (minX === Infinity || maxX === -Infinity) {
+    return 0
+  }
+  
+  // Calculate the center of the widget layout
+  const layoutCenter = (minX + maxX) / 2
+  
+  // Calculate the center of the viewport
+  const viewportCenter = window.innerWidth / 2
+  
+  // Calculate the offset needed to center the layout
+  const offset = viewportCenter - layoutCenter
+  
+  // Snap the offset to grid for better alignment
+  // We want to snap to the nearest grid unit, but keep it as a simple offset
+  const gridUnits = Math.round(offset / GRID_SIZE)
+  const snappedOffset = gridUnits * GRID_SIZE
+  
+  return snappedOffset
+}
+

@@ -10,15 +10,11 @@ const GAME_IDS = [
   "GFOS1992",
 ];
 
-// Use proxy in development, direct API in production
+// Use Netlify function to proxy API calls (works in both dev and production)
+// In development, Vite proxy handles /api routes
+// In production, Netlify redirects /api/games/* to the function
 const getApiUrl = (gameId) => {
-  // In development, use Vite proxy to avoid CORS issues
-  if (import.meta.env.DEV) {
-    return `/api/games/${gameId}`;
-  }
-  // In production, try direct API (assumes server has CORS headers)
-  // If CORS fails, you may need to use a CORS proxy service
-  return `https://api.diabolical.studio/rest-api/games/${gameId}`;
+  return `/api/games/${gameId}`;
 };
 
 /* eslint-disable react/prop-types */

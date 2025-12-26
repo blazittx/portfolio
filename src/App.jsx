@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useWidgets, componentMap } from './hooks/useWidgets'
 import { useDragAndResize } from './hooks/useDragAndResize'
@@ -15,7 +15,7 @@ import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
 import Toaster from './components/Toaster'
 import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, GRID_SIZE } from './constants/grid'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport } from './utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from './utils/grid'
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
 import { setCookie, getCookie } from './utils/cookies'
@@ -34,6 +34,24 @@ function App() {
   
   // Ensure widgets is always an array
   const validWidgets = useMemo(() => Array.isArray(widgets) ? widgets : [], [widgets])
+  
+  // Calculate center offset to center the layout horizontally
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+  
+  const centerOffset = useMemo(() => {
+    if (currentView !== 'main' || validWidgets.length === 0) {
+      return 0
+    }
+    return calculateCenterOffset(validWidgets)
+  }, [validWidgets, currentView, windowSize])
   const {
     isDragging,
     isResizing,
@@ -501,9 +519,9 @@ function App() {
         onClose={closeContextMenu}
       />
       
-      <GridBackground />
+      <GridBackground centerOffset={centerOffset} />
       
-      <GridMask widgets={widgets} />
+      <GridMask widgets={widgets} centerOffset={centerOffset} isDragging={isDragging} isResizing={isResizing} />
       
       <WidgetContainer
         widgets={validWidgets}
@@ -515,6 +533,7 @@ function App() {
         onMouseDown={handleMouseDownWithContext}
         wasLastInteractionDrag={wasLastInteractionDrag}
         onGameClick={navigateToGameDetail}
+        centerOffset={centerOffset}
       />
       <Toaster toasts={toasts} onRemove={removeToast} />
     </div>

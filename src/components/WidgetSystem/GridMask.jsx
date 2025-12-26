@@ -1,8 +1,20 @@
 import { WIDGET_PADDING } from '../../constants/grid'
 
-export default function GridMask({ widgets }) {
+/* eslint-disable react/prop-types */
+export default function GridMask({ widgets, centerOffset = 0, isDragging = false, isResizing = false }) {
   return (
-    <>
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        transform: centerOffset !== 0 ? `translateX(${centerOffset}px)` : 'none',
+        transition: (isDragging || isResizing) ? 'none' : 'transform 0.3s ease-out'
+      }}
+    >
       {widgets.map(widget => {
         // Calculate each side separately with WIDGET_PADDING
         const left = widget.x - WIDGET_PADDING
@@ -15,7 +27,7 @@ export default function GridMask({ widgets }) {
             key={`grid-mask-${widget.id}`}
             data-grid-mask-id={widget.id}
             style={{
-              position: 'fixed',
+              position: 'absolute',
               background: 'hsl(0 0% 4%)',
               pointerEvents: 'none',
               zIndex: 0,
@@ -31,7 +43,7 @@ export default function GridMask({ widgets }) {
           />
         )
       })}
-    </>
+    </div>
   )
 }
 

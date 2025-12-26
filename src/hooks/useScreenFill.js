@@ -55,31 +55,31 @@ export const useScreenFill = (widgets, setWidgets, enabled = true) => {
     }
   }, [enabled, adjustWidgetSizes]) // Only run when enabled changes
   
-  // Adjust on window resize (debounced)
-  useEffect(() => {
-    if (!enabled) return
-    
-    const handleResize = () => {
-      // Clear existing timeout
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current)
-      }
-      
-      // Debounce resize handling
-      resizeTimeoutRef.current = setTimeout(() => {
-        adjustWidgetSizes()
-      }, 250) // Wait 250ms after resize stops
-    }
-    
-    window.addEventListener('resize', handleResize)
-    
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current)
-      }
-    }
-  }, [enabled, adjustWidgetSizes])
+  // Adjust on window resize (debounced) - DISABLED FOR NOW
+  // useEffect(() => {
+  //   if (!enabled) return
+  //   
+  //   const handleResize = () => {
+  //     // Clear existing timeout
+  //     if (resizeTimeoutRef.current) {
+  //       clearTimeout(resizeTimeoutRef.current)
+  //     }
+  //     
+  //     // Debounce resize handling
+  //     resizeTimeoutRef.current = setTimeout(() => {
+  //       adjustWidgetSizes()
+  //     }, 250) // Wait 250ms after resize stops
+  //   }
+  //   
+  //   window.addEventListener('resize', handleResize)
+  //   
+  //   return () => {
+  //     window.removeEventListener('resize', handleResize)
+  //     if (resizeTimeoutRef.current) {
+  //       clearTimeout(resizeTimeoutRef.current)
+  //     }
+  //   }
+  // }, [enabled, adjustWidgetSizes])
   
 }
 

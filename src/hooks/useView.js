@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
 
 // Fetch game data by ID
+// Uses Netlify function to proxy API calls (works in both dev and production)
 const fetchGameById = async (gameId) => {
   const getApiUrl = (id) => {
-    if (import.meta.env.DEV) {
-      return `/api/games/${id}`
-    }
-    return `https://api.diabolical.studio/rest-api/games/${id}`
+    return `/api/games/${id}`
   }
 
   try {

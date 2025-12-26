@@ -10,7 +10,8 @@ export default function WidgetContainer({
   resizeStateRef, 
   onMouseDown,
   wasLastInteractionDrag,
-  onGameClick
+  onGameClick,
+  centerOffset = 0
 }) {
   // Ensure widgets is an array and filter out invalid widgets
   const validWidgets = Array.isArray(widgets) 
@@ -23,7 +24,9 @@ export default function WidgetContainer({
         position: 'relative',
         width: '100%',
         height: '100%',
-        zIndex: 1
+        zIndex: 1,
+        transform: centerOffset !== 0 ? `translateX(${centerOffset}px)` : 'none',
+        transition: (isDragging || isResizing) ? 'none' : 'transform 0.3s ease-out'
       }}
     >
       {validWidgets.map(widget => {
