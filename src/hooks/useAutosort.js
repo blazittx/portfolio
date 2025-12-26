@@ -1,13 +1,15 @@
 import { useCallback } from 'react'
-import { snapToGrid } from '../utils/grid'
-import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
+import { snapToGrid, getRawUsableAreaBounds } from '../utils/grid'
+import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, WIDGET_PADDING } from '../constants/grid'
 
-export const useAutosort = (widgets, setWidgets) => {
+export const useAutosort = (widgets, setWidgets, centerOffset = { x: 0, y: 0 }) => {
   // Autosort widgets in a puzzle-like layout (no gaps, tight packing)
   const autosortWidgets = useCallback(() => {
-    const padding = 20
-    const startX = snapToGrid(padding, GRID_OFFSET_X)
-    const startY = snapToGrid(padding, GRID_OFFSET_Y)
+    // Use raw bounds as the single source of truth for the 34x19 area
+    const rawBounds = getRawUsableAreaBounds(centerOffset)
+    // Start position is at the top-left of the usable area with padding
+    const startX = rawBounds.minX + WIDGET_PADDING
+    const startY = rawBounds.minY + WIDGET_PADDING
     
     // Separate locked/pinned and unlocked/unpinned widgets
     // Locked and pinned widgets should not be moved by autosort
@@ -33,10 +35,10 @@ export const useAutosort = (widgets, setWidgets) => {
     
     // Helper to check if a position is available
     const isPositionAvailable = (x, y, width, height) => {
-      // Check viewport bounds
+      // Check raw bounds (34x19 area) - widgets must fit within the raw area with padding
       if (x < startX || y < startY) return false
-      if (x + width > window.innerWidth - padding) return false
-      if (y + height > window.innerHeight - padding) return false
+      if (x + width > rawBounds.maxX - WIDGET_PADDING) return false
+      if (y + height > rawBounds.maxY - WIDGET_PADDING) return false
       
       // Check collision with occupied areas
       const testRect = { x, y, width, height, right: x + width, bottom: y + height }
@@ -82,9 +84,9 @@ export const useAutosort = (widgets, setWidgets) => {
         }
       }
       
-      // Fallback: grid-based scan
-      for (let y = startY; y <= window.innerHeight - padding - height; y += GRID_SIZE) {
-        for (let x = startX; x <= window.innerWidth - padding - width; x += GRID_SIZE) {
+      // Fallback: grid-based scan within raw bounds
+      for (let y = startY; y <= rawBounds.maxY - WIDGET_PADDING - height; y += GRID_SIZE) {
+        for (let x = startX; x <= rawBounds.maxX - WIDGET_PADDING - width; x += GRID_SIZE) {
           const snappedX = snapToGrid(x, GRID_OFFSET_X)
           const snappedY = snapToGrid(y, GRID_OFFSET_Y)
           
@@ -124,7 +126,7 @@ export const useAutosort = (widgets, setWidgets) => {
       
       return newWidgets
     })
-  }, [widgets, setWidgets])
+  }, [widgets, setWidgets, centerOffset])
 
   return autosortWidgets
 }

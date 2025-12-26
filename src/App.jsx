@@ -64,7 +64,7 @@ function App() {
     wasLastInteractionDrag
   } = useDragAndResize(widgets, setWidgets, centerOffset)
   
-  const autosortWidgets = useAutosort(widgets, setWidgets)
+  const autosortWidgets = useAutosort(widgets, setWidgets, centerOffset)
   const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu()
   const { toasts, showToast, removeToast } = useToast()
   

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { WIDGET_PADDING, GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, USABLE_GRID_WIDTH, USABLE_GRID_HEIGHT } from '../../constants/grid'
-import { getUsableAreaBounds } from '../../utils/grid'
+import { getRawUsableAreaBounds } from '../../utils/grid'
 
 /* eslint-disable react/prop-types */
 export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDragging = false, isResizing = false, dragStateRef }) {
@@ -15,7 +15,8 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
   const availableAreaOutline = useMemo(() => {
     if (!isDragging) return null
     
-    const bounds = getUsableAreaBounds(centerOffset)
+    // Use raw bounds as the single source of truth for the 34x19 area
+    const rawBounds = getRawUsableAreaBounds(centerOffset)
     const occupiedCells = new Set()
     const availableCells = new Set()
     
@@ -23,26 +24,28 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
     widgets.forEach(widget => {
       if (widget.id === draggingWidgetId) return
       
-      // Widget position (widget.x, widget.y) is already at: grid_cell_start + offset + WIDGET_PADDING
-      // To get the grid cell start, we subtract WIDGET_PADDING and offset
+      // Widget positions are stored relative to the grid origin (GRID_OFFSET_X, GRID_OFFSET_Y)
+      // The WidgetContainer applies a CSS transform based on centerOffset to move the grid visually
+      // So widget.x is relative to the base grid origin, not including centerOffset
+      // To get the grid cell start, subtract WIDGET_PADDING
       const widgetLeft = widget.x - WIDGET_PADDING
       const widgetTop = widget.y - WIDGET_PADDING
       const widgetRight = widget.x + widget.width + WIDGET_PADDING
       const widgetBottom = widget.y + widget.height + WIDGET_PADDING
       
-      // Calculate grid cell indices
-      // Grid cells start at GRID_OFFSET_X + offsetX, so we need to subtract that
-      const baseX = GRID_OFFSET_X + offsetX
-      const baseY = GRID_OFFSET_Y + offsetY
+      // Calculate grid cell indices relative to the base grid origin (GRID_OFFSET_X, GRID_OFFSET_Y)
+      // This is correct because widget positions are stored relative to the base grid origin
+      const baseGridX = GRID_OFFSET_X
+      const baseGridY = GRID_OFFSET_Y
+      const startCol = Math.floor((widgetLeft - baseGridX) / GRID_SIZE)
+      const endCol = Math.ceil((widgetRight - baseGridX) / GRID_SIZE)
+      const startRow = Math.floor((widgetTop - baseGridY) / GRID_SIZE)
+      const endRow = Math.ceil((widgetBottom - baseGridY) / GRID_SIZE)
       
-      const startCol = Math.floor((widgetLeft - baseX) / GRID_SIZE)
-      const endCol = Math.ceil((widgetRight - baseX) / GRID_SIZE)
-      const startRow = Math.floor((widgetTop - baseY) / GRID_SIZE)
-      const endRow = Math.ceil((widgetBottom - baseY) / GRID_SIZE)
-      
-      // Mark all cells in this range as occupied
+      // Mark all cells in this range as occupied (only if within valid 34x19 grid bounds)
       for (let row = startRow; row < endRow; row++) {
         for (let col = startCol; col < endCol; col++) {
+          // Only mark cells that are within the 34x19 grid bounds
           if (row >= 0 && row < USABLE_GRID_HEIGHT && col >= 0 && col < USABLE_GRID_WIDTH) {
             occupiedCells.add(`${row},${col}`)
           }
@@ -50,20 +53,20 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
       }
     })
     
-    // Find all available cells
+    // Find all available cells within the raw 34x19 bounds
     for (let row = 0; row < USABLE_GRID_HEIGHT; row++) {
       for (let col = 0; col < USABLE_GRID_WIDTH; col++) {
         const cellKey = `${row},${col}`
         if (!occupiedCells.has(cellKey)) {
-          // Calculate pixel position for this cell
-          const cellX = GRID_OFFSET_X + offsetX + col * GRID_SIZE
-          const cellY = GRID_OFFSET_Y + offsetY + row * GRID_SIZE
+          // Calculate pixel position for this cell using raw bounds (no double offset)
+          const cellX = rawBounds.minX + col * GRID_SIZE
+          const cellY = rawBounds.minY + row * GRID_SIZE
           
-          // Only include cells that are within usable bounds
-          if (cellX >= bounds.minX - WIDGET_PADDING && 
-              cellY >= bounds.minY - WIDGET_PADDING &&
-              cellX + GRID_SIZE <= bounds.maxX + WIDGET_PADDING &&
-              cellY + GRID_SIZE <= bounds.maxY + WIDGET_PADDING) {
+          // Verify cell is within raw bounds (should always be true, but double-check)
+          if (cellX >= rawBounds.minX && 
+              cellY >= rawBounds.minY &&
+              cellX + GRID_SIZE <= rawBounds.maxX &&
+              cellY + GRID_SIZE <= rawBounds.maxY) {
             availableCells.add(cellKey)
           }
         }
@@ -82,16 +85,16 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
     
     // Build SVG path for the outline
     // We'll draw borders on edges where available cells meet occupied cells or boundaries
-    const baseX = GRID_OFFSET_X + offsetX
-    const baseY = GRID_OFFSET_Y + offsetY
+    // Use raw bounds directly (no transform needed - cells are positioned absolutely)
     const pathSegments = []
     const cellData = []
     
     // For each available cell, check its edges and store cell data
     availableCells.forEach(cellKey => {
       const [row, col] = cellKey.split(',').map(Number)
-      const cellX = baseX + col * GRID_SIZE
-      const cellY = baseY + row * GRID_SIZE
+      // Position cells directly using raw bounds (matching debug visualization)
+      const cellX = rawBounds.minX + col * GRID_SIZE
+      const cellY = rawBounds.minY + row * GRID_SIZE
       
       // Store cell data for filling
       cellData.push({ x: cellX, y: cellY })
@@ -119,7 +122,7 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
       path: pathSegments.length > 0 ? pathSegments.join(' ') : null,
       cells: cellData
     }
-  }, [isDragging, widgets, draggingWidgetId, centerOffset, offsetX, offsetY])
+  }, [isDragging, widgets, draggingWidgetId, centerOffset])
   
   return (
     <>
@@ -177,7 +180,7 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
             width: '100%',
             height: '100%',
             pointerEvents: 'none',
-            transform: hasOffset ? `translate(${offsetX}px, ${offsetY}px)` : 'none',
+            // No transform needed - cells are positioned using raw bounds directly
             zIndex: 1
           }}
         >
