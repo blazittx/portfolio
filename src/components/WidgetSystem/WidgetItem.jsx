@@ -1,5 +1,6 @@
 import { Component, useEffect, useRef } from 'react'
 import { isMobile } from '../../utils/mobile'
+import { isDevMode } from '../../utils/devMode'
 
 /* eslint-disable react/prop-types */
 
@@ -164,7 +165,7 @@ export default function WidgetItem({
       pointerEvents: 'all',
       background: 'transparent',
       cursor: 'default',
-      display: (widget.locked || isMobile()) ? 'none' : 'block'
+      display: (widget.locked || (isMobile() && !isDevMode())) ? 'none' : 'block'
     }
 
     // Add white circle pseudo-element using a span

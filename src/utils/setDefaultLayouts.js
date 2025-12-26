@@ -36,10 +36,10 @@ export const DEFAULT_GAME_DETAIL_LAYOUT = [
 export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
   {"id":"profile","type":"profile","x":163.2,"y":26.4,"width":201,"height":111,"locked":false,"pinned":true,"settings":{"expandable":true,"expandScaleX":1,"expandScaleY":2}},
   {"id":"about","type":"about","x":28.2,"y":161.4,"width":336,"height":111,"locked":false,"pinned":true,"settings":{"adjusted":true}},
-  {"id":"contact","type":"contact","x":28.2,"y":1461,"width":336,"height":111,"locked":false,"pinned":true,"settings":{}},
+  {"id":"contact","type":"contact","x":28.2,"y":1691.4,"width":336,"height":111,"locked":false,"pinned":true,"settings":{}},
   {"id":"single-game","type":"single-game","x":28.2,"y":701.4,"width":336,"height":381,"locked":false,"pinned":true,"settings":{"gameId":"pullbackracers"}},
   {"id":"single-game-3","type":"single-game","x":28.2,"y":296.4,"width":336,"height":381,"locked":false,"pinned":true,"settings":{"gameId":"gamblelite"}},
-  {"id":"games","type":"games","x":28.2,"y":1106.4,"width":336,"height":336,"locked":false,"pinned":false,"settings":{"adjusted":true}},
+  {"id":"games","type":"games","x":28.2,"y":1106.4,"width":336,"height":561,"locked":false,"pinned":false,"settings":{"adjusted":true}},
   {"id":"profile-picture","type":"profile-picture","x":28.2,"y":26.4,"width":111,"height":111,"locked":false,"pinned":false,"settings":{"expandable":true,"expandScaleX":2,"expandScaleY":2,"expanded":false,"originalWidth":111,"originalHeight":111,"originalX":28.2,"originalY":26.4}}
 ]
 
