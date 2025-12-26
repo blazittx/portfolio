@@ -14,6 +14,7 @@ import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
 import Toaster from './components/Toaster'
 import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, COOKIE_NAME_DEFAULT_MOBILE, GRID_SIZE, WIDGET_PADDING } from './constants/grid'
+import { GAME_IDS } from './constants/games'
 import { getUsableGridWidth, getUsableGridHeight } from './utils/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from './utils/grid'
 import { findNearestValidPosition } from './utils/collision'
@@ -86,8 +87,8 @@ function App() {
                 
                 // Initialize default settings for widgets that need them
                 let settings = widget.settings || {}
-                if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
-                  settings = { gameId: 'pullbackracers' }
+                if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
+                  settings = { gameId: GAME_IDS[0] }
                 }
                 // Initialize expandable settings
                 if (widget.type === 'profile-picture' && !settings.expandable) {
@@ -144,8 +145,8 @@ function App() {
                   
                   // Initialize default settings for widgets that need them
                   let settings = widget.settings || {}
-                  if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
-                    settings = { gameId: 'pullbackracers' }
+                  if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
+                    settings = { gameId: GAME_IDS[0] }
                   }
                   // Initialize expandable settings
                   if (widget.type === 'profile-picture' && !settings.expandable) {
@@ -587,8 +588,8 @@ function App() {
             
             // Initialize default settings for widgets that need them
             let settings = widget.settings || {}
-            if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
-              settings = { gameId: 'pullbackracers' }
+            if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
+              settings = { gameId: GAME_IDS[0] }
             }
             // Initialize expandable settings
             if (widget.type === 'profile-picture' && !settings.expandable) {
@@ -821,7 +822,7 @@ function App() {
         // Initialize settings based on widget type
         let settings = {}
         if (widgetType === 'single-game') {
-          settings = { gameId: 'pullbackracers' } // Default to first game
+          settings = { gameId: GAME_IDS[0] } // Default to first game
         }
 
         // Create new widget - ensure all properties are set and create a new object

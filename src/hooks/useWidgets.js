@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getCookie, setCookie } from '../utils/cookies'
 import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_MOBILE } from '../constants/grid'
+import { GAME_IDS } from '../constants/games'
 import { snapToGrid, snapSizeToGrid, constrainToViewport } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
@@ -73,8 +74,8 @@ export const useWidgets = (view = 'main') => {
                 
                 // Initialize default settings for widgets that need them
                 let settings = widget.settings || {}
-                if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
-                  settings = { gameId: 'pullbackracers' }
+                if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
+                  settings = { gameId: GAME_IDS[0] }
                 }
                 // Initialize expandable settings
                 if (widget.type === 'profile-picture' && !settings.expandable) {
@@ -122,8 +123,8 @@ export const useWidgets = (view = 'main') => {
               
               // Initialize default settings for widgets that need them
               let settings = widget.settings || {}
-              if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
-                settings = { gameId: 'pullbackracers' }
+              if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
+                settings = { gameId: GAME_IDS[0] }
               }
               // Initialize expandable settings
               if (widget.type === 'profile-picture' && !settings.expandable) {
@@ -176,8 +177,8 @@ export const useWidgets = (view = 'main') => {
             
             // Initialize default settings for widgets that need them
             let settings = widget.settings || {}
-            if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
-              settings = { gameId: 'pullbackracers' }
+            if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
+              settings = { gameId: GAME_IDS[0] }
             }
             // Initialize expandable settings
             if (widget.type === 'profile-picture' && !settings.expandable) {
@@ -232,8 +233,8 @@ export const useWidgets = (view = 'main') => {
             
             // Initialize default settings for widgets that need them
             let settings = widget.settings || {}
-            if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
-              settings = { gameId: 'pullbackracers' }
+            if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
+              settings = { gameId: GAME_IDS[0] }
             }
             // Initialize expandable settings
             if (widget.type === 'profile-picture' && !settings.expandable) {
@@ -287,8 +288,8 @@ export const useWidgets = (view = 'main') => {
             
             // Initialize default settings for widgets that need them
             let settings = widget.settings || {}
-            if (widget.type === 'single-game' && (!settings.gameId || !['pullbackracers', 'bubbledome', 'gamblelite', 'gp1', 'Forgekeepers', 'GFOS1992'].includes(settings.gameId))) {
-              settings = { gameId: 'pullbackracers' }
+            if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
+              settings = { gameId: GAME_IDS[0] }
             }
             // Initialize expandable settings
             if (widget.type === 'profile-picture' && !settings.expandable) {
