@@ -18,7 +18,7 @@ const getApiUrl = (gameId) => {
 };
 
 /* eslint-disable react/prop-types */
-export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameClick }) {
+export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameClick, allWidgets = [] }) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -32,7 +32,22 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
     const fetchGames = async () => {
       try {
         setLoading(true);
-        const gamePromises = GAME_IDS.map(async (gameId) => {
+        // Get list of game IDs that are displayed in single-game widgets
+        const getSingleGameWidgetGameIds = () => {
+          if (!Array.isArray(allWidgets)) return [];
+          return allWidgets
+            .filter(widget => widget.type === 'single-game' && widget.settings?.gameId)
+            .map(widget => widget.settings.gameId)
+            .filter(gameId => GAME_IDS.includes(gameId)); // Only include valid game IDs
+        };
+        
+        // Get game IDs that are already displayed in single-game widgets
+        const singleGameWidgetGameIds = getSingleGameWidgetGameIds();
+        
+        // Filter out games that are displayed in single-game widgets
+        const gameIdsToFetch = GAME_IDS.filter(gameId => !singleGameWidgetGameIds.includes(gameId));
+        
+        const gamePromises = gameIdsToFetch.map(async (gameId) => {
           try {
             const apiUrl = getApiUrl(gameId);
             const response = await fetch(apiUrl, {
@@ -93,7 +108,7 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
     };
 
     fetchGames();
-  }, []);
+  }, [allWidgets]);
 
   useEffect(() => {
     if (!isAutoPlaying || games.length === 0) return;

@@ -47,6 +47,7 @@ export default function WidgetContainer({
             <WidgetItem
               key={widget.id}
               widget={widget}
+              allWidgets={validWidgets}
               isDragging={isDraggingWidget}
               isResizing={isResizingWidget}
               hasCollision={hasCollision}

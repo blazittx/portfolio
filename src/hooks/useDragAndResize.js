@@ -354,9 +354,25 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
           const finalHeight = constrainedSize.height
           
           // Constrain position to viewport and ensure it's on grid
-          const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
-          finalX = snappedPos.x
-          finalY = snappedPos.y
+          // IMPORTANT: When resizing from bottom, preserve the top Y position - only constrain X
+          // This prevents the widget from "jumping up" when trying to resize to the last row
+          if (handle.includes('s') && !handle.includes('n')) {
+            // Resizing from bottom only: keep Y fixed, only constrain X
+            const snappedX = snapToGrid(finalX, GRID_OFFSET_X)
+            const constrainedX = constrainToViewport(snappedX, finalY, finalWidth, finalHeight, centerOffset)
+            finalX = constrainedX.x
+            // finalY stays as is (already snapped to grid) - never move widget up when resizing from bottom
+          } else if (handle.includes('n') && !handle.includes('s')) {
+            // Resizing from top only: constrain both X and Y
+            const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
+            finalX = snappedPos.x
+            finalY = snappedPos.y
+          } else {
+            // Resizing from corners or sides: use standard constraint
+            const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
+            finalX = snappedPos.x
+            finalY = snappedPos.y
+          }
           
           // Show collision/shake animation if size was corrected
           if (needsSizeCorrection) {
@@ -415,9 +431,18 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
             }
             
             // Constrain adjusted position to viewport and ensure it's on grid
-            const snappedAdjustedPos = snapToGridConstrained(adjustedX, adjustedY, validSize.width, validSize.height, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
-            adjustedX = snappedAdjustedPos.x
-            adjustedY = snappedAdjustedPos.y
+            // IMPORTANT: When resizing from bottom, preserve the top Y position
+            if (handle.includes('s') && !handle.includes('n')) {
+              // Resizing from bottom only: keep Y fixed, only constrain X
+              const snappedX = snapToGrid(adjustedX, GRID_OFFSET_X)
+              const constrainedX = constrainToViewport(snappedX, adjustedY, validSize.width, validSize.height, centerOffset)
+              adjustedX = constrainedX.x
+              // adjustedY stays as is - never move widget up when resizing from bottom
+            } else {
+              const snappedAdjustedPos = snapToGridConstrained(adjustedX, adjustedY, validSize.width, validSize.height, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
+              adjustedX = snappedAdjustedPos.x
+              adjustedY = snappedAdjustedPos.y
+            }
             
             // Check if adjusted position still has collision
             const adjustedRect = {

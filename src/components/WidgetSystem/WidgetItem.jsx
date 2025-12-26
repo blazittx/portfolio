@@ -56,6 +56,7 @@ class WidgetErrorBoundary extends Component {
 
 export default function WidgetItem({ 
   widget, 
+  allWidgets,
   isDragging, 
   isResizing, 
   hasCollision,
@@ -326,6 +327,7 @@ export default function WidgetItem({
               ...widget,
               onSettingsChange: onUpdateWidgetSettings ? (settings) => onUpdateWidgetSettings(widget.id, settings) : undefined
             }}
+            allWidgets={allWidgets}
           />
         </WidgetErrorBoundary>
       </div>
