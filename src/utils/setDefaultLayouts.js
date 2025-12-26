@@ -4,8 +4,9 @@
 import { setCookie } from './cookies'
 import { COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL } from '../constants/grid'
 
+// Single source of truth for default layouts
 // Decoded homepage layout
-const homepageLayout = [
+export const DEFAULT_HOMEPAGE_LAYOUT = [
   {"id":"profile","type":"profile","x":163.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{"expandable":true,"expandScaleX":1,"expandScaleY":2}},
   {"id":"about","type":"about","x":433.2,"y":26.4,"width":291,"height":111,"locked":false,"pinned":true,"settings":{"adjusted":true}},
   {"id":"contact","type":"contact","x":748.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{}},
@@ -21,7 +22,7 @@ const homepageLayout = [
 ]
 
 // Decoded game detail layout
-const gameDetailLayout = [
+export const DEFAULT_GAME_DETAIL_LAYOUT = [
   {"id":"back-button","type":"back-button","x":28.2,"y":26.4,"width":111,"height":66,"locked":true,"pinned":false},
   {"id":"game-info","type":"game-info","x":163.2,"y":26.4,"width":696,"height":66,"locked":true,"pinned":false},
   {"id":"game-description","type":"game-description","x":28.2,"y":611.4,"width":516,"height":246,"locked":false,"pinned":true},
@@ -35,14 +36,14 @@ const gameDetailLayout = [
  * This function can be called from the browser console or imported
  */
 export const setDefaultLayouts = () => {
-  setCookie(COOKIE_NAME_DEFAULT, homepageLayout)
-  setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL, gameDetailLayout)
+  setCookie(COOKIE_NAME_DEFAULT, DEFAULT_HOMEPAGE_LAYOUT)
+  setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL, DEFAULT_GAME_DETAIL_LAYOUT)
   console.log('Default layouts set successfully!')
-  console.log('Homepage layout:', homepageLayout)
-  console.log('Game detail layout:', gameDetailLayout)
+  console.log('Homepage layout:', DEFAULT_HOMEPAGE_LAYOUT)
+  console.log('Game detail layout:', DEFAULT_GAME_DETAIL_LAYOUT)
   return {
-    homepage: homepageLayout,
-    gameDetail: gameDetailLayout
+    homepage: DEFAULT_HOMEPAGE_LAYOUT,
+    gameDetail: DEFAULT_GAME_DETAIL_LAYOUT
   }
 }
 

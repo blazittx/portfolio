@@ -13,6 +13,7 @@ import Toaster from './Toaster'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from '../utils/grid'
 import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT_GAME_DETAIL } from '../constants/grid'
 import { getCookie, setCookie } from '../utils/cookies'
+import { DEFAULT_GAME_DETAIL_LAYOUT } from '../utils/setDefaultLayouts'
 import BackButtonWidget from './GameDetailWidgets/BackButtonWidget'
 import GameInfoWidget from './GameDetailWidgets/GameInfoWidget'
 import GameDescriptionWidget from './GameDetailWidgets/GameDescriptionWidget'
@@ -30,16 +31,6 @@ const gameDetailComponentMap = {
   'game-details': GameDetailsWidget,
   'game-development-info': GameDevelopmentInfoWidget,
 }
-
-// Default game detail layout (from user's current setup)
-const DEFAULT_GAME_DETAIL_LAYOUT = [
-  {"id":"back-button","type":"back-button","x":28.2,"y":26.4,"width":111,"height":66,"locked":true,"pinned":false},
-  {"id":"game-info","type":"game-info","x":613.2,"y":116.4,"width":246,"height":201,"locked":false,"pinned":false},
-  {"id":"game-description","type":"game-description","x":1108.2,"y":116.4,"width":419.79999999999995,"height":201,"locked":false,"pinned":false},
-  {"id":"game-image","type":"game-image","x":28.2,"y":116.4,"width":561,"height":741,"locked":false,"pinned":false},
-  {"id":"game-details","type":"game-details","x":883.2,"y":116.4,"width":201,"height":201,"locked":false,"pinned":false},
-  {"id":"game-development-info","type":"game-development-info","x":613.2,"y":341.4,"width":561,"height":516,"locked":false,"pinned":false}
-]
 
 /* eslint-disable react/prop-types */
 

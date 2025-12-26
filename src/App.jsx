@@ -18,6 +18,7 @@ import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewpor
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
 import { setCookie, getCookie } from './utils/cookies'
+import { DEFAULT_HOMEPAGE_LAYOUT, DEFAULT_GAME_DETAIL_LAYOUT } from './utils/setDefaultLayouts'
 import ProfileWidget from './components/ProfileWidget'
 import AboutWidget from './components/AboutWidget'
 import SkillsWidget from './components/SkillsWidget'
@@ -744,36 +745,15 @@ function App() {
   useEffect(() => {
     const defaultLayout = getCookie(COOKIE_NAME_DEFAULT)
     if (!defaultLayout || !Array.isArray(defaultLayout) || defaultLayout.length === 0) {
-      // Set default homepage layout (from useWidgets.js DEFAULT_HOMEPAGE_LAYOUT)
-      const homepageDefault = [
-        {"id":"profile","type":"profile","x":163.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{"expandable":true,"expandScaleX":1,"expandScaleY":2}},
-        {"id":"about","type":"about","x":433.2,"y":26.4,"width":291,"height":111,"locked":false,"pinned":true,"settings":{"adjusted":true}},
-        {"id":"contact","type":"contact","x":748.2,"y":26.4,"width":246,"height":111,"locked":false,"pinned":true,"settings":{}},
-        {"id":"single-game","type":"single-game","x":1018.2,"y":431.4,"width":516,"height":426,"locked":false,"pinned":true,"settings":{"gameId":"pullbackracers"}},
-        {"id":"single-game-3","type":"single-game","x":1018.2,"y":25.4,"width":516,"height":381,"locked":false,"pinned":true,"settings":{"gameId":"gamblelite"}},
-        {"id":"github","type":"github","x":28.2,"y":161.4,"width":381,"height":561,"locked":false,"pinned":false,"settings":{"adjusted":true}},
-        {"id":"games","type":"games","x":433.2,"y":161.4,"width":561,"height":561,"locked":false,"pinned":false,"settings":{"adjusted":true}},
-        {"id":"apikey","type":"apikey","x":388.2,"y":746.4,"width":336,"height":111,"locked":false,"pinned":false,"settings":{}},
-        {"id":"time","type":"time","x":748.2,"y":746.4,"width":246,"height":111,"locked":false,"pinned":false,"settings":{}},
-        {"id":"profile-picture","type":"profile-picture","x":28.2,"y":26.4,"width":111,"height":111,"locked":false,"pinned":false,"settings":{"expandable":true,"expandScaleX":2,"expandScaleY":2,"expanded":false,"originalWidth":111,"originalHeight":111,"originalX":28.2,"originalY":26.4}},
-        {"id":"visitors","type":"visitors","x":28.2,"y":746.4,"width":111,"height":111,"locked":false,"pinned":false,"settings":{}},
-        {"id":"heartbeat","type":"heartbeat","x":163.2,"y":746.4,"width":201,"height":111,"locked":false,"pinned":false,"settings":{}}
-      ]
-      setCookie(COOKIE_NAME_DEFAULT, homepageDefault)
+      // Set default homepage layout from single source of truth
+      setCookie(COOKIE_NAME_DEFAULT, DEFAULT_HOMEPAGE_LAYOUT)
     }
     
     // Also check game detail default
     const gameDetailDefault = getCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL)
     if (!gameDetailDefault || !Array.isArray(gameDetailDefault) || gameDetailDefault.length === 0) {
-      const gameDetailLayout = [
-        {"id":"back-button","type":"back-button","x":28.2,"y":26.4,"width":111,"height":66,"locked":true,"pinned":false},
-        {"id":"game-info","type":"game-info","x":163.2,"y":26.4,"width":696,"height":66,"locked":true,"pinned":false},
-        {"id":"game-description","type":"game-description","x":28.2,"y":611.4,"width":516,"height":246,"locked":false,"pinned":true},
-        {"id":"game-image","type":"game-image","x":28.2,"y":116.4,"width":516,"height":471,"locked":false,"pinned":true},
-        {"id":"game-details","type":"game-details","x":883.2,"y":26.4,"width":651,"height":66,"locked":true,"pinned":false},
-        {"id":"game-development-info","type":"game-development-info","x":568.2,"y":116.4,"width":966,"height":741,"locked":false,"pinned":false}
-      ]
-      setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL, gameDetailLayout)
+      // Set default game detail layout from single source of truth
+      setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL, DEFAULT_GAME_DETAIL_LAYOUT)
     }
   }, [])
 
