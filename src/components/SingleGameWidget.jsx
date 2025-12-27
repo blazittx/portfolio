@@ -149,6 +149,7 @@ export default function SingleGameWidget({
           maxPlayers: data.max_players,
           steamUrl: steamUrl,
           videoUrl: videoUrl,
+          screenshots: data.screenshots || [],
         });
         fetchedGameIdRef.current = selectedGameId; // Mark as successfully fetched
       } catch (err) {
@@ -223,7 +224,7 @@ export default function SingleGameWidget({
     }
   }, [isDropdownOpen]);
 
-  // Build media array: video first (if present), then images
+  // Build media array: video first (if present), then screenshots, then fallback to background image
   const mediaArray = useMemo(() => {
     if (!game) return [];
     const media = [];
@@ -231,15 +232,18 @@ export default function SingleGameWidget({
     if (game.videoUrl && isYouTubeUrl(game.videoUrl)) {
       media.push({ type: "video", url: game.videoUrl });
     }
-    // Add images (repeat the same image 4 times for now, or until we have multiple images)
-    if (game.image) {
-      for (let i = 0; i < 4; i++) {
-        media.push({ type: "image", url: game.image });
-      }
+    // Add screenshots if available
+    if (game.screenshots && Array.isArray(game.screenshots) && game.screenshots.length > 0) {
+      game.screenshots.forEach((screenshotUrl) => {
+        media.push({ type: "image", url: screenshotUrl });
+      });
+    } else if (game.image) {
+      // Fallback to background image if no screenshots
+      media.push({ type: "image", url: game.image });
     }
     return media;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game?.videoUrl, game?.image, game?.id]);
+  }, [game?.videoUrl, game?.screenshots, game?.image, game?.id]);
 
   // Reset image index when game changes
   useEffect(() => {

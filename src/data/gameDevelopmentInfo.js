@@ -13,59 +13,231 @@
 // Each team member should have: name, role, and linkedin (optional)
 export const gameTeamMembers = {
   pullbackracers: [
-    { name: "Doruk Sasmaz", role: "Game Programmer", linkedin: "https://linkedin.com/in/doruk-sasmaz" },
-    { name: "John Doe", role: "Artist", linkedin: "https://linkedin.com/in/john-doe" },
-    { name: "Jane Doe", role: "Designer", linkedin: "https://linkedin.com/in/jane-doe" },
-    { name: "Alice Smith", role: "Sound Designer", linkedin: "https://linkedin.com/in/alice-smith" },
-    { name: "Bob Johnson", role: "QA Tester", linkedin: "https://linkedin.com/in/bob-johnson" },
-    { name: "Charlie Brown", role: "Producer", linkedin: "https://linkedin.com/in/charlie-brown" },
-    { name: "Diana Wilson", role: "UI/UX Designer", linkedin: "https://linkedin.com/in/diana-wilson" },
-    { name: "Eve Davis", role: "Technical Artist", linkedin: "https://linkedin.com/in/eve-davis" },
-    { name: "Frank Miller", role: "Level Designer", linkedin: "https://linkedin.com/in/frank-miller" }
+    {
+      name: "Doruk Sasmaz",
+      role: "Game Programmer",
+      linkedin: "https://linkedin.com/in/doruk-sasmaz",
+    },
+    {
+      name: "John Doe",
+      role: "Artist",
+      linkedin: "https://linkedin.com/in/john-doe",
+    },
+    {
+      name: "Jane Doe",
+      role: "Designer",
+      linkedin: "https://linkedin.com/in/jane-doe",
+    },
+    {
+      name: "Alice Smith",
+      role: "Sound Designer",
+      linkedin: "https://linkedin.com/in/alice-smith",
+    },
+    {
+      name: "Bob Johnson",
+      role: "QA Tester",
+      linkedin: "https://linkedin.com/in/bob-johnson",
+    },
+    {
+      name: "Charlie Brown",
+      role: "Producer",
+      linkedin: "https://linkedin.com/in/charlie-brown",
+    },
+    {
+      name: "Diana Wilson",
+      role: "UI/UX Designer",
+      linkedin: "https://linkedin.com/in/diana-wilson",
+    },
+    {
+      name: "Eve Davis",
+      role: "Technical Artist",
+      linkedin: "https://linkedin.com/in/eve-davis",
+    },
+    {
+      name: "Frank Miller",
+      role: "Level Designer",
+      linkedin: "https://linkedin.com/in/frank-miller",
+    },
   ],
   gamblelite: [
-    { name: "Doruk Sasmaz", role: "Game Programmer", linkedin: "https://linkedin.com/in/doruk-sasmaz" },
-    { name: "John Doe", role: "Artist", linkedin: "https://linkedin.com/in/john-doe" },
-    { name: "Jane Doe", role: "Designer", linkedin: "https://linkedin.com/in/jane-doe" },
-    { name: "Grace Lee", role: "Animator", linkedin: "https://linkedin.com/in/grace-lee" },
-    { name: "Henry Taylor", role: "Game Designer", linkedin: "https://linkedin.com/in/henry-taylor" },
-    { name: "Iris Martinez", role: "Marketing Manager", linkedin: "https://linkedin.com/in/iris-martinez" }
+    {
+      name: "Doruk Sasmaz",
+      role: "Game Programmer",
+      linkedin: "https://linkedin.com/in/doruk-sasmaz",
+    },
+    {
+      name: "John Doe",
+      role: "Artist",
+      linkedin: "https://linkedin.com/in/john-doe",
+    },
+    {
+      name: "Jane Doe",
+      role: "Designer",
+      linkedin: "https://linkedin.com/in/jane-doe",
+    },
+    {
+      name: "Grace Lee",
+      role: "Animator",
+      linkedin: "https://linkedin.com/in/grace-lee",
+    },
+    {
+      name: "Henry Taylor",
+      role: "Game Designer",
+      linkedin: "https://linkedin.com/in/henry-taylor",
+    },
+    {
+      name: "Iris Martinez",
+      role: "Marketing Manager",
+      linkedin: "https://linkedin.com/in/iris-martinez",
+    },
   ],
   Forgekeepers: [
-    { name: "Doruk Sasmaz", role: "Game Programmer", linkedin: "https://linkedin.com/in/doruk-sasmaz" },
-    { name: "John Doe", role: "Artist", linkedin: "https://linkedin.com/in/john-doe" },
-    { name: "Jane Doe", role: "Designer", linkedin: "https://linkedin.com/in/jane-doe" },
-    { name: "Jack Anderson", role: "3D Modeler", linkedin: "https://linkedin.com/in/jack-anderson" },
-    { name: "Kate White", role: "Writer", linkedin: "https://linkedin.com/in/kate-white" },
-    { name: "Liam Harris", role: "Network Programmer", linkedin: "https://linkedin.com/in/liam-harris" },
-    { name: "Mia Thompson", role: "Concept Artist", linkedin: "https://linkedin.com/in/mia-thompson" }
+    {
+      name: "Doruk Sasmaz",
+      role: "Game Programmer",
+      linkedin: "https://linkedin.com/in/doruk-sasmaz",
+    },
+    {
+      name: "John Doe",
+      role: "Artist",
+      linkedin: "https://linkedin.com/in/john-doe",
+    },
+    {
+      name: "Jane Doe",
+      role: "Designer",
+      linkedin: "https://linkedin.com/in/jane-doe",
+    },
+    {
+      name: "Jack Anderson",
+      role: "3D Modeler",
+      linkedin: "https://linkedin.com/in/jack-anderson",
+    },
+    {
+      name: "Kate White",
+      role: "Writer",
+      linkedin: "https://linkedin.com/in/kate-white",
+    },
+    {
+      name: "Liam Harris",
+      role: "Network Programmer",
+      linkedin: "https://linkedin.com/in/liam-harris",
+    },
+    {
+      name: "Mia Thompson",
+      role: "Concept Artist",
+      linkedin: "https://linkedin.com/in/mia-thompson",
+    },
   ],
   bubbledome: [
-    { name: "Doruk Sasmaz", role: "Game Programmer", linkedin: "https://linkedin.com/in/doruk-sasmaz" },
-    { name: "John Doe", role: "Artist", linkedin: "https://linkedin.com/in/john-doe" },
-    { name: "Jane Doe", role: "Designer", linkedin: "https://linkedin.com/in/jane-doe" },
-    { name: "Noah Garcia", role: "Physics Programmer", linkedin: "https://linkedin.com/in/noah-garcia" },
-    { name: "Olivia Rodriguez", role: "VFX Artist", linkedin: "https://linkedin.com/in/olivia-rodriguez" },
-    { name: "Paul Lewis", role: "Audio Engineer", linkedin: "https://linkedin.com/in/paul-lewis" }
+    {
+      name: "Doruk Sasmaz",
+      role: "Game Programmer",
+      linkedin: "https://linkedin.com/in/doruk-sasmaz",
+    },
+    {
+      name: "John Doe",
+      role: "Artist",
+      linkedin: "https://linkedin.com/in/john-doe",
+    },
+    {
+      name: "Jane Doe",
+      role: "Designer",
+      linkedin: "https://linkedin.com/in/jane-doe",
+    },
+    {
+      name: "Noah Garcia",
+      role: "Physics Programmer",
+      linkedin: "https://linkedin.com/in/noah-garcia",
+    },
+    {
+      name: "Olivia Rodriguez",
+      role: "VFX Artist",
+      linkedin: "https://linkedin.com/in/olivia-rodriguez",
+    },
+    {
+      name: "Paul Lewis",
+      role: "Audio Engineer",
+      linkedin: "https://linkedin.com/in/paul-lewis",
+    },
   ],
   gp1: [
-    { name: "Doruk Sasmaz", role: "Game Programmer", linkedin: "https://linkedin.com/in/doruk-sasmaz" },
-    { name: "John Doe", role: "Artist", linkedin: "https://linkedin.com/in/john-doe" },
-    { name: "Jane Doe", role: "Designer", linkedin: "https://linkedin.com/in/jane-doe" },
-    { name: "Quinn Walker", role: "Gameplay Programmer", linkedin: "https://linkedin.com/in/quinn-walker" },
-    { name: "Rachel Young", role: "Environment Artist", linkedin: "https://linkedin.com/in/rachel-young" },
-    { name: "Sam King", role: "Tools Programmer", linkedin: "https://linkedin.com/in/sam-king" },
-    { name: "Tina Scott", role: "Narrative Designer", linkedin: "https://linkedin.com/in/tina-scott" }
+    {
+      name: "Doruk Sasmaz",
+      role: "Game Programmer",
+      linkedin: "https://linkedin.com/in/doruk-sasmaz",
+    },
+    {
+      name: "John Doe",
+      role: "Artist",
+      linkedin: "https://linkedin.com/in/john-doe",
+    },
+    {
+      name: "Jane Doe",
+      role: "Designer",
+      linkedin: "https://linkedin.com/in/jane-doe",
+    },
+    {
+      name: "Quinn Walker",
+      role: "Gameplay Programmer",
+      linkedin: "https://linkedin.com/in/quinn-walker",
+    },
+    {
+      name: "Rachel Young",
+      role: "Environment Artist",
+      linkedin: "https://linkedin.com/in/rachel-young",
+    },
+    {
+      name: "Sam King",
+      role: "Tools Programmer",
+      linkedin: "https://linkedin.com/in/sam-king",
+    },
+    {
+      name: "Tina Scott",
+      role: "Narrative Designer",
+      linkedin: "https://linkedin.com/in/tina-scott",
+    },
   ],
   GFOS1992: [
-    { name: "Doruk Sasmaz", role: "Game Programmer", linkedin: "https://linkedin.com/in/doruk-sasmaz" },
-    { name: "John Doe", role: "Artist", linkedin: "https://linkedin.com/in/john-doe" },
-    { name: "Jane Doe", role: "Designer", linkedin: "https://linkedin.com/in/jane-doe" },
-    { name: "Victor Green", role: "AI Programmer", linkedin: "https://linkedin.com/in/victor-green" },
-    { name: "Wendy Adams", role: "Character Artist", linkedin: "https://linkedin.com/in/wendy-adams" },
-    { name: "Xavier Baker", role: "Systems Designer", linkedin: "https://linkedin.com/in/xavier-baker" },
-    { name: "Yara Nelson", role: "Composer", linkedin: "https://linkedin.com/in/yara-nelson" },
-    { name: "Zoe Carter", role: "Community Manager", linkedin: "https://linkedin.com/in/zoe-carter" }
+    {
+      name: "Doruk Sasmaz",
+      role: "Game Programmer",
+      linkedin: "https://linkedin.com/in/doruk-sasmaz",
+    },
+    {
+      name: "John Doe",
+      role: "Artist",
+      linkedin: "https://linkedin.com/in/john-doe",
+    },
+    {
+      name: "Jane Doe",
+      role: "Designer",
+      linkedin: "https://linkedin.com/in/jane-doe",
+    },
+    {
+      name: "Victor Green",
+      role: "AI Programmer",
+      linkedin: "https://linkedin.com/in/victor-green",
+    },
+    {
+      name: "Wendy Adams",
+      role: "Character Artist",
+      linkedin: "https://linkedin.com/in/wendy-adams",
+    },
+    {
+      name: "Xavier Baker",
+      role: "Systems Designer",
+      linkedin: "https://linkedin.com/in/xavier-baker",
+    },
+    {
+      name: "Yara Nelson",
+      role: "Composer",
+      linkedin: "https://linkedin.com/in/yara-nelson",
+    },
+    {
+      name: "Zoe Carter",
+      role: "Community Manager",
+      linkedin: "https://linkedin.com/in/zoe-carter",
+    },
   ],
 };
 

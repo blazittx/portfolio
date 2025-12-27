@@ -116,6 +116,7 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
               minPlayers: data.min_players,
               maxPlayers: data.max_players,
               videoUrl: videoUrl,
+              screenshots: data.screenshots || [],
             };
           } catch (error) {
             // Handle CORS and network errors
@@ -148,7 +149,7 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameIdsToFetchKey]); // Only depend on the stable string key, not array references
 
-  // Build media array for a game: video first (if present), then images
+  // Build media array for a game: video first (if present), then screenshots, then fallback to background image
   const getMediaArray = (game) => {
     if (!game) return [];
     const media = [];
@@ -156,11 +157,14 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
     if (game.videoUrl && isYouTubeUrl(game.videoUrl)) {
       media.push({ type: 'video', url: game.videoUrl });
     }
-    // Add images (repeat the same image 4 times for now, or until we have multiple images)
-    if (game.image) {
-      for (let i = 0; i < 4; i++) {
-        media.push({ type: 'image', url: game.image });
-      }
+    // Add screenshots if available
+    if (game.screenshots && Array.isArray(game.screenshots) && game.screenshots.length > 0) {
+      game.screenshots.forEach((screenshotUrl) => {
+        media.push({ type: 'image', url: screenshotUrl });
+      });
+    } else if (game.image) {
+      // Fallback to background image if no screenshots
+      media.push({ type: 'image', url: game.image });
     }
     return media;
   };

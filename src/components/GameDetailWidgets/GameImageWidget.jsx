@@ -34,7 +34,7 @@ export default function GameImageWidget({ game }) {
     return YOUTUBE_URLS[game.id] || game.videoUrl || game.youtube_url || game.trailer_url || null
   }, [game.id, game.videoUrl, game.youtube_url, game.trailer_url])
 
-  // Build media array: video first (if present), then images
+  // Build media array: video first (if present), then screenshots, then fallback to background image
   const mediaArray = useMemo(() => {
     if (!game) return []
     const media = []
@@ -42,11 +42,14 @@ export default function GameImageWidget({ game }) {
     if (videoUrl && isYouTubeUrl(videoUrl)) {
       media.push({ type: 'video', url: videoUrl })
     }
-    // Add images (repeat the same image 4 times for now, or until we have multiple images)
-    if (game.image) {
-      for (let i = 0; i < 4; i++) {
-        media.push({ type: 'image', url: game.image })
-      }
+    // Add screenshots if available
+    if (game.screenshots && Array.isArray(game.screenshots) && game.screenshots.length > 0) {
+      game.screenshots.forEach((screenshotUrl) => {
+        media.push({ type: 'image', url: screenshotUrl })
+      })
+    } else if (game.image) {
+      // Fallback to background image if no screenshots
+      media.push({ type: 'image', url: game.image })
     }
     return media
   }, [game, videoUrl])

@@ -22,6 +22,9 @@ export const YOUTUBE_URLS = {
   gp1: "https://www.youtube.com/watch?v=ahNtZkPkLwk",
   pullbackracers: "https://www.youtube.com/watch?v=rverpDDUjKA",
   gamblelite: "https://www.youtube.com/watch?v=xHO0eRE6NxM",
+  Forgekeepers: "https://www.youtube.com/watch?v=QcgpHLj85cg",
+  GFOS1992: "https://www.youtube.com/watch?v=csXpdMuZkp8",
+  bubbledome: "https://www.youtube.com/watch?v=TyFXXudBoJQ",
 };
 
 // Technology chips per game (displayed as badges)

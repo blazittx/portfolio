@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { YOUTUBE_URLS } from '../constants/games'
 
 // Fetch game data by ID
 // Uses Netlify function to proxy API calls (works in both dev and production)
@@ -23,6 +24,8 @@ const fetchGameById = async (gameId) => {
     }
 
     const data = await response.json()
+    // Get video URL from manual mapping first, then fall back to API data
+    const videoUrl = YOUTUBE_URLS[gameId] || data.youtube_url || data.video_url || data.trailer_url || null
     return {
       id: data.game_id,
       title: data.game_name,
@@ -36,6 +39,8 @@ const fetchGameById = async (gameId) => {
       difficulty: data.difficulty_level,
       minPlayers: data.min_players,
       maxPlayers: data.max_players,
+      videoUrl: videoUrl,
+      screenshots: data.screenshots || [],
     }
   } catch (error) {
     console.error(`Error fetching game ${gameId}:`, error)
