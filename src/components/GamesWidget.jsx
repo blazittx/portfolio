@@ -455,7 +455,8 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                               flexWrap: 'wrap',
                               gap: '0.375rem',
                               alignItems: 'center',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              overflow: 'visible'
                             }}>
                               {/* Technology chips */}
                               {getGameChips(game.id).map((chip, chipIndex) => (
@@ -503,7 +504,9 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                                     whiteSpace: 'nowrap',
                                     transition: 'opacity 0.2s, transform 0.2s',
                                     cursor: 'pointer',
-                                    userSelect: 'none'
+                                    userSelect: 'none',
+                                    boxSizing: 'border-box',
+                                    transformOrigin: 'center'
                                   }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.opacity = '1';
@@ -527,7 +530,8 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                             display: sizeClass.includes('very-short') ? 'none' : 'flex',
                             flexWrap: 'wrap',
                             gap: '0.375rem',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            overflow: 'visible'
                           }}>
                             {/* Technology chips */}
                             {getGameChips(game.id).map((chip, chipIndex) => (
@@ -575,7 +579,9 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                                   whiteSpace: 'nowrap',
                                   transition: 'opacity 0.2s, transform 0.2s',
                                   cursor: 'pointer',
-                                  userSelect: 'none'
+                                  userSelect: 'none',
+                                  boxSizing: 'border-box',
+                                  transformOrigin: 'center'
                                 }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.opacity = '1';
@@ -892,7 +898,8 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
           marginTop: 'auto',
           flexShrink: 0,
           flexWrap: isMobile() ? 'wrap' : 'nowrap',
-          gap: sizeClass.includes('narrow') ? '0.25rem' : '0.5rem'
+          gap: sizeClass.includes('narrow') ? '0.25rem' : '0.5rem',
+          overflow: 'visible'
         }}>
           <button 
             style={{
@@ -910,7 +917,10 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
               opacity: 0.6,
               transition: 'opacity 0.2s, transform 0.2s',
               padding: 0,
-              lineHeight: 1
+              lineHeight: 1,
+              boxSizing: 'border-box',
+              transformOrigin: 'center',
+              margin: '0.25rem'
             }}
             onClick={goToPrev}
             aria-label="Previous game"
@@ -989,7 +999,10 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
               opacity: 0.6,
               transition: 'opacity 0.2s, transform 0.2s',
               padding: 0,
-              lineHeight: 1
+              lineHeight: 1,
+              boxSizing: 'border-box',
+              transformOrigin: 'center',
+              margin: '0.25rem'
             }}
             onClick={goToNext}
             aria-label="Next game"

@@ -682,6 +682,7 @@ export default function SingleGameWidget({
                         gap: "0.375rem",
                         alignItems: "center",
                         flexShrink: 0,
+                        overflow: "visible",
                       }}
                     >
                       {/* Technology chips */}
@@ -742,6 +743,8 @@ export default function SingleGameWidget({
                             whiteSpace: "nowrap",
                             transition: "opacity 0.2s, transform 0.2s",
                             cursor: "pointer",
+                            boxSizing: "border-box",
+                            transformOrigin: "center",
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.opacity = "1";
@@ -790,6 +793,7 @@ export default function SingleGameWidget({
                       flexWrap: "wrap",
                       gap: "0.375rem",
                       alignItems: "center",
+                      overflow: "visible",
                     }}
                   >
                     {/* Technology chips */}
@@ -850,6 +854,8 @@ export default function SingleGameWidget({
                           whiteSpace: "nowrap",
                           transition: "opacity 0.2s, transform 0.2s",
                           cursor: "pointer",
+                          boxSizing: "border-box",
+                          transformOrigin: "center",
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.opacity = "1";
