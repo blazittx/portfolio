@@ -38,7 +38,7 @@ export default function BaseWidget({ children, className = '', padding = '4px 0 
         /* Custom scrollbar styling */
         [data-base-widget] * {
           scrollbar-width: thin;
-          scrollbar-color: color-mix(in hsl, canvasText, transparent 20%) transparent;
+          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
         }
         [data-base-widget] *::-webkit-scrollbar {
           width: 6px;
@@ -49,11 +49,11 @@ export default function BaseWidget({ children, className = '', padding = '4px 0 
           margin: 0;
         }
         [data-base-widget] *::-webkit-scrollbar-thumb {
-          background: color-mix(in hsl, canvasText, transparent 20%);
+          background: rgba(255, 255, 255, 0.2);
           border-radius: 3px;
         }
         [data-base-widget] *::-webkit-scrollbar-thumb:hover {
-          background: color-mix(in hsl, canvasText, transparent 30%);
+          background: rgba(255, 255, 255, 0.3);
         }
       `
       document.head.appendChild(style)

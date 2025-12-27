@@ -49,19 +49,24 @@ const fetchGameById = async (gameId) => {
 }
 
 export const useView = () => {
-  const [currentView, setCurrentView] = useState('main') // 'main' or 'game-detail'
+  const [currentView, setCurrentView] = useState('main') // 'main', 'game-detail', or 'cv-detail'
   const [selectedGame, setSelectedGame] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
 
   // Initialize from URL on mount
   useEffect(() => {
     const path = window.location.pathname
-    const gameId = path.slice(1) // Remove leading '/'
+    const pathSegment = path.slice(1) // Remove leading '/'
 
-    // If there's a game ID in the URL and we're not already showing it
-    if (gameId && gameId !== '' && currentView === 'main' && !selectedGame) {
+    // Check if it's CV view
+    if (pathSegment === 'cv') {
+      if (currentView !== 'cv-detail') {
+        setCurrentView('cv-detail')
+      }
+    } else if (pathSegment && pathSegment !== '' && currentView === 'main' && !selectedGame) {
+      // Try to fetch as game ID
       setIsLoading(true)
-      fetchGameById(gameId)
+      fetchGameById(pathSegment)
         .then((game) => {
           if (game) {
             setSelectedGame(game)
@@ -76,7 +81,7 @@ export const useView = () => {
           setIsLoading(false)
           window.history.replaceState(null, '', '/')
         })
-    } else if (!gameId || gameId === '') {
+    } else if (!pathSegment || pathSegment === '') {
       // URL is root, ensure we're on main view
       if (currentView !== 'main') {
         setCurrentView('main')
@@ -89,11 +94,14 @@ export const useView = () => {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname
-      const gameId = path.slice(1)
+      const pathSegment = path.slice(1)
 
-      if (gameId && gameId !== '') {
+      if (pathSegment === 'cv') {
+        setCurrentView('cv-detail')
+        setSelectedGame(null)
+      } else if (pathSegment && pathSegment !== '') {
         setIsLoading(true)
-        fetchGameById(gameId)
+        fetchGameById(pathSegment)
           .then((game) => {
             if (game) {
               setSelectedGame(game)
@@ -133,11 +141,18 @@ export const useView = () => {
     window.history.pushState(null, '', '/')
   }
 
+  const navigateToCV = () => {
+    setCurrentView('cv-detail')
+    // Update URL to /cv
+    window.history.pushState(null, '', '/cv')
+  }
+
   return {
     currentView,
     selectedGame,
     navigateToGameDetail,
     navigateToMain,
+    navigateToCV,
     isLoading
   }
 }

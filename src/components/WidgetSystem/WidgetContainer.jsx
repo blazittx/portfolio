@@ -12,6 +12,7 @@ export default function WidgetContainer({
   onMouseDown,
   wasLastInteractionDrag,
   onGameClick,
+  onCVClick,
   centerOffset = { x: 0, y: 0 },
   onUpdateWidgetSettings,
   onToggleWidgetExpand
@@ -57,6 +58,7 @@ export default function WidgetContainer({
               onMouseDown={onMouseDown}
               wasLastInteractionDrag={wasLastInteractionDrag}
               onGameClick={onGameClick}
+              onCVClick={onCVClick}
               onUpdateWidgetSettings={onUpdateWidgetSettings}
               onToggleWidgetExpand={onToggleWidgetExpand}
             />

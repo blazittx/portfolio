@@ -3,7 +3,7 @@ import { WIDGET_PADDING, GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../../c
 import { getRawUsableAreaBounds, getUsableGridWidth, getUsableGridHeight } from '../../utils/grid'
 
 /* eslint-disable react/prop-types */
-export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDragging = false, isResizing = false, dragStateRef }) {
+export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDragging = false, isResizing = false, dragStateRef, view = 'main' }) {
   const offsetX = centerOffset.x || 0
   const offsetY = centerOffset.y || 0
   const hasOffset = offsetX !== 0 || offsetY !== 0
@@ -16,9 +16,9 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
     if (!isDragging) return null
     
     // Use raw bounds as the single source of truth for the usable area
-    const rawBounds = getRawUsableAreaBounds(centerOffset)
-    const gridWidth = getUsableGridWidth()
-    const gridHeight = getUsableGridHeight()
+    const rawBounds = getRawUsableAreaBounds(centerOffset, view)
+    const gridWidth = getUsableGridWidth(view)
+    const gridHeight = getUsableGridHeight(view)
     const occupiedCells = new Set()
     const availableCells = new Set()
     

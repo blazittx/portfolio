@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCookie, setCookie } from '../utils/cookies'
-import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_MOBILE } from '../constants/grid'
+import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_CV_DETAIL, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_MOBILE } from '../constants/grid'
 import { GAME_IDS } from '../constants/games'
 import { snapToGrid, snapSizeToGrid, constrainToViewport } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
@@ -20,6 +20,7 @@ import ApiKeyWidget from '../components/ApiKeyWidget'
 import SingleGameWidget from '../components/SingleGameWidget'
 import ProfilePictureWidget from '../components/ProfilePictureWidget'
 import HeartbeatWidget from '../components/HeartbeatWidget'
+import CVWidget from '../components/CVWidget'
 
 // Component mapping - exported for use in other components
 export const componentMap = {
@@ -35,21 +36,22 @@ export const componentMap = {
   apikey: ApiKeyWidget,
   'single-game': SingleGameWidget,
   'profile-picture': ProfilePictureWidget,
-  heartbeat: HeartbeatWidget
+  heartbeat: HeartbeatWidget,
+  cv: CVWidget
 }
 
 export const useWidgets = (view = 'main') => {
   // Determine which cookie to use based on view and mobile state
   const mobile = isMobile()
-  const cookieName = view === 'game-detail' ? COOKIE_NAME_GAME_DETAIL : COOKIE_NAME
+  const cookieName = view === 'game-detail' ? COOKIE_NAME_GAME_DETAIL : (view === 'cv-detail' ? COOKIE_NAME_CV_DETAIL : COOKIE_NAME)
   const defaultCookieName = mobile 
-    ? (view === 'game-detail' ? null : COOKIE_NAME_DEFAULT_MOBILE) // Game detail mobile default handled in GameDetailView
-    : (view === 'game-detail' ? null : COOKIE_NAME_DEFAULT)
+    ? (view === 'game-detail' ? null : (view === 'cv-detail' ? null : COOKIE_NAME_DEFAULT_MOBILE)) // Game detail and CV detail mobile defaults handled in their respective views
+    : (view === 'game-detail' ? null : (view === 'cv-detail' ? null : COOKIE_NAME_DEFAULT))
   
   // Initialize widget positions - load from cookie or use defaults
   const [widgets, setWidgets] = useState(() => {
-    // For game-detail view, return empty array - let GameDetailView handle initialization
-    if (view === 'game-detail') {
+    // For game-detail and cv-detail views, return empty array - let their respective views handle initialization
+    if (view === 'game-detail' || view === 'cv-detail') {
       return []
     }
     
@@ -343,9 +345,9 @@ export const useWidgets = (view = 'main') => {
 
   // Save to cookie whenever widgets change
   useEffect(() => {
-    // For game-detail view, don't save empty arrays (GameDetailView handles its own initialization)
+    // For game-detail and cv-detail views, don't save empty arrays (their respective views handle initialization)
     // This prevents overwriting saved layout with empty array on initial mount
-    if (view === 'game-detail' && (!widgets || widgets.length === 0)) {
+    if ((view === 'game-detail' || view === 'cv-detail') && (!widgets || widgets.length === 0)) {
       return
     }
     

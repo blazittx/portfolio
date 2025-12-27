@@ -27,13 +27,13 @@ export default function Toaster({ toasts, onRemove }) {
         <div
           key={toast.id}
           style={{
-            background: 'color-mix(in hsl, hsl(0 0% 4%), transparent 5%)',
-            border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
+            background: 'rgba(10, 10, 10, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '8px',
             padding: '0.75rem 1rem',
             color: 'canvasText',
             fontSize: '0.875rem',
-            boxShadow: '0 4px 12px color-mix(in hsl, canvasText, transparent 95%)',
+            boxShadow: '0 4px 12px rgba(255, 255, 255, 0.05)',
             backdropFilter: 'blur(10px)',
             minWidth: '200px',
             maxWidth: '400px',

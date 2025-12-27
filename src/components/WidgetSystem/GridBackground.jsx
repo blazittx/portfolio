@@ -3,10 +3,10 @@ import { getRawUsableAreaBounds, getUsableGridWidth, getUsableGridHeight } from 
 import { isMobile } from '../../utils/mobile'
 
 /* eslint-disable react/prop-types */
-export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebugOutline = false }) {
+export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebugOutline = false, view = 'main' }) {
   const size = 45
-  const line = 'color-mix(in hsl, #ffffff, transparent 85%)'
-  const lineSecondary = 'color-mix(in hsl, #808080, transparent 90%)'
+  const line = 'rgba(255, 255, 255, 0.15)'
+  const lineSecondary = 'rgba(128, 128, 128, 0.1)'
   const mobile = isMobile()
   
   // Calculate the adjusted offset for the grid background
@@ -15,12 +15,12 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
   const adjustedOffsetY = size * 0.32 + (centerOffset.y || 0)
   
   // Get the raw bounds of the usable area (single source of truth)
-  const rawBounds = getRawUsableAreaBounds(centerOffset)
+  const rawBounds = getRawUsableAreaBounds(centerOffset, view)
   const areaWidth = rawBounds.maxX - rawBounds.minX
   const areaHeight = rawBounds.maxY - rawBounds.minY
   
   // On mobile, extend the grid background to cover the full scrollable area
-  const gridHeight = getUsableGridHeight()
+  const gridHeight = getUsableGridHeight(view)
   const backgroundHeight = mobile ? `${gridHeight * GRID_SIZE}px` : '100vh'
   
   return (
@@ -86,7 +86,7 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
               borderRadius: '2px'
             }}
           >
-            {getUsableGridWidth()}×{getUsableGridHeight()} usable area
+            {getUsableGridWidth(view)}×{getUsableGridHeight(view)} usable area
           </div>
         </div>
       )}

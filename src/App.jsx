@@ -12,6 +12,7 @@ import GridBackground from './components/WidgetSystem/GridBackground'
 import GridMask from './components/WidgetSystem/GridMask'
 import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
+import CVDetailView from './components/CVDetailView'
 import Toaster from './components/Toaster'
 import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, COOKIE_NAME_DEFAULT_MOBILE, GRID_SIZE, WIDGET_PADDING } from './constants/grid'
 import { GAME_IDS } from './constants/games'
@@ -29,7 +30,7 @@ import ContactWidget from './components/ContactWidget'
 import GamesWidget from './components/GamesWidget'
 
 function App() {
-  const { currentView, selectedGame, navigateToGameDetail: originalNavigateToGameDetail, navigateToMain: originalNavigateToMain, isLoading } = useView()
+  const { currentView, selectedGame, navigateToGameDetail: originalNavigateToGameDetail, navigateToMain: originalNavigateToMain, navigateToCV: originalNavigateToCV, isLoading } = useView()
   const [widgets, setWidgets] = useWidgets('main')
   const { transition, animateInitial, animateWidgetsIn } = usePageTransition()
   const previousViewRef = useRef(currentView)
@@ -888,7 +889,7 @@ function App() {
   }, [transition, originalNavigateToGameDetail])
 
   const navigateToMain = useCallback(async () => {
-    if (previousViewRef.current === 'game-detail') {
+    if (previousViewRef.current === 'game-detail' || previousViewRef.current === 'cv-detail') {
       const animateIn = await transition()
       originalNavigateToMain()
       await animateIn()
@@ -897,6 +898,17 @@ function App() {
     }
     previousViewRef.current = 'main'
   }, [transition, originalNavigateToMain])
+
+  const navigateToCV = useCallback(async () => {
+    if (previousViewRef.current === 'main') {
+      const animateIn = await transition()
+      originalNavigateToCV()
+      await animateIn()
+    } else {
+      originalNavigateToCV()
+    }
+    previousViewRef.current = 'cv-detail'
+  }, [transition, originalNavigateToCV])
 
   // Handle view changes for transitions
   useEffect(() => {
@@ -984,6 +996,11 @@ function App() {
     return <GameDetailView game={selectedGame} onBack={navigateToMain} />
   }
 
+  // Show CV detail view if selected
+  if (currentView === 'cv-detail') {
+    return <CVDetailView onBack={navigateToMain} />
+  }
+
   const mobile = isMobile()
   
   return (
@@ -1026,6 +1043,7 @@ function App() {
         onMouseDown={handleMouseDownWithContext}
         wasLastInteractionDrag={wasLastInteractionDrag}
         onGameClick={navigateToGameDetail}
+        onCVClick={navigateToCV}
         centerOffset={centerOffset}
         onUpdateWidgetSettings={updateWidgetSettings}
         onToggleWidgetExpand={toggleWidgetExpand}

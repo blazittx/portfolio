@@ -6,7 +6,7 @@ import { isMobile } from '../utils/mobile'
 import { isDevMode } from '../utils/devMode'
 import { hasCollisionWithOthers, findNearestValidPosition, findValidSize, findCollidingWidget, findWidgetAtPoint } from '../utils/collision'
 
-export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 0 }) => {
+export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 0 }, view = 'main') => {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [collisionWidgetId, setCollisionWidgetId] = useState(null)
@@ -198,12 +198,12 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
 
         // Allow resizing below minimum during drag - we'll validate on mouse up
         // Constrain size to viewport (no minimum enforced during resize)
-        const constrainedSize = constrainSizeToViewport(newX, newY, newWidth, newHeight, 0, 0, centerOffset)
+        const constrainedSize = constrainSizeToViewport(newX, newY, newWidth, newHeight, 0, 0, centerOffset, view)
         newWidth = constrainedSize.width
         newHeight = constrainedSize.height
 
         // Constrain position to viewport (in case resize moved it out)
-        const constrainedPos = constrainToViewport(newX, newY, newWidth, newHeight, centerOffset)
+        const constrainedPos = constrainToViewport(newX, newY, newWidth, newHeight, centerOffset, true, view)
         newX = constrainedPos.x
         newY = constrainedPos.y
 
@@ -262,7 +262,7 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
         )
       })
     }
-  }, [setWidgets, centerOffset, swapTargetId, performSwap])
+  }, [setWidgets, centerOffset, swapTargetId, performSwap, view])
 
   const handleMouseUp = useCallback(() => {
     // Clear swap timer
@@ -354,7 +354,7 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
           }
           
           // Constrain size to viewport (with content-based minimum)
-          const constrainedSize = constrainSizeToViewport(finalX, finalY, correctedWidth, correctedHeight, minWidth, minHeight, centerOffset)
+          const constrainedSize = constrainSizeToViewport(finalX, finalY, correctedWidth, correctedHeight, minWidth, minHeight, centerOffset, view)
           const finalWidth = constrainedSize.width
           const finalHeight = constrainedSize.height
           
@@ -364,17 +364,17 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
           if (handle.includes('s') && !handle.includes('n')) {
             // Resizing from bottom only: keep Y fixed, only constrain X
             const snappedX = snapToGrid(finalX, GRID_OFFSET_X)
-            const constrainedX = constrainToViewport(snappedX, finalY, finalWidth, finalHeight, centerOffset)
+            const constrainedX = constrainToViewport(snappedX, finalY, finalWidth, finalHeight, centerOffset, true, view)
             finalX = constrainedX.x
             // finalY stays as is (already snapped to grid) - never move widget up when resizing from bottom
           } else if (handle.includes('n') && !handle.includes('s')) {
             // Resizing from top only: constrain both X and Y
-            const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
+            const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset, view)
             finalX = snappedPos.x
             finalY = snappedPos.y
           } else {
             // Resizing from corners or sides: use standard constraint
-            const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
+            const snappedPos = snapToGridConstrained(finalX, finalY, finalWidth, finalHeight, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset, view)
             finalX = snappedPos.x
             finalY = snappedPos.y
           }
@@ -409,7 +409,7 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
             )
             
             // Constrain valid size to viewport (with content-based minimum)
-            const constrainedValidSize = constrainSizeToViewport(finalX, finalY, validSize.width, validSize.height, minWidth, minHeight, centerOffset)
+            const constrainedValidSize = constrainSizeToViewport(finalX, finalY, validSize.width, validSize.height, minWidth, minHeight, centerOffset, view)
             validSize.width = constrainedValidSize.width
             validSize.height = constrainedValidSize.height
             
@@ -440,11 +440,11 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
             if (handle.includes('s') && !handle.includes('n')) {
               // Resizing from bottom only: keep Y fixed, only constrain X
               const snappedX = snapToGrid(adjustedX, GRID_OFFSET_X)
-              const constrainedX = constrainToViewport(snappedX, adjustedY, validSize.width, validSize.height, centerOffset)
+              const constrainedX = constrainToViewport(snappedX, adjustedY, validSize.width, validSize.height, centerOffset, true, view)
               adjustedX = constrainedX.x
               // adjustedY stays as is - never move widget up when resizing from bottom
             } else {
-              const snappedAdjustedPos = snapToGridConstrained(adjustedX, adjustedY, validSize.width, validSize.height, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset)
+              const snappedAdjustedPos = snapToGridConstrained(adjustedX, adjustedY, validSize.width, validSize.height, GRID_OFFSET_X, GRID_OFFSET_Y, centerOffset, view)
               adjustedX = snappedAdjustedPos.x
               adjustedY = snappedAdjustedPos.y
             }
@@ -537,7 +537,7 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
             const snappedY = snapToGrid(widget.y, GRID_OFFSET_Y)
             
             // Check if widget is within usable area
-            const withinArea = isWithinUsableArea(snappedX, snappedY, widget.width, widget.height, centerOffset)
+            const withinArea = isWithinUsableArea(snappedX, snappedY, widget.width, widget.height, centerOffset, view)
             
             let finalX = snappedX
             let finalY = snappedY
@@ -545,7 +545,7 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
             
             if (!withinArea) {
               // Widget is outside usable area - constrain it back
-              const constrained = constrainToViewport(snappedX, snappedY, widget.width, widget.height, centerOffset)
+              const constrained = constrainToViewport(snappedX, snappedY, widget.width, widget.height, centerOffset, true, view)
               finalX = constrained.x
               finalY = constrained.y
               shouldWiggle = true

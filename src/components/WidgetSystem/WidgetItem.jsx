@@ -67,6 +67,7 @@ export default function WidgetItem({
   onMouseDown,
   wasLastInteractionDrag,
   onGameClick,
+  onCVClick,
   onUpdateWidgetSettings,
   onToggleWidgetExpand
 }) {
@@ -117,7 +118,7 @@ export default function WidgetItem({
     const baseStyle = {
       position: 'absolute',
       background: 'hsl(0 0% 4%)',
-      border: hasCollision ? '2px solid #ff4444' : (isSwapTarget ? '1px solid rgba(74, 158, 255, 0.3)' : (widget.pinned ? '1px solid color-mix(in hsl, canvasText, transparent 55%)' : '1px solid #777777')),
+      border: hasCollision ? '2px solid #ff4444' : (isSwapTarget ? '1px solid rgba(74, 158, 255, 0.3)' : (widget.pinned ? '1px solid rgba(255, 255, 255, 0.45)' : '1px solid #777777')),
       borderRadius: '4px',
       overflow: 'visible',
       transition: isDragging || isResizing ? 'none' : 'border-color 0.2s ease, box-shadow 0.2s ease, left 0.4s cubic-bezier(0.4, 0, 0.2, 1), top 0.4s cubic-bezier(0.4, 0, 0.2, 1), width 0.4s cubic-bezier(0.4, 0, 0.2, 1), height 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -185,15 +186,15 @@ export default function WidgetItem({
 
   const handleMouseEnter = (e) => {
     if (!widget.locked && !isDragging && !isResizing) {
-      e.currentTarget.style.borderColor = 'color-mix(in hsl, canvasText, transparent 10%)'
+      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)'
       e.currentTarget.style.transform = 'translateY(-2px)'
-      e.currentTarget.style.boxShadow = '0 4px 12px color-mix(in hsl, canvasText, transparent 95%)'
+      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.05)'
     }
   }
 
   const handleMouseLeave = (e) => {
     if (!widget.locked && !isDragging && !isResizing) {
-      e.currentTarget.style.borderColor = widget.pinned ? 'color-mix(in hsl, canvasText, transparent 55%)' : '#777777'
+      e.currentTarget.style.borderColor = widget.pinned ? 'rgba(255, 255, 255, 0.45)' : '#777777'
       e.currentTarget.style.transform = 'translateY(0)'
       e.currentTarget.style.boxShadow = 'none'
     }
@@ -326,6 +327,7 @@ export default function WidgetItem({
             widgetId={widget.id}
             wasLastInteractionDrag={wasLastInteractionDrag}
             onGameClick={onGameClick}
+            onCVClick={onCVClick}
             widget={{
               ...widget,
               onSettingsChange: onUpdateWidgetSettings ? (settings) => onUpdateWidgetSettings(widget.id, settings) : undefined,
