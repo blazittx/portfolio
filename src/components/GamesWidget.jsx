@@ -1,60 +1,121 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import BaseWidget from "./BaseWidget";
-import { GAME_IDS, YOUTUBE_URLS, getGameChips, getGameLinks } from "../constants/games";
-import { isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnailUrl, setYouTubeVolume } from "../utils/youtube";
+import {
+  GAME_IDS,
+  YOUTUBE_URLS,
+  getGameChips,
+  getGameLinks,
+} from "../constants/games";
+import {
+  isYouTubeUrl,
+  getYouTubeEmbedUrl,
+  getYouTubeThumbnailUrl,
+  setYouTubeVolume,
+} from "../utils/youtube";
 import { isMobile } from "../utils/mobile";
 
 // Use Netlify function to proxy API calls (works in both dev and production)
 // In development, Vite proxy handles /api routes
 // In production, Netlify redirects /api/games/* to the function
 const getApiUrl = (gameId) => {
-    return `/api/games/${gameId}`;
+  return `/api/games/${gameId}`;
 };
 
 /* eslint-disable react/prop-types */
-export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameClick, allWidgets = [] }) {
+export default function GamesWidget({
+  widgetId,
+  wasLastInteractionDrag,
+  onGameClick,
+  allWidgets = [],
+}) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [videoPlayingByGame, setVideoPlayingByGame] = useState({});
   const autoPlayRef = useRef(null);
   const containerRef = useRef(null);
-  const [sizeClass, setSizeClass] = useState('');
+  const [sizeClass, setSizeClass] = useState("");
   const fetchedGameIdsRef = useRef(null); // Track which gameIds we've already fetched
   const [imageIndices, setImageIndices] = useState({}); // Track current image index for each game
   const [shouldSwitchImage, setShouldSwitchImage] = useState(true); // Track whether to switch image or game
   const videoIframeRefs = useRef({}); // Track video iframes for each game
+  const videoKeyToGameIdRef = useRef({});
 
   // Create a stable key from allWidgets that only changes when relevant data changes
   const allWidgetsKey = useMemo(() => {
-    if (!Array.isArray(allWidgets)) return '';
+    if (!Array.isArray(allWidgets)) return "";
     return allWidgets
-      .map(w => `${w.id}-${w.type}-${w.settings?.gameId || ''}`)
+      .map((w) => `${w.id}-${w.type}-${w.settings?.gameId || ""}`)
       .sort()
-      .join('|');
+      .join("|");
   }, [allWidgets]);
 
   // Memoize the list of game IDs from single-game widgets to prevent unnecessary re-fetches
   // Only recalculate when the actual gameIds change, not when the array reference changes
   const singleGameWidgetGameIdsString = useMemo(() => {
-    if (!Array.isArray(allWidgets)) return '';
+    if (!Array.isArray(allWidgets)) return "";
     const gameIds = allWidgets
-      .filter(widget => widget.type === 'single-game' && widget.settings?.gameId)
-      .map(widget => widget.settings.gameId)
-      .filter(gameId => GAME_IDS.includes(gameId)) // Only include valid game IDs
+      .filter(
+        (widget) => widget.type === "single-game" && widget.settings?.gameId
+      )
+      .map((widget) => widget.settings.gameId)
+      .filter((gameId) => GAME_IDS.includes(gameId)) // Only include valid game IDs
       .sort(); // Sort for consistent comparison
-    return gameIds.join(',');
+    return gameIds.join(",");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allWidgetsKey]); // Intentionally depend on stable key, not allWidgets array
 
   // Memoize the gameIds to fetch
   const gameIdsToFetch = useMemo(() => {
-    const excludedIds = singleGameWidgetGameIdsString ? singleGameWidgetGameIdsString.split(',') : [];
-    return GAME_IDS.filter(gameId => !excludedIds.includes(gameId)).sort();
+    const excludedIds = singleGameWidgetGameIdsString
+      ? singleGameWidgetGameIdsString.split(",")
+      : [];
+    return GAME_IDS.filter((gameId) => !excludedIds.includes(gameId)).sort();
   }, [singleGameWidgetGameIdsString]);
 
   // Create a stable string key for the gameIds to fetch
-  const gameIdsToFetchKey = gameIdsToFetch.join(',');
+  const gameIdsToFetchKey = gameIdsToFetch.join(",");
+
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.origin !== "https://www.youtube.com") return;
+
+      let data;
+      try {
+        if (typeof event.data === "string") {
+          if (!event.data.startsWith("{")) return;
+          data = JSON.parse(event.data);
+        } else {
+          data = event.data;
+        }
+      } catch {
+        return;
+      }
+
+      if (data?.event !== "onStateChange") return;
+
+      const state = data.info !== undefined ? data.info : data;
+      const isPlaying = state === 1 || state === 3;
+
+      const srcWin = event.source;
+      const entries = Object.entries(videoIframeRefs.current);
+
+      const match = entries.find(
+        ([, iframe]) => iframe?.contentWindow === srcWin
+      );
+      if (!match) return;
+
+      const [iframeKey] = match;
+      const gameId = videoKeyToGameIdRef.current[iframeKey];
+      if (!gameId) return;
+
+      setVideoPlayingByGame((prev) => ({ ...prev, [gameId]: isPlaying }));
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   // Fetch games from API - only when gameIdsToFetch actually changes
   useEffect(() => {
@@ -71,14 +132,14 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
       if (gameIdsToFetch.length === 0) {
         setGames([]);
         setLoading(false);
-        fetchedGameIdsRef.current = '';
+        fetchedGameIdsRef.current = "";
         return;
       }
 
       try {
         setLoading(true);
         fetchedGameIdsRef.current = gameIdsToFetchKey; // Mark as fetching
-        
+
         const gamePromises = gameIdsToFetch.map(async (gameId) => {
           try {
             const apiUrl = getApiUrl(gameId);
@@ -101,7 +162,12 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
 
             const data = await response.json();
             // Get video URL from manual mapping first, then fall back to API data
-            const videoUrl = YOUTUBE_URLS[gameId] || data.youtube_url || data.video_url || data.trailer_url || null;
+            const videoUrl =
+              YOUTUBE_URLS[gameId] ||
+              data.youtube_url ||
+              data.video_url ||
+              data.trailer_url ||
+              null;
             return {
               id: data.game_id,
               title: data.game_name,
@@ -155,16 +221,20 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
     const media = [];
     // Add video as first item if present
     if (game.videoUrl && isYouTubeUrl(game.videoUrl)) {
-      media.push({ type: 'video', url: game.videoUrl });
+      media.push({ type: "video", url: game.videoUrl });
     }
     // Add screenshots if available
-    if (game.screenshots && Array.isArray(game.screenshots) && game.screenshots.length > 0) {
+    if (
+      game.screenshots &&
+      Array.isArray(game.screenshots) &&
+      game.screenshots.length > 0
+    ) {
       game.screenshots.forEach((screenshotUrl) => {
-        media.push({ type: 'image', url: screenshotUrl });
+        media.push({ type: "image", url: screenshotUrl });
       });
     } else if (game.image) {
       // Fallback to background image if no screenshots
-      media.push({ type: 'image', url: game.image });
+      media.push({ type: "image", url: game.image });
     }
     return media;
   };
@@ -175,12 +245,9 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
     // Check if current game is showing a video - if so, stop auto-switching
     const currentGame = games[currentIndex];
     if (currentGame) {
-      const mediaArray = getMediaArray(currentGame);
-      const currentImageIndex = imageIndices[currentGame.id] || 0;
-      const isVideoActive = currentImageIndex === 0 && mediaArray[0]?.type === 'video';
-      
-      // Stop all auto-switching if video is active
-      if (isVideoActive) {
+      const isVideoPlaying = !!videoPlayingByGame[currentGame.id];
+
+      if (isVideoPlaying) {
         if (autoPlayRef.current) {
           clearInterval(autoPlayRef.current);
           autoPlayRef.current = null;
@@ -198,10 +265,13 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
           const currentImageIndex = imageIndices[currentGame.id] || 0;
           let nextImageIndex = (currentImageIndex + 1) % mediaArray.length;
           // Skip video if we're auto-scrolling (only show it when manually selected)
-          if (nextImageIndex === 0 && mediaArray[0]?.type === 'video') {
+          if (nextImageIndex === 0 && mediaArray[0]?.type === "video") {
             nextImageIndex = 1 % mediaArray.length; // Skip to first image
           }
-          setImageIndices(prev => ({ ...prev, [currentGame.id]: nextImageIndex }));
+          setImageIndices((prev) => ({
+            ...prev,
+            [currentGame.id]: nextImageIndex,
+          }));
         }
         setShouldSwitchImage(false); // Next time, switch game
       } else {
@@ -221,11 +291,11 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
   // Initialize image indices for each game
   useEffect(() => {
     if (games.length === 0) return;
-    
-    setImageIndices(prev => {
+
+    setImageIndices((prev) => {
       const newIndices = { ...prev };
       let hasNew = false;
-      games.forEach(game => {
+      games.forEach((game) => {
         if (!(game.id in newIndices)) {
           newIndices[game.id] = 0;
           hasNew = true;
@@ -239,30 +309,30 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
 
   useEffect(() => {
     const updateSizeClass = () => {
-      if (!containerRef.current) return
-      const { width, height } = containerRef.current.getBoundingClientRect()
-      const isNarrow = width < 200
-      const isShort = height < 150
-      const isVeryShort = height < 100
-      let classes = []
-      if (isNarrow) classes.push('narrow')
-      if (isShort) classes.push('short')
-      if (isVeryShort) classes.push('very-short')
-      setSizeClass(classes.join(' '))
-    }
-    updateSizeClass()
-    const resizeObserver = new ResizeObserver(updateSizeClass)
+      if (!containerRef.current) return;
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      const isNarrow = width < 200;
+      const isShort = height < 150;
+      const isVeryShort = height < 100;
+      let classes = [];
+      if (isNarrow) classes.push("narrow");
+      if (isShort) classes.push("short");
+      if (isVeryShort) classes.push("very-short");
+      setSizeClass(classes.join(" "));
+    };
+    updateSizeClass();
+    const resizeObserver = new ResizeObserver(updateSizeClass);
     if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
+      resizeObserver.observe(containerRef.current);
     }
-    return () => resizeObserver.disconnect()
-  }, [])
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Add fadeInUp animation
   useEffect(() => {
-    if (!document.getElementById('games-widget-animation')) {
-      const style = document.createElement('style')
-      style.id = 'games-widget-animation'
+    if (!document.getElementById("games-widget-animation")) {
+      const style = document.createElement("style");
+      style.id = "games-widget-animation";
       style.textContent = `
         @keyframes fadeInUp {
           from {
@@ -274,10 +344,10 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
             transform: translateY(0);
           }
         }
-      `
-      document.head.appendChild(style)
+      `;
+      document.head.appendChild(style);
     }
-  }, [])
+  }, []);
 
   // Helper function to render Steam icon SVG
   const renderSteamIcon = (size) => (
@@ -318,15 +388,19 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
   if (loading) {
     return (
       <BaseWidget padding="1rem 0.75rem 1rem 1rem">
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '200px',
-          color: 'canvasText',
-          opacity: 0.6,
-          fontSize: '0.875rem'
-        }}>Loading games...</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "200px",
+            color: "canvasText",
+            opacity: 0.6,
+            fontSize: "0.875rem",
+          }}
+        >
+          Loading games...
+        </div>
       </BaseWidget>
     );
   }
@@ -334,151 +408,189 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
   if (games.length === 0) {
     return (
       <BaseWidget padding="1rem 0.75rem 1rem 1rem">
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '200px',
-          color: 'canvasText',
-          opacity: 0.6,
-          fontSize: '0.875rem'
-        }}>No games available</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "200px",
+            color: "canvasText",
+            opacity: 0.6,
+            fontSize: "0.875rem",
+          }}
+        >
+          No games available
+        </div>
       </BaseWidget>
     );
   }
 
   return (
-    <BaseWidget
-      padding="1rem 0.75rem 1rem 1rem"
-      style={{ gap: "0.75rem" }}
-    >
-      <div 
+    <BaseWidget padding="1rem 0.75rem 1rem 1rem" style={{ gap: "0.75rem" }}>
+      <div
         ref={containerRef}
         style={{
           flex: 1,
           minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-          overflow: 'hidden'
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          overflow: "hidden",
         }}
         onMouseEnter={() => setIsAutoPlaying(false)}
         onMouseLeave={() => setIsAutoPlaying(true)}
       >
-        <div style={{
-          flex: 1,
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
+        <div
+          style={{
+            flex: 1,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
           {games.map((game, index) => {
-            const isActive = index === currentIndex
+            const isActive = index === currentIndex;
             return (
               <div
                 key={game.id}
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 0,
                   left: 0,
-                  width: '100%',
-                  height: '100%',
+                  width: "100%",
+                  height: "100%",
                   opacity: isActive ? 1 : 0,
-                  transform: isActive ? 'translateX(0)' : 'translateX(20px)',
-                  transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                  pointerEvents: isActive ? 'all' : 'none',
-                  cursor: 'pointer'
+                  transform: isActive ? "translateX(0)" : "translateX(20px)",
+                  transition:
+                    "opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                  pointerEvents: isActive ? "all" : "none",
+                  cursor: "pointer",
                 }}
                 onMouseUp={(e) => {
                   // Only navigate if it wasn't a drag (check after mouse up)
                   if (onGameClick && e.button === 0) {
                     // Check if click was on thumbnail container
-                    const clickedThumbnail = e.target.closest('[data-thumbnail-container]');
+                    const clickedThumbnail = e.target.closest(
+                      "[data-thumbnail-container]"
+                    );
                     if (clickedThumbnail) return;
-                    
+
                     // Small delay to let drag system update
                     setTimeout(() => {
-                      const wasDrag = wasLastInteractionDrag && typeof wasLastInteractionDrag === 'function' 
-                        ? wasLastInteractionDrag(widgetId) 
-                        : false
-                      
+                      const wasDrag =
+                        wasLastInteractionDrag &&
+                        typeof wasLastInteractionDrag === "function"
+                          ? wasLastInteractionDrag(widgetId)
+                          : false;
+
                       if (!wasDrag) {
-                        onGameClick(game)
+                        onGameClick(game);
                       }
-                    }, 10)
+                    }, 10);
                   }
                 }}
               >
-                <div style={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem',
-                  padding: 0,
-                  animation: 'fadeInUp 0.6s ease-out'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: '0.75rem',
-                    flexShrink: 0,
-                    flexDirection: isMobile() ? 'column' : 'row'
-                  }}>
-                    <div style={{
-                      flex: isMobile() ? '0 0 100%' : 1,
-                      minWidth: 0,
-                      width: isMobile() ? '100%' : undefined
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.75rem'
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          flexWrap: isMobile() ? 'wrap' : 'nowrap'
-                        }}>
-                          <h4 style={{
-                            fontSize: sizeClass.includes('short') ? '1rem' : (sizeClass.includes('very-short') ? '0.9375rem' : '1.125rem'),
-                            fontWeight: 600,
-                            margin: 0,
-                            color: 'canvasText',
-                            letterSpacing: '-0.01em',
-                            lineHeight: 1.3,
-                            flex: sizeClass.includes('narrow') ? '0 0 100%' : 1,
-                            minWidth: 0,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>{game.title}</h4>
+                <div
+                  style={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.75rem",
+                    padding: 0,
+                    animation: "fadeInUp 0.6s ease-out",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: "0.75rem",
+                      flexShrink: 0,
+                      flexDirection: isMobile() ? "column" : "row",
+                    }}
+                  >
+                    <div
+                      style={{
+                        flex: isMobile() ? "0 0 100%" : 1,
+                        minWidth: 0,
+                        width: isMobile() ? "100%" : undefined,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.75rem",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            flexWrap: isMobile() ? "wrap" : "nowrap",
+                          }}
+                        >
+                          <h4
+                            style={{
+                              fontSize: sizeClass.includes("short")
+                                ? "1rem"
+                                : sizeClass.includes("very-short")
+                                ? "0.9375rem"
+                                : "1.125rem",
+                              fontWeight: 600,
+                              margin: 0,
+                              color: "canvasText",
+                              letterSpacing: "-0.01em",
+                              lineHeight: 1.3,
+                              flex: sizeClass.includes("narrow")
+                                ? "0 0 100%"
+                                : 1,
+                              minWidth: 0,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {game.title}
+                          </h4>
                           {!isMobile() && (
                             /* Technology and link chips next to title when not mobile */
-                            <div style={{
-                              display: sizeClass.includes('very-short') ? 'none' : 'flex',
-                              flexWrap: 'wrap',
-                              gap: '0.375rem',
-                              alignItems: 'center',
-                              flexShrink: 0,
-                              overflow: 'visible'
-                            }}>
+                            <div
+                              style={{
+                                display: sizeClass.includes("very-short")
+                                  ? "none"
+                                  : "flex",
+                                flexWrap: "wrap",
+                                gap: "0.375rem",
+                                alignItems: "center",
+                                flexShrink: 0,
+                                overflow: "visible",
+                              }}
+                            >
                               {/* Technology chips */}
                               {getGameChips(game.id).map((chip, chipIndex) => (
                                 <div
                                   key={chipIndex}
                                   style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
-                                    borderRadius: '2px',
-                                    background: 'color-mix(in hsl, canvasText, transparent 90%)',
-                                    border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
-                                    fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    padding: sizeClass.includes("short")
+                                      ? "0.1875rem 0.375rem"
+                                      : "0.25rem 0.5rem",
+                                    borderRadius: "2px",
+                                    background:
+                                      "color-mix(in hsl, canvasText, transparent 90%)",
+                                    border:
+                                      "1px solid color-mix(in hsl, canvasText, transparent 20%)",
+                                    fontSize: sizeClass.includes("short")
+                                      ? "0.625rem"
+                                      : "0.6875rem",
                                     fontWeight: 500,
-                                    color: 'canvasText',
+                                    color: "canvasText",
                                     opacity: 0.9,
-                                    whiteSpace: 'nowrap',
-                                    userSelect: 'none'
+                                    whiteSpace: "nowrap",
+                                    userSelect: "none",
                                   }}
                                 >
                                   {chip}
@@ -493,35 +605,46 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
                                   style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.375rem',
-                                    padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
-                                    borderRadius: '2px',
-                                    background: 'color-mix(in hsl, canvasText, transparent 90%)',
-                                    border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
-                                    fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "0.375rem",
+                                    padding: sizeClass.includes("short")
+                                      ? "0.1875rem 0.375rem"
+                                      : "0.25rem 0.5rem",
+                                    borderRadius: "2px",
+                                    background:
+                                      "color-mix(in hsl, canvasText, transparent 90%)",
+                                    border:
+                                      "1px solid color-mix(in hsl, canvasText, transparent 20%)",
+                                    fontSize: sizeClass.includes("short")
+                                      ? "0.625rem"
+                                      : "0.6875rem",
                                     fontWeight: 500,
-                                    color: 'canvasText',
+                                    color: "canvasText",
                                     opacity: 0.9,
-                                    textDecoration: 'none',
-                                    whiteSpace: 'nowrap',
-                                    transition: 'opacity 0.2s, transform 0.2s',
-                                    cursor: 'pointer',
-                                    userSelect: 'none',
-                                    boxSizing: 'border-box',
-                                    transformOrigin: 'center'
+                                    textDecoration: "none",
+                                    whiteSpace: "nowrap",
+                                    transition: "opacity 0.2s, transform 0.2s",
+                                    cursor: "pointer",
+                                    userSelect: "none",
+                                    boxSizing: "border-box",
+                                    transformOrigin: "center",
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.opacity = '1';
-                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                    e.currentTarget.style.opacity = "1";
+                                    e.currentTarget.style.transform =
+                                      "scale(1.05)";
                                   }}
                                   onMouseLeave={(e) => {
-                                    e.currentTarget.style.opacity = '0.9';
-                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.opacity = "0.9";
+                                    e.currentTarget.style.transform =
+                                      "scale(1)";
                                   }}
                                 >
-                                  {link.type === 'steam' && renderSteamIcon(sizeClass.includes('short') ? '12' : '14')}
+                                  {link.type === "steam" &&
+                                    renderSteamIcon(
+                                      sizeClass.includes("short") ? "12" : "14"
+                                    )}
                                   <span>{link.label}</span>
                                 </a>
                               ))}
@@ -530,30 +653,40 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                         </div>
                         {isMobile() && (
                           /* Technology and link chips below title when mobile */
-                          <div style={{
-                            display: sizeClass.includes('very-short') ? 'none' : 'flex',
-                            flexWrap: 'wrap',
-                            gap: '0.375rem',
-                            alignItems: 'center',
-                            overflow: 'visible'
-                          }}>
+                          <div
+                            style={{
+                              display: sizeClass.includes("very-short")
+                                ? "none"
+                                : "flex",
+                              flexWrap: "wrap",
+                              gap: "0.375rem",
+                              alignItems: "center",
+                              overflow: "visible",
+                            }}
+                          >
                             {/* Technology chips */}
                             {getGameChips(game.id).map((chip, chipIndex) => (
                               <div
                                 key={chipIndex}
                                 style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
-                                  borderRadius: '2px',
-                                  background: 'color-mix(in hsl, canvasText, transparent 90%)',
-                                  border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
-                                  fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  padding: sizeClass.includes("short")
+                                    ? "0.1875rem 0.375rem"
+                                    : "0.25rem 0.5rem",
+                                  borderRadius: "2px",
+                                  background:
+                                    "color-mix(in hsl, canvasText, transparent 90%)",
+                                  border:
+                                    "1px solid color-mix(in hsl, canvasText, transparent 20%)",
+                                  fontSize: sizeClass.includes("short")
+                                    ? "0.625rem"
+                                    : "0.6875rem",
                                   fontWeight: 500,
-                                  color: 'canvasText',
+                                  color: "canvasText",
                                   opacity: 0.9,
-                                  whiteSpace: 'nowrap',
-                                  userSelect: 'none'
+                                  whiteSpace: "nowrap",
+                                  userSelect: "none",
                                 }}
                               >
                                 {chip}
@@ -568,125 +701,157 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
                                 style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.375rem',
-                                  padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
-                                  borderRadius: '2px',
-                                  background: 'color-mix(in hsl, canvasText, transparent 90%)',
-                                  border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
-                                  fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.375rem",
+                                  padding: sizeClass.includes("short")
+                                    ? "0.1875rem 0.375rem"
+                                    : "0.25rem 0.5rem",
+                                  borderRadius: "2px",
+                                  background:
+                                    "color-mix(in hsl, canvasText, transparent 90%)",
+                                  border:
+                                    "1px solid color-mix(in hsl, canvasText, transparent 20%)",
+                                  fontSize: sizeClass.includes("short")
+                                    ? "0.625rem"
+                                    : "0.6875rem",
                                   fontWeight: 500,
-                                  color: 'canvasText',
+                                  color: "canvasText",
                                   opacity: 0.9,
-                                  textDecoration: 'none',
-                                  whiteSpace: 'nowrap',
-                                  transition: 'opacity 0.2s, transform 0.2s',
-                                  cursor: 'pointer',
-                                  userSelect: 'none',
-                                  boxSizing: 'border-box',
-                                  transformOrigin: 'center'
+                                  textDecoration: "none",
+                                  whiteSpace: "nowrap",
+                                  transition: "opacity 0.2s, transform 0.2s",
+                                  cursor: "pointer",
+                                  userSelect: "none",
+                                  boxSizing: "border-box",
+                                  transformOrigin: "center",
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.opacity = '1';
-                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                  e.currentTarget.style.opacity = "1";
+                                  e.currentTarget.style.transform =
+                                    "scale(1.05)";
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.opacity = '0.9';
-                                  e.currentTarget.style.transform = 'scale(1)';
+                                  e.currentTarget.style.opacity = "0.9";
+                                  e.currentTarget.style.transform = "scale(1)";
                                 }}
                               >
-                                {link.type === 'steam' && renderSteamIcon(sizeClass.includes('short') ? '12' : '14')}
+                                {link.type === "steam" &&
+                                  renderSteamIcon(
+                                    sizeClass.includes("short") ? "12" : "14"
+                                  )}
                                 <span>{link.label}</span>
                               </a>
                             ))}
                           </div>
                         )}
                       </div>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.75rem',
-                        opacity: 0.7,
-                        color: 'canvasText',
-                        marginTop: sizeClass.includes('very-short')
-                          ? '0'
-                          : sizeClass.includes('short')
-                          ? '0.5rem'
-                          : '0.75rem'
-                      }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          fontSize: "0.75rem",
+                          opacity: 0.7,
+                          color: "canvasText",
+                          marginTop: sizeClass.includes("very-short")
+                            ? "0"
+                            : sizeClass.includes("short")
+                            ? "0.5rem"
+                            : "0.75rem",
+                        }}
+                      >
                         {game.teamIcon && (
                           <img
                             src={game.teamIcon}
                             alt={game.tech}
                             draggable="false"
                             style={{
-                              width: '16px',
-                              height: '16px',
-                              borderRadius: '2px',
-                              objectFit: 'cover',
+                              width: "16px",
+                              height: "16px",
+                              borderRadius: "2px",
+                              objectFit: "cover",
                               flexShrink: 0,
-                              userSelect: 'none'
+                              userSelect: "none",
                             }}
                             onError={(e) => {
                               e.target.style.display = "none";
                             }}
                           />
                         )}
-                        <span style={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>{game.tech}</span>
+                        <span
+                          style={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {game.tech}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.5rem',
-                    flex: 1,
-                    minHeight: 0,
-                    position: 'relative'
-                  }}
-                  >
-                    {/* Large media display on top */}
-                    <div style={{
-                      position: 'relative',
-                      width: '100%',
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.5rem",
                       flex: 1,
                       minHeight: 0,
-                      overflow: 'hidden',
-                      borderRadius: '4px',
-                      background: 'color-mix(in hsl, canvasText, transparent 98%)'
-                    }}>
+                      position: "relative",
+                    }}
+                  >
+                    {/* Large media display on top */}
+                    <div
+                      style={{
+                        position: "relative",
+                        width: "100%",
+                        flex: 1,
+                        minHeight: 0,
+                        overflow: "hidden",
+                        borderRadius: "4px",
+                        background:
+                          "color-mix(in hsl, canvasText, transparent 98%)",
+                      }}
+                    >
                       {(() => {
                         const mediaArray = getMediaArray(game);
                         const currentImageIndex = imageIndices[game.id] || 0;
                         const currentMedia = mediaArray[currentImageIndex];
-                        
+
                         if (!currentMedia) return null;
-                        
-                        if (currentMedia.type === 'video') {
-                          const embedUrl = getYouTubeEmbedUrl(currentMedia.url, {
-                            autoplay: 0,
-                            controls: 1,
-                            rel: 0
-                          });
+
+                        if (currentMedia.type === "video") {
+                          const embedUrl = getYouTubeEmbedUrl(
+                            currentMedia.url,
+                            {
+                              autoplay: 0,
+                              controls: 1,
+                              rel: 0,
+                              enablejsapi: 1,
+                              origin: window.location.origin,
+                            }
+                          );
                           return (
                             <iframe
                               ref={(el) => {
-                                if (el) videoIframeRefs.current[`${game.id}-${currentImageIndex}`] = el;
+                                const k = `${game.id}-${currentImageIndex}`;
+                                if (el) {
+                                  videoIframeRefs.current[k] = el;
+                                  videoKeyToGameIdRef.current[k] = game.id;
+                                } else {
+                                  delete videoIframeRefs.current[k];
+                                  delete videoKeyToGameIdRef.current[k];
+                                }
                               }}
                               key={`video-${game.id}-${currentImageIndex}`}
                               src={embedUrl}
                               title={`${game.title} - Video`}
                               style={{
-                                width: '100%',
-                                height: '100%',
-                                border: 'none',
-                                display: 'block'
+                                width: "100%",
+                                height: "100%",
+                                border: "none",
+                                display: "block",
                               }}
                               allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
@@ -694,7 +859,8 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                               onLoad={() => {
                                 // Set volume to 50% when iframe loads
                                 const iframeKey = `${game.id}-${currentImageIndex}`;
-                                const iframe = videoIframeRefs.current[iframeKey];
+                                const iframe =
+                                  videoIframeRefs.current[iframeKey];
                                 if (iframe) {
                                   setTimeout(() => {
                                     setYouTubeVolume(iframe, 50);
@@ -705,23 +871,26 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                           );
                         } else {
                           return (
-                            <img 
-                              src={currentMedia.url} 
-                              alt={`${game.title} - Image ${currentImageIndex + 1}`}
+                            <img
+                              src={currentMedia.url}
+                              alt={`${game.title} - Image ${
+                                currentImageIndex + 1
+                              }`}
                               draggable="false"
                               style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                display: 'block',
-                                userSelect: 'none',
-                                transition: 'opacity 0.3s ease'
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                                userSelect: "none",
+                                transition: "opacity 0.3s ease",
                               }}
                               loading="lazy"
                               onDragStart={(e) => e.preventDefault()}
                               onMouseDown={(e) => e.stopPropagation()}
                               onError={(e) => {
-                                e.target.src = "https://via.placeholder.com/800x600?text=Game+Image";
+                                e.target.src =
+                                  "https://via.placeholder.com/800x600?text=Game+Image";
                               }}
                             />
                           );
@@ -730,38 +899,42 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                     </div>
 
                     {/* Thumbnail images below, horizontally */}
-                    <div 
+                    <div
                       data-thumbnail-container
                       style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        gap: '0.5rem',
-                        overflowX: 'hidden',
-                        overflowY: 'hidden',
-                        paddingBottom: '0.25rem',
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: "0.5rem",
+                        overflowX: "hidden",
+                        overflowY: "hidden",
+                        paddingBottom: "0.25rem",
                         flexShrink: 0,
-                        flexWrap: 'wrap',
-                        justifyContent: 'flex-start',
+                        flexWrap: "wrap",
+                        justifyContent: "flex-start",
                         // Prevent page scrolling when clicking thumbnails on mobile
-                        touchAction: 'pan-y',
-                        WebkitOverflowScrolling: 'touch'
+                        touchAction: "pan-y",
+                        WebkitOverflowScrolling: "touch",
                       }}
                     >
                       {(() => {
                         const mediaArray = getMediaArray(game);
                         const currentImageIndex = imageIndices[game.id] || 0;
                         return mediaArray.map((media, index) => {
-                          const thumbnailUrl = media.type === 'video' 
-                            ? getYouTubeThumbnailUrl(media.url)
-                            : media.url;
-                          
+                          const thumbnailUrl =
+                            media.type === "video"
+                              ? getYouTubeThumbnailUrl(media.url)
+                              : media.url;
+
                           return (
                             <div
                               key={index}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                setImageIndices(prev => ({ ...prev, [game.id]: index }));
+                                setImageIndices((prev) => ({
+                                  ...prev,
+                                  [game.id]: index,
+                                }));
                               }}
                               onMouseUp={(e) => {
                                 e.stopPropagation();
@@ -772,94 +945,104 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                                 e.stopPropagation();
                               }}
                               style={{
-                                position: 'relative',
-                                width: '60px',
-                                height: '60px',
+                                position: "relative",
+                                width: "60px",
+                                height: "60px",
                                 flexShrink: 0,
-                                borderRadius: '4px',
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                border: currentImageIndex === index 
-                                  ? '2px solid canvasText' 
-                                  : '2px solid transparent',
+                                borderRadius: "4px",
+                                overflow: "hidden",
+                                cursor: "pointer",
+                                border:
+                                  currentImageIndex === index
+                                    ? "2px solid canvasText"
+                                    : "2px solid transparent",
                                 opacity: currentImageIndex === index ? 1 : 0.7,
-                                transition: 'opacity 0.2s ease, border-color 0.2s ease',
-                                background: 'color-mix(in hsl, canvasText, transparent 98%)'
+                                transition:
+                                  "opacity 0.2s ease, border-color 0.2s ease",
+                                background:
+                                  "color-mix(in hsl, canvasText, transparent 98%)",
                               }}
                               onMouseEnter={(e) => {
                                 if (currentImageIndex !== index) {
-                                  e.currentTarget.style.opacity = '0.9'
+                                  e.currentTarget.style.opacity = "0.9";
                                 }
                               }}
                               onMouseLeave={(e) => {
                                 if (currentImageIndex !== index) {
-                                  e.currentTarget.style.opacity = '0.7'
+                                  e.currentTarget.style.opacity = "0.7";
                                 }
                               }}
                             >
-                              {media.type === 'video' ? (
+                              {media.type === "video" ? (
                                 <>
-                                  <img 
-                                    src={thumbnailUrl || "https://via.placeholder.com/60x60?text=Video"} 
+                                  <img
+                                    src={
+                                      thumbnailUrl ||
+                                      "https://via.placeholder.com/60x60?text=Video"
+                                    }
                                     alt={`${game.title} - Video thumbnail`}
                                     draggable="false"
                                     style={{
-                                      width: '100%',
-                                      height: '100%',
-                                      objectFit: 'cover',
-                                      display: 'block',
-                                      userSelect: 'none'
+                                      width: "100%",
+                                      height: "100%",
+                                      objectFit: "cover",
+                                      display: "block",
+                                      userSelect: "none",
                                     }}
                                     loading="lazy"
                                     onDragStart={(e) => e.preventDefault()}
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onError={(e) => {
-                                      e.target.src = "https://via.placeholder.com/60x60?text=Video";
+                                      e.target.src =
+                                        "https://via.placeholder.com/60x60?text=Video";
                                     }}
                                   />
                                   {/* Play icon overlay */}
-                                  <div style={{
-                                    position: 'absolute',
-                                    top: '50%',
-                                    left: '50%',
-                                    transform: 'translate(-50%, -50%)',
-                                    width: '20px',
-                                    height: '20px',
-                                    borderRadius: '50%',
-                                    background: 'rgba(0, 0, 0, 0.7)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    pointerEvents: 'none'
-                                  }}>
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: "50%",
+                                      left: "50%",
+                                      transform: "translate(-50%, -50%)",
+                                      width: "20px",
+                                      height: "20px",
+                                      borderRadius: "50%",
+                                      background: "rgba(0, 0, 0, 0.7)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      pointerEvents: "none",
+                                    }}
+                                  >
                                     <svg
                                       width="12"
                                       height="12"
                                       viewBox="0 0 24 24"
                                       fill="white"
-                                      style={{ marginLeft: '2px' }}
+                                      style={{ marginLeft: "2px" }}
                                     >
                                       <path d="M8 5v14l11-7z" />
                                     </svg>
                                   </div>
                                 </>
                               ) : (
-                                <img 
-                                  src={thumbnailUrl} 
+                                <img
+                                  src={thumbnailUrl}
                                   alt={`${game.title} - Thumbnail ${index + 1}`}
                                   draggable="false"
                                   style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    display: 'block',
-                                    userSelect: 'none'
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    display: "block",
+                                    userSelect: "none",
                                   }}
                                   loading="lazy"
                                   onDragStart={(e) => e.preventDefault()}
                                   onMouseDown={(e) => e.stopPropagation()}
                                   onError={(e) => {
-                                    e.target.src = "https://via.placeholder.com/60x60?text=Image";
+                                    e.target.src =
+                                      "https://via.placeholder.com/60x60?text=Image";
                                   }}
                                 />
                               )}
@@ -869,160 +1052,178 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                       })()}
                     </div>
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.625rem',
-                    flexShrink: 0
-                  }}>
-                    <p style={{
-                      fontSize: sizeClass.includes('short') ? '0.75rem' : '0.8125rem',
-                      lineHeight: 1.5,
-                      opacity: 0.85,
-                      color: 'canvasText',
-                      margin: 0,
-                      display: sizeClass.includes('very-short') ? 'none' : (sizeClass.includes('short') ? '-webkit-box' : '-webkit-box'),
-                      WebkitLineClamp: sizeClass.includes('short') ? 1 : 2,
-                      lineClamp: sizeClass.includes('short') ? 1 : 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}>{game.description}</p>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.625rem",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: sizeClass.includes("short")
+                          ? "0.75rem"
+                          : "0.8125rem",
+                        lineHeight: 1.5,
+                        opacity: 0.85,
+                        color: "canvasText",
+                        margin: 0,
+                        display: sizeClass.includes("very-short")
+                          ? "none"
+                          : sizeClass.includes("short")
+                          ? "-webkit-box"
+                          : "-webkit-box",
+                        WebkitLineClamp: sizeClass.includes("short") ? 1 : 2,
+                        lineClamp: sizeClass.includes("short") ? 1 : 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {game.description}
+                    </p>
                   </div>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
-        
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingTop: '0.75rem',
-          marginTop: 'auto',
-          flexShrink: 0,
-          flexWrap: isMobile() ? 'wrap' : 'nowrap',
-          gap: sizeClass.includes('narrow') ? '0.25rem' : '0.5rem',
-          overflow: 'visible'
-        }}>
-          <button 
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingTop: "0.75rem",
+            marginTop: "auto",
+            flexShrink: 0,
+            flexWrap: isMobile() ? "wrap" : "nowrap",
+            gap: sizeClass.includes("narrow") ? "0.25rem" : "0.5rem",
+            overflow: "visible",
+          }}
+        >
+          <button
             style={{
-              background: 'color-mix(in hsl, canvasText, transparent 95%)',
-              border: '1px solid color-mix(in hsl, canvasText, transparent 6%)',
-              borderRadius: '4px',
-              color: 'canvasText',
-              fontSize: sizeClass.includes('narrow') ? '1rem' : '1.25rem',
-              width: sizeClass.includes('narrow') ? '1.75rem' : '2rem',
-              height: sizeClass.includes('narrow') ? '1.75rem' : '2rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
+              background: "color-mix(in hsl, canvasText, transparent 95%)",
+              border: "1px solid color-mix(in hsl, canvasText, transparent 6%)",
+              borderRadius: "4px",
+              color: "canvasText",
+              fontSize: sizeClass.includes("narrow") ? "1rem" : "1.25rem",
+              width: sizeClass.includes("narrow") ? "1.75rem" : "2rem",
+              height: sizeClass.includes("narrow") ? "1.75rem" : "2rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
               opacity: 0.6,
-              transition: 'opacity 0.2s, transform 0.2s',
+              transition: "opacity 0.2s, transform 0.2s",
               padding: 0,
               lineHeight: 1,
-              boxSizing: 'border-box',
-              transformOrigin: 'center',
-              margin: '0.25rem'
+              boxSizing: "border-box",
+              transformOrigin: "center",
+              margin: "0.25rem",
             }}
             onClick={goToPrev}
             aria-label="Previous game"
             onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '1'
-              e.currentTarget.style.transform = 'scale(1.1)'
+              e.currentTarget.style.opacity = "1";
+              e.currentTarget.style.transform = "scale(1.1)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.6'
-              e.currentTarget.style.transform = 'scale(1)'
+              e.currentTarget.style.opacity = "0.6";
+              e.currentTarget.style.transform = "scale(1)";
             }}
             onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.95)'
+              e.currentTarget.style.transform = "scale(0.95)";
             }}
             onMouseUp={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)'
+              e.currentTarget.style.transform = "scale(1.1)";
             }}
           >
             ‹
           </button>
-          <div style={{
-            display: 'flex',
-            gap: '0.375rem',
-            alignItems: 'center',
-            flex: 1,
-            justifyContent: 'center'
-          }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.375rem",
+              alignItems: "center",
+              flex: 1,
+              justifyContent: "center",
+            }}
+          >
             {games.map((_, index) => {
-              const isActive = index === currentIndex
+              const isActive = index === currentIndex;
               return (
                 <button
                   key={index}
                   style={{
-                    width: isActive ? '8px' : '6px',
-                    height: isActive ? '8px' : '6px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: isActive ? 'canvasText' : 'color-mix(in hsl, canvasText, transparent 80%)',
-                    cursor: 'pointer',
+                    width: isActive ? "8px" : "6px",
+                    height: isActive ? "8px" : "6px",
+                    borderRadius: "50%",
+                    border: "none",
+                    background: isActive
+                      ? "canvasText"
+                      : "color-mix(in hsl, canvasText, transparent 80%)",
+                    cursor: "pointer",
                     padding: 0,
-                    transition: 'all 0.3s ease',
+                    transition: "all 0.3s ease",
                     opacity: isActive ? 0.8 : 0.4,
-                    transform: isActive ? 'scale(1.2)' : 'scale(1)'
+                    transform: isActive ? "scale(1.2)" : "scale(1)",
                   }}
                   onClick={() => goToSlide(index)}
                   aria-label={`Go to game ${index + 1}`}
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.opacity = '0.7'
-                      e.currentTarget.style.transform = 'scale(1.3)'
+                      e.currentTarget.style.opacity = "0.7";
+                      e.currentTarget.style.transform = "scale(1.3)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.opacity = '0.4'
-                      e.currentTarget.style.transform = 'scale(1)'
+                      e.currentTarget.style.opacity = "0.4";
+                      e.currentTarget.style.transform = "scale(1)";
                     }
                   }}
                 />
-              )
+              );
             })}
           </div>
-          <button 
+          <button
             style={{
-              background: 'color-mix(in hsl, canvasText, transparent 95%)',
-              border: '1px solid color-mix(in hsl, canvasText, transparent 6%)',
-              borderRadius: '4px',
-              color: 'canvasText',
-              fontSize: sizeClass.includes('narrow') ? '1rem' : '1.25rem',
-              width: sizeClass.includes('narrow') ? '1.75rem' : '2rem',
-              height: sizeClass.includes('narrow') ? '1.75rem' : '2rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
+              background: "color-mix(in hsl, canvasText, transparent 95%)",
+              border: "1px solid color-mix(in hsl, canvasText, transparent 6%)",
+              borderRadius: "4px",
+              color: "canvasText",
+              fontSize: sizeClass.includes("narrow") ? "1rem" : "1.25rem",
+              width: sizeClass.includes("narrow") ? "1.75rem" : "2rem",
+              height: sizeClass.includes("narrow") ? "1.75rem" : "2rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
               opacity: 0.6,
-              transition: 'opacity 0.2s, transform 0.2s',
+              transition: "opacity 0.2s, transform 0.2s",
               padding: 0,
               lineHeight: 1,
-              boxSizing: 'border-box',
-              transformOrigin: 'center',
-              margin: '0.25rem'
+              boxSizing: "border-box",
+              transformOrigin: "center",
+              margin: "0.25rem",
             }}
             onClick={goToNext}
             aria-label="Next game"
             onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '1'
-              e.currentTarget.style.transform = 'scale(1.1)'
+              e.currentTarget.style.opacity = "1";
+              e.currentTarget.style.transform = "scale(1.1)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.6'
-              e.currentTarget.style.transform = 'scale(1)'
+              e.currentTarget.style.opacity = "0.6";
+              e.currentTarget.style.transform = "scale(1)";
             }}
             onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.95)'
+              e.currentTarget.style.transform = "scale(0.95)";
             }}
             onMouseUp={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)'
+              e.currentTarget.style.transform = "scale(1.1)";
             }}
           >
             ›
