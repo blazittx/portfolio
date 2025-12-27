@@ -17,7 +17,8 @@ export const COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE =
   "widgetLayoutDefaultGameDetailMobile";
 export const COOKIE_NAME_CV_DETAIL = "widgetLayoutCVDetail";
 export const COOKIE_NAME_DEFAULT_CV_DETAIL = "widgetLayoutDefaultCVDetail";
-export const COOKIE_NAME_DEFAULT_CV_DETAIL_MOBILE = "widgetLayoutDefaultCVDetailMobile";
+export const COOKIE_NAME_DEFAULT_CV_DETAIL_MOBILE =
+  "widgetLayoutDefaultCVDetailMobile";
 
 // Mobile breakpoint - screens smaller than this are considered mobile
 export const MOBILE_BREAKPOINT = 768;
@@ -57,12 +58,12 @@ export const getWidgetMinSize = (widgetType) => {
     "game-development-info": { width: 1, height: 1 },
     heartbeat: { width: 1, height: 1 },
     cv: { width: 1, height: 1 },
-    "experience": { width: 1, height: 1 },
-    "education": { width: 1, height: 1 },
-    "projects": { width: 1, height: 1 },
+    experience: { width: 1, height: 1 },
+    education: { width: 1, height: 1 },
+    projects: { width: 1, height: 1 },
     "technical-skills": { width: 1, height: 1 },
-    "languages": { width: 1, height: 1 },
-    "certifications": { width: 1, height: 1 },
+    languages: { width: 1, height: 1 },
+    certifications: { width: 1, height: 1 },
   };
 
   const gridUnits = minSizesInGridUnits[widgetType] || { width: 2, height: 2 };

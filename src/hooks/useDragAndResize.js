@@ -4,7 +4,7 @@ import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { isMobile } from '../utils/mobile'
 import { isDevMode } from '../utils/devMode'
-import { hasCollisionWithOthers, findNearestValidPosition, findValidSize, findCollidingWidget, findWidgetAtPoint } from '../utils/collision'
+import { hasCollisionWithOthers, findNearestValidPosition, findValidSize, findWidgetAtPoint } from '../utils/collision'
 
 export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 0 }, view = 'main') => {
   const [isDragging, setIsDragging] = useState(false)
@@ -277,12 +277,6 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
     // Clear collision state and swap target
     setCollisionWidgetId(null)
     setSwapTargetId(null)
-    
-    // Check if it was a drag or click (for widgets that need to differentiate)
-    let wasDrag = false
-    if (dragStateRef.current.activeId) {
-      wasDrag = dragStateRef.current.hasMoved
-    }
     
     // Handle resize end
     if (resizeStateRef.current.activeId) {

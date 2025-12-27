@@ -28,6 +28,18 @@ export default function ProjectsWidget({ widget }) {
   // Default projects data - can be customized via widget settings
   const projects = widget?.settings?.projects || [
     {
+      name: 'Gamble With Your Friends',
+      role: 'Game Programmer',
+      tech: 'Multiplayer Casino Game (not real money xd) • TENSTACK',
+      description: ''
+    },
+    {
+      name: 'Pullback Racers',
+      role: 'Game Programmer',
+      tech: 'Multiplayer Racing Party Game • TENSTACK',
+      description: ''
+    },
+    {
       name: 'Bubbledome',
       role: 'Game Programmer',
       tech: 'Local Co-Op Party Brawler • GGJ 25',
@@ -50,12 +62,6 @@ export default function ProjectsWidget({ widget }) {
       role: 'Game Programmer',
       tech: 'Local Co-Op Puzzle Game • MAUJAM 2024',
       description: 'Programmed zero-gravity mechanics for puzzle-based gameplay. Developed hand-controlled interactions for precise movement. Delivered an immersive astronaut experience through advanced physics. Developed in 48 hours for MAUJAM 2024.'
-    },
-    {
-      name: 'BOZO BRAWI',
-      role: 'Game Developer',
-      tech: 'Local Co-Op Party Game • BUG Lab TEKMER',
-      description: 'Implemented active ragdoll physics for chaotic interactions. Created unpredictable movement and engaging game modes. Transitioned from concept to pre-production using feedback-driven iteration.'
     }
   ]
 

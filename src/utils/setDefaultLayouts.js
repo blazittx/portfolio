@@ -10,8 +10,6 @@ import {
   COOKIE_NAME_DEFAULT_CV_DETAIL,
 } from "../constants/grid";
 
-// Single source of truth for default layouts
-// Decoded homepage layout
 export const DEFAULT_HOMEPAGE_LAYOUT = [
   {
     id: "profile",
@@ -22,7 +20,11 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
     height: 111,
     locked: false,
     pinned: true,
-    settings: { expandable: true, expandScaleX: 1, expandScaleY: 2 },
+    settings: {
+      expandable: true,
+      expandScaleX: 1,
+      expandScaleY: 2,
+    },
   },
   {
     id: "about",
@@ -33,14 +35,16 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
     height: 111,
     locked: false,
     pinned: true,
-    settings: { adjusted: true },
+    settings: {
+      adjusted: true,
+    },
   },
   {
     id: "contact",
     type: "contact",
-    x: 1018.2,
+    x: 1243.2,
     y: 746.4,
-    width: 516,
+    width: 291,
     height: 111,
     locked: false,
     pinned: true,
@@ -55,7 +59,9 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
     height: 426,
     locked: false,
     pinned: true,
-    settings: { gameId: "pullbackracers" },
+    settings: {
+      gameId: "pullbackracers",
+    },
   },
   {
     id: "single-game-3",
@@ -66,7 +72,9 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
     height: 381,
     locked: false,
     pinned: true,
-    settings: { gameId: "gamblelite" },
+    settings: {
+      gameId: "gamblelite",
+    },
   },
   {
     id: "github",
@@ -77,7 +85,9 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
     height: 561,
     locked: false,
     pinned: false,
-    settings: { adjusted: true },
+    settings: {
+      adjusted: true,
+    },
   },
   {
     id: "games",
@@ -88,7 +98,9 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
     height: 696,
     locked: false,
     pinned: false,
-    settings: { adjusted: true },
+    settings: {
+      adjusted: true,
+    },
   },
   {
     id: "profile-picture",
@@ -110,9 +122,19 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
       originalY: 26.4,
     },
   },
+  {
+    id: "cv",
+    type: "cv",
+    x: 1018.2,
+    y: 746.4,
+    width: 201,
+    height: 111,
+    locked: false,
+    pinned: false,
+    settings: {},
+  },
 ];
 
-// Decoded game detail layout
 export const DEFAULT_GAME_DETAIL_LAYOUT = [
   {
     id: "back-button",
@@ -176,8 +198,6 @@ export const DEFAULT_GAME_DETAIL_LAYOUT = [
   },
 ];
 
-// Mobile default layouts
-// Mobile homepage layout
 export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
   {
     id: "profile",
@@ -188,7 +208,11 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
     height: 111,
     locked: false,
     pinned: true,
-    settings: { expandable: true, expandScaleX: 1, expandScaleY: 2 },
+    settings: {
+      expandable: true,
+      expandScaleX: 1,
+      expandScaleY: 2,
+    },
   },
   {
     id: "about",
@@ -199,14 +223,16 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
     height: 111,
     locked: false,
     pinned: true,
-    settings: { adjusted: true },
+    settings: {
+      adjusted: true,
+    },
   },
   {
     id: "contact",
     type: "contact",
     x: 28.2,
     y: 1691.4,
-    width: 336,
+    width: 201,
     height: 111,
     locked: false,
     pinned: true,
@@ -221,7 +247,9 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
     height: 381,
     locked: false,
     pinned: true,
-    settings: { gameId: "pullbackracers" },
+    settings: {
+      gameId: "pullbackracers",
+    },
   },
   {
     id: "single-game-3",
@@ -232,7 +260,9 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
     height: 381,
     locked: false,
     pinned: true,
-    settings: { gameId: "gamblelite" },
+    settings: {
+      gameId: "gamblelite",
+    },
   },
   {
     id: "games",
@@ -243,7 +273,9 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
     height: 561,
     locked: false,
     pinned: false,
-    settings: { adjusted: true },
+    settings: {
+      adjusted: true,
+    },
   },
   {
     id: "profile-picture",
@@ -264,6 +296,17 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
       originalX: 28.2,
       originalY: 26.4,
     },
+  },
+  {
+    id: "cv",
+    type: "cv",
+    x: 253.2,
+    y: 1691.4,
+    width: 111,
+    height: 111,
+    locked: false,
+    pinned: false,
+    settings: {},
   },
 ];
 
@@ -330,7 +373,6 @@ export const DEFAULT_GAME_DETAIL_LAYOUT_MOBILE = [
   },
 ];
 
-// Default CV detail layout (desktop)
 export const DEFAULT_CV_DETAIL_LAYOUT = [
   {
     id: "back-button",

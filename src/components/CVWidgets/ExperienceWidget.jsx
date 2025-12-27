@@ -28,6 +28,13 @@ export default function ExperienceWidget({ widget }) {
   // Default experience data - can be customized via widget settings
   const experiences = widget?.settings?.experiences || [
     {
+      company: 'TENSTACK',
+      role: 'Game Programmer',
+      period: 'Apr 2025 – Present',
+      location: 'Sweden',
+      description: "Worked on TENSTACK's first multiplayer game Pullback Racers. Set up networked game mechanics and UI systems. Currently working on Gamble With Your Friends, an unreleased game in development."
+    },
+    {
       company: 'Diabolical Studios',
       role: 'Co-Founder',
       period: 'Nov 2022 – Feb 2025',
@@ -35,15 +42,15 @@ export default function ExperienceWidget({ widget }) {
       description: 'Formed Diabolical Studios during university after several successful game jam collaborations. Led development on game jam titles, focusing on mechanics and AI systems under tight deadlines. Represented the studio in competitions, securing wins that helped fund larger, non-jam projects.'
     },
     {
-      company: 'Internship / Jotform',
-      role: 'UI Designer',
+      company: 'Jotform',
+      role: 'UI Designer Intern',
       period: 'Jul 2023 – Aug 2023',
       location: 'Remote',
       description: 'Collaborated with a team of four interns to design recurring form systems under tight deadlines. Created a calendar-based selection feature and a card-style "View Forms" tab for intuitive user flows. Earned "Best Enterprise Engineering Project" by enhancing user experience through continuous feedback and iteration.'
     },
     {
       company: 'Koçtaş',
-      role: 'UX Designer',
+      role: 'UX Designer Intern',
       period: 'Jan 2022 – Jun 2022',
       location: 'Turkey',
       description: 'Designed user-focused web interfaces, applying e-commerce UX principles for improved customer journeys. Worked closely with cross-functional teams to implement updates and meet project milestones. Expanded front-end skills (HTML, CSS, JavaScript) to prototype and refine features efficiently.'
