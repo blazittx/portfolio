@@ -9,54 +9,47 @@
  * - { type: 'code', language: 'javascript', content: '...' } - Code block
  */
 
+const codeSamples = import.meta.glob("../codeSamples/**/*", {
+  as: "raw",
+  eager: true,
+});
+
+export const getCodeSample = (filename) => {
+  return codeSamples[`../codeSamples/${filename}`];
+};
+
 // Team members for each game
 // Each team member should have: name, role, and linkedin (optional)
 export const gameTeamMembers = {
   pullbackracers: [
     {
       name: "Doruk Sasmaz",
-      role: "Game Programmer",
+      role: "Game & UI Programmer",
       linkedin: "https://linkedin.com/in/doruk-sasmaz",
     },
     {
-      name: "John Doe",
-      role: "Artist",
-      linkedin: "https://linkedin.com/in/john-doe",
+      name: "Yigit Doruk",
+      role: "Game & Level Designer",
+      linkedin: "https://www.linkedin.com/in/yigitdoruk/",
     },
     {
-      name: "Jane Doe",
-      role: "Designer",
-      linkedin: "https://linkedin.com/in/jane-doe",
+      name: "Fatih Gorguc",
+      role: "Game Programmer",
+      linkedin:
+        "https://www.linkedin.com/in/fatih-g%C3%B6rg%C3%BC%C3%A7-45105b192/",
     },
     {
-      name: "Alice Smith",
-      role: "Sound Designer",
-      linkedin: "https://linkedin.com/in/alice-smith",
+      name: "Karl Flodin",
+      role: "Sound Designer & Music Composer",
+      linkedin: "https://www.linkedin.com/in/karl-flodin-584259153/",
     },
     {
-      name: "Bob Johnson",
-      role: "QA Tester",
-      linkedin: "https://linkedin.com/in/bob-johnson",
+      name: "Erik Lyding",
+      role: "Sound Designer & Music Composer",
     },
     {
-      name: "Charlie Brown",
-      role: "Producer",
-      linkedin: "https://linkedin.com/in/charlie-brown",
-    },
-    {
-      name: "Diana Wilson",
-      role: "UI/UX Designer",
-      linkedin: "https://linkedin.com/in/diana-wilson",
-    },
-    {
-      name: "Eve Davis",
-      role: "Technical Artist",
-      linkedin: "https://linkedin.com/in/eve-davis",
-    },
-    {
-      name: "Frank Miller",
-      role: "Level Designer",
-      linkedin: "https://linkedin.com/in/frank-miller",
+      name: "Olof Högberg",
+      role: "Sound Designer & Music Composer",
     },
   ],
   gamblelite: [
@@ -66,67 +59,51 @@ export const gameTeamMembers = {
       linkedin: "https://linkedin.com/in/doruk-sasmaz",
     },
     {
-      name: "John Doe",
-      role: "Artist",
-      linkedin: "https://linkedin.com/in/john-doe",
+      name: "Yigit Doruk",
+      role: "Game & Level Designer",
+      linkedin: "https://www.linkedin.com/in/yigitdoruk/",
     },
     {
-      name: "Jane Doe",
-      role: "Designer",
-      linkedin: "https://linkedin.com/in/jane-doe",
+      name: "Fatih Gorguc",
+      role: "Game Programmer",
+      linkedin:
+        "https://www.linkedin.com/in/fatih-g%C3%B6rg%C3%BC%C3%A7-45105b192/",
     },
     {
-      name: "Grace Lee",
-      role: "Animator",
-      linkedin: "https://linkedin.com/in/grace-lee",
+      name: "Erik Lyding",
+      role: "Sound Designer & Music Composer",
     },
     {
-      name: "Henry Taylor",
-      role: "Game Designer",
-      linkedin: "https://linkedin.com/in/henry-taylor",
+      name: "Olof Högberg",
+      role: "Sound Designer & Music Composer",
     },
     {
-      name: "Iris Martinez",
-      role: "Marketing Manager",
-      linkedin: "https://linkedin.com/in/iris-martinez",
+      name: "Karl Flodin",
+      role: "Sound Designer & Music Composer",
+      linkedin: "https://www.linkedin.com/in/karl-flodin-584259153/",
+    },
+    {
+      name: "Robin Ekström",
+      role: "3D & 2D Artist",
+      linkedin: "https://www.linkedin.com/in/robin-ekstr%C3%B6m/",
+    },
+    {
+      name: "James Lee",
+      role: "Social Media & Community Manager",
+      linkedin: "https://www.linkedin.com/in/james-lee-08bba8157/",
+    },
+    {
+      name: "Kiwick Studios",
+      role: "3D & 2D Art & Animation",
+      linkedin: "https://www.linkedin.com/company/kiwick-studios/",
     },
   ],
   Forgekeepers: [
     {
       name: "Doruk Sasmaz",
-      role: "Game Programmer",
+      role: "Solo Project",
       linkedin: "https://linkedin.com/in/doruk-sasmaz",
-    },
-    {
-      name: "John Doe",
-      role: "Artist",
-      linkedin: "https://linkedin.com/in/john-doe",
-    },
-    {
-      name: "Jane Doe",
-      role: "Designer",
-      linkedin: "https://linkedin.com/in/jane-doe",
-    },
-    {
-      name: "Jack Anderson",
-      role: "3D Modeler",
-      linkedin: "https://linkedin.com/in/jack-anderson",
-    },
-    {
-      name: "Kate White",
-      role: "Writer",
-      linkedin: "https://linkedin.com/in/kate-white",
-    },
-    {
-      name: "Liam Harris",
-      role: "Network Programmer",
-      linkedin: "https://linkedin.com/in/liam-harris",
-    },
-    {
-      name: "Mia Thompson",
-      role: "Concept Artist",
-      linkedin: "https://linkedin.com/in/mia-thompson",
-    },
+    }
   ],
   bubbledome: [
     {
@@ -135,66 +112,78 @@ export const gameTeamMembers = {
       linkedin: "https://linkedin.com/in/doruk-sasmaz",
     },
     {
-      name: "John Doe",
-      role: "Artist",
-      linkedin: "https://linkedin.com/in/john-doe",
+      name: "Robin Zeitlin",
+      role: "Game Programmer",
+      linkedin: "https://www.linkedin.com/in/robin-zeitlin-778a9127a/",
     },
     {
-      name: "Jane Doe",
-      role: "Designer",
-      linkedin: "https://linkedin.com/in/jane-doe",
+      name: "Dash Corning",
+      role: "Game Programmer",
+      linkedin: "https://www.linkedin.com/in/dashcorning/",
     },
     {
-      name: "Noah Garcia",
-      role: "Physics Programmer",
-      linkedin: "https://linkedin.com/in/noah-garcia",
-    },
-    {
-      name: "Olivia Rodriguez",
-      role: "VFX Artist",
-      linkedin: "https://linkedin.com/in/olivia-rodriguez",
-    },
-    {
-      name: "Paul Lewis",
-      role: "Audio Engineer",
-      linkedin: "https://linkedin.com/in/paul-lewis",
+      name: "Yigit Doruk",
+      role: "Game & Level Designer",
+      linkedin: "https://www.linkedin.com/in/yigitdoruk/",
     },
   ],
   gp1: [
     {
       name: "Doruk Sasmaz",
-      role: "Game Programmer",
+      role: "Game Programmer & PO",
       linkedin: "https://linkedin.com/in/doruk-sasmaz",
     },
     {
-      name: "John Doe",
-      role: "Artist",
-      linkedin: "https://linkedin.com/in/john-doe",
+      name: "Alexander Granskog",
+      role: "Narrative Designer / Generalist",
     },
     {
-      name: "Jane Doe",
-      role: "Designer",
-      linkedin: "https://linkedin.com/in/jane-doe",
+      name: "Brian Barikhan",
+      role: "UI Design/Generalist/Quality Assurance",
     },
     {
-      name: "Quinn Walker",
-      role: "Gameplay Programmer",
-      linkedin: "https://linkedin.com/in/quinn-walker",
+      name: "David Hult",
+      role: "Animation / VFX",
     },
     {
-      name: "Rachel Young",
-      role: "Environment Artist",
-      linkedin: "https://linkedin.com/in/rachel-young",
+      name: "Emilia Molander",
+      role: "Game Artist",
     },
     {
-      name: "Sam King",
-      role: "Tools Programmer",
-      linkedin: "https://linkedin.com/in/sam-king",
+      name: "Federico Garcia",
+      role: "Lead Designer / Gameplay Designer",
     },
     {
-      name: "Tina Scott",
-      role: "Narrative Designer",
-      linkedin: "https://linkedin.com/in/tina-scott",
+      name: "Galina Syrodoeva",
+      role: "Character Programmer",
+    },
+    {
+      name: "Halldór Kristmundsson",
+      role: "Character Programmer",
+    },
+    {
+      name: "Ilyas Kaya",
+      role: "Game Programmer",
+    },
+    {
+      name: "Kristin Walkhed",
+      role: "Game Artist",
+    },
+    {
+      name: "Marcus Swensån",
+      role: "Game Artist",
+    },
+    {
+      name: "Robin",
+      role: "Animation/VFX",
+    },
+    {
+      name: "Tiger Martin",
+      role: "Lead Programmer, World Generation",
+    },
+    {
+      name: "Vamsi Krishna Kasina",
+      role: "Level Design / Game Design",
     },
   ],
   GFOS1992: [
@@ -204,39 +193,24 @@ export const gameTeamMembers = {
       linkedin: "https://linkedin.com/in/doruk-sasmaz",
     },
     {
-      name: "John Doe",
-      role: "Artist",
-      linkedin: "https://linkedin.com/in/john-doe",
+      name: "Berkin Paker",
+      role: "Game Designer",
+      linkedin: "https://www.linkedin.com/in/berkincemalpaker/",
     },
     {
-      name: "Jane Doe",
-      role: "Designer",
-      linkedin: "https://linkedin.com/in/jane-doe",
+      name: "Emre Celikler",
+      role: "Game Programmer",
+      linkedin: "https://www.linkedin.com/in/emre-%C3%A7elikler/",
     },
     {
-      name: "Victor Green",
-      role: "AI Programmer",
-      linkedin: "https://linkedin.com/in/victor-green",
+      name: "Yigit Kayhan",
+      role: "Game Artist & Designer",
+      linkedin: "https://www.linkedin.com/in/yigitkayhan/",
     },
     {
-      name: "Wendy Adams",
-      role: "Character Artist",
-      linkedin: "https://linkedin.com/in/wendy-adams",
-    },
-    {
-      name: "Xavier Baker",
-      role: "Systems Designer",
-      linkedin: "https://linkedin.com/in/xavier-baker",
-    },
-    {
-      name: "Yara Nelson",
-      role: "Composer",
-      linkedin: "https://linkedin.com/in/yara-nelson",
-    },
-    {
-      name: "Zoe Carter",
-      role: "Community Manager",
-      linkedin: "https://linkedin.com/in/zoe-carter",
+      name: "Lal Koyuncu",
+      role: "3D Artist",
+      linkedin: "https://www.linkedin.com/in/lal-kync/",
     },
   ],
 };
@@ -258,8 +232,7 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
-      content:
-        "public class GameController : MonoBehaviour\n{\n    void Start()\n    {\n        // Placeholder code\n    }\n    \n    void Update()\n    {\n        // Placeholder code\n    }\n}",
+      content: getCodeSample("carControllerPullbackRacers.cs"),
     },
     { type: "heading", level: 3, content: "Key Features" },
     {
@@ -285,8 +258,28 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
+      content: `
+        public class GameController : MonoBehaviour
+        {
+            void Start()
+            {
+            }
+        
+            void Update()
+            {
+            }
+        }
+        `,
+    },
+    {
+      type: "image",
+      src: "previewPortfolio.png",
+      alt: "Technical Stack",
+    },
+    {
+      type: "text",
       content:
-        "public class GameController : MonoBehaviour\n{\n    void Start()\n    {\n        // Placeholder code\n    }\n    \n    void Update()\n    {\n        // Placeholder code\n    }\n}",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
     },
     { type: "heading", level: 3, content: "Development Challenges" },
     {
@@ -338,8 +331,18 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
-      content:
-        "public class GameController : MonoBehaviour\n{\n    void Start()\n    {\n        // Placeholder code\n    }\n    \n    void Update()\n    {\n        // Placeholder code\n    }\n}",
+      content: `
+    public class GameController : MonoBehaviour
+    {
+        void Start()
+        {
+        }
+    
+        void Update()
+        {
+        }
+    }
+    `,
     },
     { type: "heading", level: 3, content: "Visual Design" },
     {
@@ -365,8 +368,18 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
-      content:
-        "public class GameController : MonoBehaviour\n{\n    void Start()\n    {\n        // Placeholder code\n    }\n    \n    void Update()\n    {\n        // Placeholder code\n    }\n}",
+      content: `
+    public class GameController : MonoBehaviour
+    {
+        void Start()
+        {
+        }
+    
+        void Update()
+        {
+        }
+    }
+    `,
     },
     { type: "heading", level: 3, content: "Track Design" },
     {
@@ -392,8 +405,18 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
-      content:
-        "public class GameController : MonoBehaviour\n{\n    void Start()\n    {\n        // Placeholder code\n    }\n    \n    void Update()\n    {\n        // Placeholder code\n    }\n}",
+      content: `
+    public class GameController : MonoBehaviour
+    {
+        void Start()
+        {
+        }
+    
+        void Update()
+        {
+        }
+    }
+    `,
     },
     { type: "heading", level: 3, content: "Gameplay Mechanics" },
     {
