@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import BaseWidget from "./BaseWidget";
-import { GAME_IDS, YOUTUBE_URLS } from "../constants/games";
+import { GAME_IDS, YOUTUBE_URLS, getGameChips, getGameLinks } from "../constants/games";
 import { isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnailUrl, setYouTubeVolume } from "../utils/youtube";
+import { isMobile } from "../utils/mobile";
 
 // Use Netlify function to proxy API calls (works in both dev and production)
 // In development, Vite proxy handles /api routes
@@ -274,6 +275,23 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
     }
   }, [])
 
+  // Helper function to render Steam icon SVG
+  const renderSteamIcon = (size) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="currentColor"
+      style={{
+        display: "block",
+        flexShrink: 0,
+        opacity: 0.9,
+      }}
+    >
+      <path d="M18.102 12.129c0-0 0-0 0-0.001 0-1.564 1.268-2.831 2.831-2.831s2.831 1.268 2.831 2.831c0 1.564-1.267 2.831-2.831 2.831-0 0-0 0-0.001 0h0c-0 0-0 0-0.001 0-1.563 0-2.83-1.267-2.83-2.83 0-0 0-0 0-0.001v0zM24.691 12.135c0-2.081-1.687-3.768-3.768-3.768s-3.768 1.687-3.768 3.768c0 2.081 1.687 3.768 3.768 3.768v0c2.080-0.003 3.765-1.688 3.768-3.767v-0zM10.427 23.76l-1.841-0.762c0.524 1.078 1.611 1.808 2.868 1.808 1.317 0 2.448-0.801 2.93-1.943l0.008-0.021c0.155-0.362 0.246-0.784 0.246-1.226 0-1.757-1.424-3.181-3.181-3.181-0.405 0-0.792 0.076-1.148 0.213l0.022-0.007 1.903 0.787c0.852 0.364 1.439 1.196 1.439 2.164 0 1.296-1.051 2.347-2.347 2.347-0.324 0-0.632-0.066-0.913-0.184l0.015 0.006zM15.974 1.004c-7.857 0.001-14.301 6.046-14.938 13.738l-0.004 0.054 8.038 3.322c0.668-0.462 1.495-0.737 2.387-0.737 0.001 0 0.002 0 0.002 0h-0c0.079 0 0.156 0.005 0.235 0.008l3.575-5.176v-0.074c0.003-3.12 2.533-5.648 5.653-5.648 3.122 0 5.653 2.531 5.653 5.653s-2.531 5.653-5.653 5.653h-0.131l-5.094 3.638c0 0.065 0.005 0.131 0.005 0.199 0 0.001 0 0.002 0 0.003 0 2.342-1.899 4.241-4.241 4.241-2.047 0-3.756-1.451-4.153-3.38l-0.005-0.027-5.755-2.383c1.841 6.345 7.601 10.905 14.425 10.905 8.281 0 14.994-6.713 14.994-14.994s-6.713-14.994-14.994-14.994c-0 0-0.001 0-0.001 0h0z"></path>
+    </svg>
+  );
+
   const goToSlide = (index) => {
     setCurrentIndex(index);
     setIsAutoPlaying(false);
@@ -399,22 +417,23 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                     alignItems: 'flex-start',
                     gap: '0.75rem',
                     flexShrink: 0,
-                    flexDirection: sizeClass.includes('narrow') ? 'column' : 'row'
+                    flexDirection: isMobile() ? 'column' : 'row'
                   }}>
                     <div style={{
-                      flex: 1,
-                      minWidth: 0
+                      flex: isMobile() ? '0 0 100%' : 1,
+                      minWidth: 0,
+                      width: isMobile() ? '100%' : undefined
                     }}>
                       <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.25rem'
+                        gap: '0.75rem'
                       }}>
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
-                          flexWrap: sizeClass.includes('narrow') ? 'wrap' : 'nowrap'
+                          flexWrap: isMobile() ? 'wrap' : 'nowrap'
                         }}>
                           <h4 style={{
                             fontSize: sizeClass.includes('short') ? '1rem' : (sizeClass.includes('very-short') ? '0.9375rem' : '1.125rem'),
@@ -429,8 +448,8 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
                           }}>{game.title}</h4>
-                          {!sizeClass.includes('narrow') && (
-                            /* Unity and C# chips next to title when not narrow */
+                          {!isMobile() && (
+                            /* Technology and link chips next to title when not mobile */
                             <div style={{
                               display: sizeClass.includes('very-short') ? 'none' : 'flex',
                               flexWrap: 'wrap',
@@ -438,85 +457,139 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                               alignItems: 'center',
                               flexShrink: 0
                             }}>
-                              {/* Unity chip */}
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
-                                borderRadius: '2px',
-                                background: 'color-mix(in hsl, canvasText, transparent 90%)',
-                                border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
-                                fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
-                                fontWeight: 500,
-                                color: 'canvasText',
-                                opacity: 0.9,
-                                whiteSpace: 'nowrap',
-                                userSelect: 'none'
-                              }}>
-                                Unity
-                              </div>
-                              {/* C# chip */}
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
-                                borderRadius: '2px',
-                                background: 'color-mix(in hsl, canvasText, transparent 90%)',
-                                border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
-                                fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
-                                fontWeight: 500,
-                                color: 'canvasText',
-                                opacity: 0.9,
-                                whiteSpace: 'nowrap',
-                                userSelect: 'none'
-                              }}>
-                                C#
-                              </div>
+                              {/* Technology chips */}
+                              {getGameChips(game.id).map((chip, chipIndex) => (
+                                <div
+                                  key={chipIndex}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
+                                    borderRadius: '2px',
+                                    background: 'color-mix(in hsl, canvasText, transparent 90%)',
+                                    border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
+                                    fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                                    fontWeight: 500,
+                                    color: 'canvasText',
+                                    opacity: 0.9,
+                                    whiteSpace: 'nowrap',
+                                    userSelect: 'none'
+                                  }}
+                                >
+                                  {chip}
+                                </div>
+                              ))}
+                              {/* Link chips */}
+                              {getGameLinks(game.id).map((link, linkIndex) => (
+                                <a
+                                  key={linkIndex}
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.375rem',
+                                    padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
+                                    borderRadius: '2px',
+                                    background: 'color-mix(in hsl, canvasText, transparent 90%)',
+                                    border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
+                                    fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                                    fontWeight: 500,
+                                    color: 'canvasText',
+                                    opacity: 0.9,
+                                    textDecoration: 'none',
+                                    whiteSpace: 'nowrap',
+                                    transition: 'opacity 0.2s, transform 0.2s',
+                                    cursor: 'pointer',
+                                    userSelect: 'none'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.opacity = '1';
+                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.opacity = '0.9';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                  }}
+                                >
+                                  {link.type === 'steam' && renderSteamIcon(sizeClass.includes('short') ? '12' : '14')}
+                                  <span>{link.label}</span>
+                                </a>
+                              ))}
                             </div>
                           )}
                         </div>
-                        {sizeClass.includes('narrow') && (
-                          /* Unity and C# chips below title when narrow */
+                        {isMobile() && (
+                          /* Technology and link chips below title when mobile */
                           <div style={{
                             display: sizeClass.includes('very-short') ? 'none' : 'flex',
                             flexWrap: 'wrap',
                             gap: '0.375rem',
                             alignItems: 'center'
                           }}>
-                            {/* Unity chip */}
-                            <div style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
-                              borderRadius: '2px',
-                              background: 'color-mix(in hsl, canvasText, transparent 90%)',
-                              border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
-                              fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
-                              fontWeight: 500,
-                              color: 'canvasText',
-                              opacity: 0.9,
-                              whiteSpace: 'nowrap',
-                              userSelect: 'none'
-                            }}>
-                              Unity
-                            </div>
-                            {/* C# chip */}
-                            <div style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
-                              borderRadius: '2px',
-                              background: 'color-mix(in hsl, canvasText, transparent 90%)',
-                              border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
-                              fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
-                              fontWeight: 500,
-                              color: 'canvasText',
-                              opacity: 0.9,
-                              whiteSpace: 'nowrap',
-                              userSelect: 'none'
-                            }}>
-                              C#
-                            </div>
+                            {/* Technology chips */}
+                            {getGameChips(game.id).map((chip, chipIndex) => (
+                              <div
+                                key={chipIndex}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
+                                  borderRadius: '2px',
+                                  background: 'color-mix(in hsl, canvasText, transparent 90%)',
+                                  border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
+                                  fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                                  fontWeight: 500,
+                                  color: 'canvasText',
+                                  opacity: 0.9,
+                                  whiteSpace: 'nowrap',
+                                  userSelect: 'none'
+                                }}
+                              >
+                                {chip}
+                              </div>
+                            ))}
+                            {/* Link chips */}
+                            {getGameLinks(game.id).map((link, linkIndex) => (
+                              <a
+                                key={linkIndex}
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.375rem',
+                                  padding: sizeClass.includes('short') ? '0.1875rem 0.375rem' : '0.25rem 0.5rem',
+                                  borderRadius: '2px',
+                                  background: 'color-mix(in hsl, canvasText, transparent 90%)',
+                                  border: '1px solid color-mix(in hsl, canvasText, transparent 20%)',
+                                  fontSize: sizeClass.includes('short') ? '0.625rem' : '0.6875rem',
+                                  fontWeight: 500,
+                                  color: 'canvasText',
+                                  opacity: 0.9,
+                                  textDecoration: 'none',
+                                  whiteSpace: 'nowrap',
+                                  transition: 'opacity 0.2s, transform 0.2s',
+                                  cursor: 'pointer',
+                                  userSelect: 'none'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.opacity = '1';
+                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.opacity = '0.9';
+                                  e.currentTarget.style.transform = 'scale(1)';
+                                }}
+                              >
+                                {link.type === 'steam' && renderSteamIcon(sizeClass.includes('short') ? '12' : '14')}
+                                <span>{link.label}</span>
+                              </a>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -526,7 +599,12 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
                         gap: '0.5rem',
                         fontSize: '0.75rem',
                         opacity: 0.7,
-                        color: 'canvasText'
+                        color: 'canvasText',
+                        marginTop: sizeClass.includes('very-short')
+                          ? '0'
+                          : sizeClass.includes('short')
+                          ? '0.5rem'
+                          : '0.75rem'
                       }}>
                         {game.teamIcon && (
                           <img
@@ -813,7 +891,7 @@ export default function GamesWidget({ widgetId, wasLastInteractionDrag, onGameCl
           paddingTop: '0.75rem',
           marginTop: 'auto',
           flexShrink: 0,
-          flexWrap: sizeClass.includes('narrow') ? 'wrap' : 'nowrap',
+          flexWrap: isMobile() ? 'wrap' : 'nowrap',
           gap: sizeClass.includes('narrow') ? '0.25rem' : '0.5rem'
         }}>
           <button 

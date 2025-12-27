@@ -1,11 +1,16 @@
 import { useMemo } from 'react'
 import BaseWidget from '../BaseWidget'
 import { getDevelopmentInfo } from '../../data/gameDevelopmentInfo'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 /* eslint-disable react/prop-types */
 
 // Code block component with syntax highlighting
 function CodeBlock({ language, content }) {
+  // Map language names to Prism language identifiers
+  const prismLanguage = language === 'csharp' ? 'csharp' : language || 'text'
+
   return (
     <div style={{
       position: 'relative',
@@ -28,19 +33,27 @@ function CodeBlock({ language, content }) {
           {language}
         </div>
       )}
-      <pre style={{
-        margin: 0,
-        padding: '1rem',
-        fontSize: '0.8125rem',
-        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
-        lineHeight: '1.5',
-        color: 'canvasText',
-        overflowX: 'auto',
-        whiteSpace: 'pre',
-        tabSize: 2
-      }}>
-        <code>{content}</code>
-      </pre>
+      <SyntaxHighlighter
+        language={prismLanguage}
+        style={vscDarkPlus}
+        customStyle={{
+          margin: 0,
+          padding: '1rem',
+          background: 'transparent',
+          fontSize: '0.8125rem',
+          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
+          lineHeight: '1.5'
+        }}
+        codeTagProps={{
+          style: {
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
+            fontSize: '0.8125rem'
+          }
+        }}
+        PreTag="div"
+      >
+        {content}
+      </SyntaxHighlighter>
     </div>
   )
 }

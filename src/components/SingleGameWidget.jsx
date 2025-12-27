@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import BaseWidget from "./BaseWidget";
 import { isMobile } from "../utils/mobile";
-import { GRID_SIZE } from "../constants/grid";
 import { GAME_IDS, STEAM_URLS, YOUTUBE_URLS, getGameChips, getGameLinks } from "../constants/games";
 import {
   isYouTubeUrl,
@@ -39,7 +38,6 @@ export default function SingleGameWidget({
   const [error, setError] = useState(null);
   const containerRef = useRef(null);
   const [sizeClass, setSizeClass] = useState("");
-  const [widthInGridUnits, setWidthInGridUnits] = useState(10); // Default to wide enough to show chips next to title
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const fetchedGameIdRef = useRef(null); // Track which gameId we've already fetched
@@ -51,6 +49,9 @@ export default function SingleGameWidget({
   const thumbnailContainerRef = useRef(null);
   const thumbnailRefs = useRef({});
   const videoIframeRef = useRef(null);
+  const holdTimerRef = useRef(null);
+  const isHoldingRef = useRef(false);
+  const shouldNavigateRef = useRef(false);
 
   // Extract gameId from widget settings to use as stable dependency
   const widgetGameId = widget?.settings?.gameId || null;
@@ -168,18 +169,13 @@ export default function SingleGameWidget({
   useEffect(() => {
     const updateSizeClass = () => {
       if (!containerRef.current) return;
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      const isNarrow = width < 200;
+      const { height } = containerRef.current.getBoundingClientRect();
       const isShort = height < 150;
       const isVeryShort = height < 100;
       let classes = [];
-      if (isNarrow) classes.push("narrow");
       if (isShort) classes.push("short");
       if (isVeryShort) classes.push("very-short");
       setSizeClass(classes.join(" "));
-      // Calculate width in grid units
-      const gridUnits = width / GRID_SIZE;
-      setWidthInGridUnits(gridUnits);
     };
 
     // Use requestAnimationFrame to ensure DOM is ready
@@ -436,6 +432,15 @@ export default function SingleGameWidget({
     }
   }, [currentImageIndex, mediaArray, game?.id]);
 
+  // Cleanup hold timer on unmount
+  useEffect(() => {
+    return () => {
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+      }
+    };
+  }, []);
+
   if (loading) {
     return (
       <BaseWidget padding="1rem 0.75rem 1rem 1rem">
@@ -560,14 +565,15 @@ export default function SingleGameWidget({
               alignItems: "flex-start",
               gap: "0.75rem",
               flexShrink: 0,
-              flexDirection: sizeClass.includes("narrow") ? "column" : "row",
+              flexDirection: isMobile() ? "column" : "row",
             }}
           >
             <div
               style={{
-                flex: 1,
+                flex: isMobile() ? '0 0 100%' : 1,
                 minWidth: 0,
                 position: "relative",
+                width: isMobile() ? '100%' : undefined,
               }}
               ref={dropdownRef}
             >
@@ -576,14 +582,62 @@ export default function SingleGameWidget({
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "0.5rem",
+                  gap: "0.75rem",
                 }}
               >
                 <div
                   data-dropdown-trigger
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
                     e.stopPropagation();
-                    setIsDropdownOpen(!isDropdownOpen);
+                    // Reset state
+                    isHoldingRef.current = false;
+                    shouldNavigateRef.current = true;
+                    
+                    // Start timer to detect hold
+                    holdTimerRef.current = setTimeout(() => {
+                      // If we reach here, it's a hold
+                      isHoldingRef.current = true;
+                      shouldNavigateRef.current = false;
+                      setIsDropdownOpen(true);
+                    }, 300); // 300ms threshold for hold
+                  }}
+                  onMouseUp={(e) => {
+                    e.stopPropagation();
+                    
+                    // Clear the hold timer
+                    if (holdTimerRef.current) {
+                      clearTimeout(holdTimerRef.current);
+                      holdTimerRef.current = null;
+                    }
+                    
+                    // If it was a quick click (not a hold), navigate
+                    if (shouldNavigateRef.current && !isHoldingRef.current && onGameClick) {
+                      // Small delay to let drag system update
+                      setTimeout(() => {
+                        const wasDrag =
+                          wasLastInteractionDrag &&
+                          typeof wasLastInteractionDrag === "function"
+                            ? wasLastInteractionDrag(widgetId)
+                            : false;
+                        
+                        if (!wasDrag) {
+                          onGameClick(game);
+                        }
+                      }, 10);
+                    }
+                    
+                    // Reset state
+                    isHoldingRef.current = false;
+                    shouldNavigateRef.current = false;
+                  }}
+                  onMouseLeave={() => {
+                    // Cancel hold timer if mouse leaves
+                    if (holdTimerRef.current) {
+                      clearTimeout(holdTimerRef.current);
+                      holdTimerRef.current = null;
+                    }
+                    isHoldingRef.current = false;
+                    shouldNavigateRef.current = false;
                   }}
                   style={{
                     display: "flex",
@@ -606,8 +660,7 @@ export default function SingleGameWidget({
                       color: "canvasText",
                       letterSpacing: "-0.01em",
                       lineHeight: 1.3,
-                      flex:
-                        sizeClass.includes("narrow") || widthInGridUnits < 9
+                      flex: isMobile()
                           ? "0 0 calc(100% - 1.5rem)"
                           : 1,
                       minWidth: 0,
@@ -618,8 +671,8 @@ export default function SingleGameWidget({
                   >
                     {game.title}
                   </h4>
-                  {!sizeClass.includes("narrow") && widthInGridUnits >= 9 && (
-                    /* Chips next to title when not narrow and width >= 9 grid units */
+                  {!isMobile() && (
+                    /* Chips next to title when not mobile */
                     <div
                       style={{
                         display: sizeClass.includes("very-short")
@@ -727,8 +780,8 @@ export default function SingleGameWidget({
                     ▼
                   </span>
                 </div>
-                {/* Chips below title when narrow or width < 9 grid units */}
-                {(sizeClass.includes("narrow") || widthInGridUnits < 9) && (
+                {/* Chips below title when mobile */}
+                {isMobile() && (
                   <div
                     style={{
                       display: sizeClass.includes("very-short")
@@ -886,8 +939,8 @@ export default function SingleGameWidget({
                   marginTop: sizeClass.includes("very-short")
                     ? "0"
                     : sizeClass.includes("short")
-                    ? "0.25rem"
-                    : "0.375rem",
+                    ? "0.5rem"
+                    : "0.75rem",
                 }}
               >
                 {game.teamIcon && (
