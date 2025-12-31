@@ -7,6 +7,11 @@ import {
   getYouTubeThumbnailUrl,
   setYouTubeVolume,
 } from '../../utils/youtube'
+import {
+  buildOptimizedSrcSet,
+  getOptimizedImageUrl,
+  getOptimizedThumbnailUrl,
+} from '../../utils/images'
 
 /* eslint-disable react/prop-types */
 
@@ -23,6 +28,28 @@ export default function GameImageWidget({ game }) {
         }
         [data-thumbnail-container]::-webkit-scrollbar {
           display: none;
+        }
+      `
+      document.head.appendChild(style)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!document.getElementById('game-media-fade')) {
+      const style = document.createElement('style')
+      style.id = 'game-media-fade'
+      style.textContent = `
+        @keyframes mediaFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.94) translateY(8px);
+            filter: blur(6px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            filter: blur(0);
+          }
         }
       `
       document.head.appendChild(style)
@@ -58,11 +85,21 @@ export default function GameImageWidget({ game }) {
   const [isHovered, setIsHovered] = useState(false)
   const intervalRef = useRef(null)
   const videoIframeRef = useRef(null)
+  const defaultImageIndex = useMemo(() => {
+    if (!mediaArray.length) return 0
+    return mediaArray[0]?.type === 'video' && mediaArray.length > 1 ? 1 : 0
+  }, [mediaArray])
 
   // Reset image index when game changes
   useEffect(() => {
-    setCurrentIndex(0)
-  }, [game?.id])
+    if (mediaArray.length === 0) {
+      setCurrentIndex(0)
+      return
+    }
+    const defaultIndex =
+      mediaArray[0]?.type === 'video' && mediaArray.length > 1 ? 1 : 0
+    setCurrentIndex(defaultIndex)
+  }, [game?.id, mediaArray])
 
   useEffect(() => {
     if (!isHovered && mediaArray.length > 0) {
@@ -121,6 +158,14 @@ export default function GameImageWidget({ game }) {
             const currentMedia = mediaArray[currentIndex]
             if (!currentMedia) return null
 
+            const mediaKey = `${game.id}-${currentIndex}-${currentMedia.type}`
+            const mediaWrapperStyle = {
+              width: '100%',
+              height: '100%',
+              animation: 'mediaFadeIn 520ms cubic-bezier(0.22, 1, 0.36, 1)',
+              willChange: 'opacity, transform, filter'
+            }
+
             if (currentMedia.type === 'video') {
               const embedUrl = getYouTubeEmbedUrl(currentMedia.url, {
                 autoplay: 0,
@@ -128,51 +173,69 @@ export default function GameImageWidget({ game }) {
                 rel: 0
               })
               return (
-                <iframe
-                  ref={videoIframeRef}
-                  key={`video-${game.id}-${currentIndex}`}
-                  src={embedUrl}
-                  title={`${game.title} - Video`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    border: 'none',
-                    display: 'block'
-                  }}
-                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onLoad={() => {
-                    // Set volume to 50% when iframe loads
-                    if (videoIframeRef.current) {
-                      setTimeout(() => {
-                        setYouTubeVolume(videoIframeRef.current, 50)
-                      }, 100)
-                    }
-                  }}
-                />
+                <div key={mediaKey} style={mediaWrapperStyle}>
+                  <iframe
+                    ref={videoIframeRef}
+                    src={embedUrl}
+                    title={`${game.title} - Video`}
+                    loading="lazy"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      display: 'block'
+                    }}
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onLoad={() => {
+                      // Set volume to 50% when iframe loads
+                      if (videoIframeRef.current) {
+                        setTimeout(() => {
+                          setYouTubeVolume(videoIframeRef.current, 50)
+                        }, 100)
+                      }
+                    }}
+                  />
+                </div>
               )
             } else {
+              const optimizedSrc = getOptimizedImageUrl(currentMedia.url, {
+                width: 1400,
+                format: 'webp',
+                quality: 70
+              })
+              const optimizedSrcSet = buildOptimizedSrcSet(
+                currentMedia.url,
+                [600, 900, 1200, 1400],
+                { format: 'webp', quality: 70 }
+              )
+              const isPriorityImage = currentIndex === defaultImageIndex
               return (
-                <img 
-                  src={currentMedia.url} 
-                  alt={`${game.title} - Image ${currentIndex + 1}`}
-                  draggable="false"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                    userSelect: 'none',
-                    transition: 'opacity 0.3s ease'
-                  }}
-                  loading="lazy"
-                  onDragStart={(e) => e.preventDefault()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/800x600?text=Game+Image";
-                  }}
-                />
+                <div key={mediaKey} style={mediaWrapperStyle}>
+                  <img 
+                    src={optimizedSrc} 
+                    srcSet={optimizedSrcSet}
+                    sizes="(max-width: 900px) 100vw, (max-width: 1400px) 70vw, 60vw"
+                    alt={`${game.title} - Image ${currentIndex + 1}`}
+                    draggable="false"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      userSelect: 'none'
+                    }}
+                    loading={isPriorityImage ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchpriority={isPriorityImage ? 'high' : 'low'}
+                    onDragStart={(e) => e.preventDefault()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/800x600?text=Game+Image";
+                    }}
+                  />
+                </div>
               )
             }
           })()}
@@ -196,7 +259,7 @@ export default function GameImageWidget({ game }) {
           {mediaArray.map((media, index) => {
             const thumbnailUrl = media.type === 'video' 
               ? getYouTubeThumbnailUrl(media.url)
-              : media.url
+              : getOptimizedThumbnailUrl(media.url, 120) || media.url
 
             return (
               <div
@@ -242,6 +305,8 @@ export default function GameImageWidget({ game }) {
                         userSelect: 'none'
                       }}
                       loading="lazy"
+                      decoding="async"
+                      fetchpriority="low"
                       onDragStart={(e) => e.preventDefault()}
                       onMouseDown={(e) => e.stopPropagation()}
                       onError={(e) => {
@@ -277,6 +342,15 @@ export default function GameImageWidget({ game }) {
                 ) : (
                   <img 
                     src={thumbnailUrl} 
+                    srcSet={
+                      media.type === 'video'
+                        ? undefined
+                        : buildOptimizedSrcSet(media.url, [60, 120], {
+                            format: 'webp',
+                            quality: 70
+                          })
+                    }
+                    sizes="60px"
                     alt={`${game.title} - Thumbnail ${index + 1}`}
                     draggable="false"
                     style={{
@@ -287,6 +361,8 @@ export default function GameImageWidget({ game }) {
                       userSelect: 'none'
                     }}
                     loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
                     onDragStart={(e) => e.preventDefault()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onError={(e) => {

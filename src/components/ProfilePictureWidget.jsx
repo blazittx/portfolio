@@ -53,6 +53,9 @@ export default function ProfilePictureWidget({ widget }) {
           src="/profilePic.png" 
           alt="Profile Picture" 
           draggable="false"
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
           style={getImageStyle()}
           onClick={handleClick}
           onMouseEnter={() => setIsHovered(true)}

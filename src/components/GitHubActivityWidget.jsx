@@ -358,6 +358,9 @@ export default function GitHubActivityWidget() {
               <img 
                 src="/followLink.svg" 
                 alt="Open GitHub Profile" 
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
                 style={{ 
                   width: "100%", 
                   height: "100%",

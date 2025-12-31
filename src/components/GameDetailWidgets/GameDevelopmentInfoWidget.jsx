@@ -71,6 +71,8 @@ function ContentImage({ src, alt }) {
         src={src}
         alt={alt || 'Development screenshot'}
         draggable="false"
+        decoding="async"
+        fetchpriority="low"
         style={{
           width: '100%',
           height: 'auto',
