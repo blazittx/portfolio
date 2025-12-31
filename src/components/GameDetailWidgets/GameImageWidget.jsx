@@ -52,7 +52,7 @@ export default function GameImageWidget({ game }) {
       <MediaCarousel
         media={mediaArray}
         title={game.title}
-        layout="auto"
+        layout="horizontal"
         currentIndex={currentIndex}
         onIndexChange={setCurrentIndex}
         autoAdvance
