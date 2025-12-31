@@ -2,16 +2,11 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import BaseWidget from "./BaseWidget";
 import { isMobile } from "../utils/mobile";
 import { GAME_IDS, STEAM_URLS, YOUTUBE_URLS, getGameChips, getGameLinks } from "../constants/games";
-import {
-  isYouTubeUrl,
-  getYouTubeEmbedUrl,
-  getYouTubeThumbnailUrl,
-  setYouTubeVolume,
-} from "../utils/youtube";
+import { isYouTubeUrl } from "../utils/youtube";
+import MediaCarousel from "./MediaCarousel";
 import {
   buildOptimizedSrcSet,
   getOptimizedImageUrl,
-  getOptimizedThumbnailUrl,
 } from "../utils/images";
 
 // Use Netlify function to proxy API calls (works in both dev and production)
@@ -48,16 +43,7 @@ export default function SingleGameWidget({
   const fetchedGameIdRef = useRef(null); // Track which gameId we've already fetched
   const isInitialMountRef = useRef(true); // Track if this is the initial mount
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const intervalRef = useRef(null);
-  const thumbnailContainerRef = useRef(null);
-  const thumbnailRefs = useRef({});
-  const videoIframeRef = useRef(null);
-  const [previousMedia, setPreviousMedia] = useState(null);
-  const lastImageIndexRef = useRef(0);
-  const fadeTimeoutRef = useRef(null);
-  const fadeDurationMs = 360;
   const holdTimerRef = useRef(null);
   const isHoldingRef = useRef(false);
   const shouldNavigateRef = useRef(false);
@@ -206,32 +192,6 @@ export default function SingleGameWidget({
     };
   }, []);
 
-  useEffect(() => {
-    if (!document.getElementById("game-media-fade")) {
-      const style = document.createElement("style");
-      style.id = "game-media-fade";
-      style.textContent = `
-        @keyframes mediaFadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        @keyframes mediaFadeOut {
-          from {
-            opacity: 1;
-          }
-          to {
-            opacity: 0;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
-
   // Handle game selection change
   const handleGameSelect = (gameId) => {
     setSelectedGameId(gameId);
@@ -280,11 +240,6 @@ export default function SingleGameWidget({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game?.videoUrl, game?.screenshots, game?.image, game?.id]);
 
-  const defaultImageIndex = useMemo(() => {
-    if (!mediaArray.length) return 0;
-    return mediaArray[0]?.type === "video" && mediaArray.length > 1 ? 1 : 0;
-  }, [mediaArray]);
-
   // Reset image index when game changes
   useEffect(() => {
     if (mediaArray.length === 0) {
@@ -295,74 +250,6 @@ export default function SingleGameWidget({
       mediaArray[0]?.type === "video" && mediaArray.length > 1 ? 1 : 0;
     setCurrentImageIndex(defaultIndex);
   }, [game?.id, mediaArray]);
-
-  useEffect(() => {
-    if (!mediaArray.length) {
-      setPreviousMedia(null);
-      lastImageIndexRef.current = 0;
-      return;
-    }
-
-    const lastIndex = lastImageIndexRef.current;
-    if (lastIndex !== currentImageIndex && mediaArray[lastIndex]) {
-      const lastMedia = mediaArray[lastIndex];
-      setPreviousMedia({
-        media: lastMedia,
-        key: `${game?.id || "game"}-${lastIndex}-${lastMedia.type}-${Date.now()}`,
-      });
-
-      if (fadeTimeoutRef.current) {
-        clearTimeout(fadeTimeoutRef.current);
-      }
-
-      fadeTimeoutRef.current = setTimeout(() => {
-        setPreviousMedia(null);
-      }, fadeDurationMs);
-    }
-
-    lastImageIndexRef.current = currentImageIndex;
-  }, [currentImageIndex, mediaArray, game?.id, fadeDurationMs]);
-
-  // Scroll to selected thumbnail when image index changes
-  useEffect(() => {
-    if (!game || mediaArray.length === 0) return;
-
-    const thumbnailElement = thumbnailRefs.current[currentImageIndex];
-    if (thumbnailElement && thumbnailContainerRef.current && !isHovered) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        // On mobile, scroll within the container only to avoid page scrolling
-        if (isMobile()) {
-          const container = thumbnailContainerRef.current;
-          const element = thumbnailElement;
-          if (container && element) {
-            const containerRect = container.getBoundingClientRect();
-            const elementRect = element.getBoundingClientRect();
-
-            // Calculate scroll position to center the thumbnail in the container
-            const scrollTop =
-              element.offsetTop -
-              container.offsetTop -
-              containerRect.height / 2 +
-              elementRect.height / 2;
-
-            container.scrollTo({
-              top: scrollTop,
-              behavior: "smooth",
-            });
-          }
-        } else {
-          // On desktop, use scrollIntoView with block: 'nearest' to avoid page scrolling
-          thumbnailElement.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "nearest",
-          });
-        }
-      }, 50);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentImageIndex, game?.id, isHovered, mediaArray.length]);
 
   // Listen for YouTube iframe events to detect video playback state
   useEffect(() => {
@@ -403,69 +290,9 @@ export default function SingleGameWidget({
     };
   }, []);
 
-  // Auto-scroll images (stop only if video is playing)
   useEffect(() => {
-    if (!game || mediaArray.length === 0) return;
-
-    // Stop auto-scrolling if video is actively playing
-    if (isVideoPlaying) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
-    }
-
-    // If we're on the video but it's not playing, auto-scroll to images after a delay
-    const isVideoActive = currentImageIndex === 0 && mediaArray[0]?.type === "video";
-    if (isVideoActive && !isVideoPlaying) {
-      // Wait a bit to see if user will play, then auto-scroll to images
-      const timer = setTimeout(() => {
-        if (!isVideoPlaying && mediaArray.length > 1) {
-          setCurrentImageIndex(1); // Move to first image
-        }
-      }, 5000); // Wait 5 seconds before auto-scrolling away from video
-      
-      return () => clearTimeout(timer);
-    }
-
-    if (!isHovered) {
-      intervalRef.current = setInterval(() => {
-        setCurrentImageIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % mediaArray.length;
-          // Skip video if we're auto-scrolling (only show it when manually selected)
-          if (nextIndex === 0 && mediaArray[0]?.type === "video") {
-            return 1 % mediaArray.length; // Skip to first image
-          }
-          return nextIndex;
-        });
-      }, 3000); // Auto-scroll every 3 seconds
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isHovered,
-    game?.id,
-    game?.image,
-    game?.videoUrl,
-    mediaArray.length,
-    currentImageIndex,
-    isVideoPlaying,
-  ]);
-
-  const handleThumbnailClick = (index) => {
-    setCurrentImageIndex(index);
-  };
+    setIsVideoPlaying(false);
+  }, [currentImageIndex, game?.id]);
 
   // Get chips and links for current game
   const gameChips = useMemo(() => {
@@ -493,35 +320,11 @@ export default function SingleGameWidget({
     </svg>
   );
 
-  // Set YouTube volume to 50% and reset playing state when video iframe loads or changes
-  useEffect(() => {
-    if (videoIframeRef.current && mediaArray[currentImageIndex]?.type === 'video') {
-      // Reset playing state when switching to video
-      setIsVideoPlaying(false);
-      // Small delay to ensure iframe is ready
-      const timer = setTimeout(() => {
-        setYouTubeVolume(videoIframeRef.current, 50);
-      }, 500);
-      return () => clearTimeout(timer);
-    } else {
-      // Reset playing state when switching away from video
-      setIsVideoPlaying(false);
-    }
-  }, [currentImageIndex, mediaArray, game?.id]);
-
   // Cleanup hold timer on unmount
   useEffect(() => {
     return () => {
       if (holdTimerRef.current) {
         clearTimeout(holdTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (fadeTimeoutRef.current) {
-        clearTimeout(fadeTimeoutRef.current);
       }
     };
   }, []);
@@ -1089,321 +892,26 @@ export default function SingleGameWidget({
                 minHeight: 0,
                 position: "relative",
               }}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
             >
-              {/* Large media display on left */}
-              <div
-                style={{
-                  position: "relative",
-                  flex: 1,
-                  minWidth: 0,
-                  minHeight: 0,
-                  overflow: "hidden",
-                  borderRadius: "4px",
-                  background: "color-mix(in hsl, canvasText, transparent 98%)",
+              <MediaCarousel
+                media={mediaArray}
+                title={game.title}
+                layout="auto"
+                currentIndex={currentImageIndex}
+                onIndexChange={setCurrentImageIndex}
+                autoAdvance
+                pauseAutoAdvance={isVideoPlaying}
+                imageIntervalMs={3000}
+                videoIntervalMs={8000}
+                carouselId={`single-${game.id}`}
+                videoEmbedOptions={{
+                  autoplay: 0,
+                  controls: 1,
+                  rel: 0,
+                  enablejsapi: 1,
+                  origin: window.location.origin,
                 }}
-              >
-                {(() => {
-                  const currentMedia = mediaArray[currentImageIndex];
-                  if (!currentMedia) return null;
-
-                    const mediaKey = `${game.id}-${currentImageIndex}-${currentMedia.type}`;
-                    const mediaWrapperStyle = {
-                      width: "100%",
-                      height: "100%",
-                      position: "absolute",
-                      inset: 0,
-                      willChange: "opacity",
-                    };
-
-                    if (currentMedia.type === "video") {
-                      const embedUrl = getYouTubeEmbedUrl(currentMedia.url, {
-                        autoplay: 0,
-                        controls: 1,
-                        rel: 0,
-                      });
-                      return (
-                        <div key={mediaKey} style={mediaWrapperStyle}>
-                          <iframe
-                            ref={videoIframeRef}
-                            src={embedUrl}
-                            title={`${game.title} - Video`}
-                            loading="lazy"
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              border: "none",
-                              display: "block",
-                            }}
-                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onLoad={() => {
-                              // Set volume to 50% when iframe loads
-                              if (videoIframeRef.current) {
-                                setTimeout(() => {
-                                  setYouTubeVolume(videoIframeRef.current, 50);
-                                }, 100);
-                              }
-                            }}
-                          />
-                        </div>
-                      );
-                    } else {
-                      const optimizedSrc = getOptimizedImageUrl(
-                        currentMedia.url,
-                        { width: 1400, format: "webp", quality: 70 }
-                      );
-                      const optimizedSrcSet = buildOptimizedSrcSet(
-                        currentMedia.url,
-                        [600, 900, 1200, 1400],
-                        { format: "webp", quality: 70 }
-                      );
-                      const isPriorityImage =
-                        currentImageIndex === defaultImageIndex;
-                      return (
-                        <>
-                          {previousMedia && previousMedia.media.type !== "video" ? (
-                            <div
-                              key={`prev-${previousMedia.key}`}
-                              style={{
-                                ...mediaWrapperStyle,
-                                zIndex: 1,
-                                animation: `mediaFadeOut ${fadeDurationMs}ms ease`,
-                                pointerEvents: "none",
-                              }}
-                            >
-                              <img
-                                src={getOptimizedImageUrl(
-                                  previousMedia.media.url,
-                                  { width: 1400, format: "webp", quality: 70 }
-                                )}
-                                srcSet={buildOptimizedSrcSet(
-                                  previousMedia.media.url,
-                                  [600, 900, 1200, 1400],
-                                  { format: "webp", quality: 70 }
-                                )}
-                                sizes="(max-width: 900px) 100vw, (max-width: 1400px) 70vw, 60vw"
-                                alt=""
-                                aria-hidden="true"
-                                draggable="false"
-                                decoding="async"
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                  display: "block",
-                                  userSelect: "none",
-                                }}
-                              />
-                            </div>
-                          ) : null}
-                          <div
-                            key={mediaKey}
-                            style={{
-                              ...mediaWrapperStyle,
-                              zIndex: 2,
-                              animation: `mediaFadeIn ${fadeDurationMs}ms ease`,
-                            }}
-                          >
-                            <img
-                              src={optimizedSrc}
-                              srcSet={optimizedSrcSet}
-                              sizes="(max-width: 900px) 100vw, (max-width: 1400px) 70vw, 60vw"
-                              alt={`${game.title} - Image ${
-                                currentImageIndex + 1
-                              }`}
-                              draggable="false"
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                                display: "block",
-                                userSelect: "none",
-                              }}
-                              loading={isPriorityImage ? "eager" : "lazy"}
-                              decoding="async"
-                              fetchpriority={isPriorityImage ? "high" : "low"}
-                              onDragStart={(e) => e.preventDefault()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onError={(e) => {
-                                e.target.src =
-                                  "https://via.placeholder.com/800x600?text=Game+Image";
-                              }}
-                            />
-                          </div>
-                        </>
-                      );
-                    }
-                  })()}
-                </div>
-
-              {/* Thumbnail images on right, vertically stacked */}
-              <div
-                ref={thumbnailContainerRef}
-                data-thumbnail-container
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.5rem",
-                  overflowY: "auto",
-                  overflowX: "hidden",
-                  paddingRight: "0.25rem",
-                  flexShrink: 0,
-                  width: "60px",
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                  // Prevent page scrolling when scrolling thumbnails on mobile
-                  touchAction: "pan-y",
-                  WebkitOverflowScrolling: "touch",
-                }}
-              >
-                {mediaArray.map((media, index) => {
-                  const thumbnailUrl =
-                    media.type === "video"
-                      ? getYouTubeThumbnailUrl(media.url)
-                      : getOptimizedThumbnailUrl(media.url, 120) || media.url;
-
-                  return (
-                    <div
-                      key={index}
-                      ref={(el) => {
-                        if (el) thumbnailRefs.current[index] = el;
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleThumbnailClick(index);
-                      }}
-                      onMouseUp={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                      }}
-                      onTouchStart={(e) => {
-                        // Prevent page scrolling when touching thumbnails on mobile
-                        e.stopPropagation();
-                      }}
-                      style={{
-                        position: "relative",
-                        width: "60px",
-                        height: "60px",
-                        flexShrink: 0,
-                        borderRadius: "4px",
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        border:
-                          currentImageIndex === index
-                            ? "2px solid canvasText"
-                            : "2px solid transparent",
-                        opacity: currentImageIndex === index ? 1 : 0.7,
-                        transition: "opacity 0.2s ease, border-color 0.2s ease",
-                        background:
-                          "color-mix(in hsl, canvasText, transparent 98%)",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (currentImageIndex !== index) {
-                          e.currentTarget.style.opacity = "0.9";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentImageIndex !== index) {
-                          e.currentTarget.style.opacity = "0.7";
-                        }
-                      }}
-                    >
-                      {media.type === "video" ? (
-                        <>
-                          <img
-                            src={
-                              thumbnailUrl ||
-                              "https://via.placeholder.com/60x60?text=Video"
-                            }
-                            alt={`${game.title} - Video thumbnail`}
-                            draggable="false"
-                            loading="lazy"
-                            decoding="async"
-                            fetchpriority="low"
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                              display: "block",
-                              userSelect: "none",
-                            }}
-                            loading="lazy"
-                            onDragStart={(e) => e.preventDefault()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onError={(e) => {
-                              e.target.src =
-                                "https://via.placeholder.com/60x60?text=Video";
-                            }}
-                          />
-                          {/* Play icon overlay */}
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                              width: "20px",
-                              height: "20px",
-                              borderRadius: "50%",
-                              background: "rgba(0, 0, 0, 0.7)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              pointerEvents: "none",
-                            }}
-                          >
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="white"
-                              style={{ marginLeft: "2px" }}
-                            >
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </>
-                      ) : (
-                        <img
-                          src={thumbnailUrl}
-                          srcSet={
-                            media.type === "video"
-                              ? undefined
-                              : buildOptimizedSrcSet(media.url, [60, 120], {
-                                  format: "webp",
-                                  quality: 70,
-                                })
-                          }
-                          sizes="60px"
-                          alt={`${game.title} - Thumbnail ${index + 1}`}
-                          draggable="false"
-                          loading="lazy"
-                          decoding="async"
-                          fetchpriority="low"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            display: "block",
-                            userSelect: "none",
-                          }}
-                          loading="lazy"
-                          onDragStart={(e) => e.preventDefault()}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onError={(e) => {
-                            e.target.src =
-                              "https://via.placeholder.com/60x60?text=Image";
-                          }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              />
             </div>
           )}
 
