@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, snapToGridConstrained, isWithinUsableArea } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
@@ -12,6 +12,7 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
   const [collisionWidgetId, setCollisionWidgetId] = useState(null)
   const [swapTargetId, setSwapTargetId] = useState(null)
   const swapTimerRef = useRef(null)
+  const handleMouseUpRef = useRef(null)
   const dragStateRef = useRef({
     activeId: null,
     startX: 0,
@@ -155,6 +156,12 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
   }, [setWidgets])
 
   const handleMouseMove = useCallback((e) => {
+    if ((dragStateRef.current.activeId || resizeStateRef.current.activeId) && e.buttons === 0) {
+      if (handleMouseUpRef.current) {
+        handleMouseUpRef.current()
+      }
+      return
+    }
     // Track if dragging has actually moved (for click vs drag detection)
     if (dragStateRef.current.activeId) {
       const deltaX = Math.abs(e.clientX - dragStateRef.current.startX)
@@ -665,6 +672,38 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
       }
     }
   }, [setWidgets, swapTargetId])
+
+  useEffect(() => {
+    handleMouseUpRef.current = handleMouseUp
+  }, [handleMouseUp])
+
+  useEffect(() => {
+    const handleGlobalCancel = () => {
+      if (handleMouseUpRef.current) {
+        handleMouseUpRef.current()
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleGlobalCancel()
+      }
+    }
+
+    window.addEventListener('blur', handleGlobalCancel)
+    window.addEventListener('mouseup', handleGlobalCancel)
+    window.addEventListener('pointerup', handleGlobalCancel)
+    window.addEventListener('pointercancel', handleGlobalCancel)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('blur', handleGlobalCancel)
+      window.removeEventListener('mouseup', handleGlobalCancel)
+      window.removeEventListener('pointerup', handleGlobalCancel)
+      window.removeEventListener('pointercancel', handleGlobalCancel)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
 
   // Helper to check if the last interaction was a drag
   const wasLastInteractionDrag = useCallback((widgetId) => {
