@@ -43,7 +43,6 @@ export default function SingleGameWidget({
   const fetchedGameIdRef = useRef(null); // Track which gameId we've already fetched
   const isInitialMountRef = useRef(true); // Track if this is the initial mount
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const holdTimerRef = useRef(null);
   const isHoldingRef = useRef(false);
   const shouldNavigateRef = useRef(false);
@@ -246,53 +245,9 @@ export default function SingleGameWidget({
       setCurrentImageIndex(0);
       return;
     }
-    const defaultIndex =
-      mediaArray[0]?.type === "video" && mediaArray.length > 1 ? 1 : 0;
-    setCurrentImageIndex(defaultIndex);
+    const videoIndex = mediaArray.findIndex((item) => item.type === "video");
+    setCurrentImageIndex(videoIndex >= 0 ? videoIndex : 0);
   }, [game?.id, mediaArray]);
-
-  // Listen for YouTube iframe events to detect video playback state
-  useEffect(() => {
-    const handleMessage = (event) => {
-      // Only accept messages from YouTube
-      if (event.origin !== 'https://www.youtube.com') return;
-      
-      try {
-        let data;
-        if (typeof event.data === 'string') {
-          // YouTube sends events as strings that need parsing
-          if (event.data.startsWith('{')) {
-            data = JSON.parse(event.data);
-          } else {
-            // Some YouTube messages are not JSON
-            return;
-          }
-        } else {
-          data = event.data;
-        }
-        
-        // YouTube iframe API events
-        if (data.event === 'onStateChange') {
-          // YouTube player states:
-          // -1 = unstarted, 0 = ended, 1 = playing, 2 = paused, 3 = buffering, 5 = cued
-          const state = data.info !== undefined ? data.info : data;
-          const isPlaying = state === 1 || state === 3; // Playing or buffering
-          setIsVideoPlaying(isPlaying);
-        }
-      } catch (error) {
-        // Ignore parsing errors for non-JSON messages
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, []);
-
-  useEffect(() => {
-    setIsVideoPlaying(false);
-  }, [currentImageIndex, game?.id]);
 
   // Get chips and links for current game
   const gameChips = useMemo(() => {
@@ -900,17 +855,9 @@ export default function SingleGameWidget({
                 currentIndex={currentImageIndex}
                 onIndexChange={setCurrentImageIndex}
                 autoAdvance
-                pauseAutoAdvance={isVideoPlaying}
                 imageIntervalMs={3000}
                 videoIntervalMs={8000}
                 carouselId={`single-${game.id}`}
-                videoEmbedOptions={{
-                  autoplay: 0,
-                  controls: 1,
-                  rel: 0,
-                  enablejsapi: 1,
-                  origin: window.location.origin,
-                }}
               />
             </div>
           )}

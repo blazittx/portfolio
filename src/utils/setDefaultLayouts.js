@@ -42,9 +42,9 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
   {
     id: "contact",
     type: "contact",
-    x: 1243.2,
+    x: 208.2,
     y: 746.4,
-    width: 291,
+    width: 246,
     height: 111,
     locked: false,
     pinned: true,
@@ -53,7 +53,7 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
   {
     id: "single-game",
     type: "single-game",
-    x: 478.2,
+    x: 973.2,
     y: 431.4,
     width: 561,
     height: 426,
@@ -79,10 +79,10 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
   {
     id: "games",
     type: "games",
-    x: 1063.2,
-    y: 26.4,
-    width: 471,
-    height: 696,
+    x: 28.2,
+    y: 296.4,
+    width: 426,
+    height: 426,
     locked: false,
     pinned: false,
     settings: {
@@ -112,7 +112,7 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
   {
     id: "cv",
     type: "cv",
-    x: 1063.2,
+    x: 28.2,
     y: 746.4,
     width: 156,
     height: 111,
@@ -123,14 +123,27 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
   {
     id: "single-game-4",
     type: "single-game",
-    x: 28.2,
-    y: 296.4,
-    width: 426,
-    height: 561,
+    x: 478.2,
+    y: 431.4,
+    width: 471,
+    height: 426,
     locked: false,
     pinned: false,
     settings: {
       gameId: "Forgekeepers",
+    },
+  },
+  {
+    id: "single-game-5",
+    type: "single-game",
+    x: 1063.2,
+    y: 26.4,
+    width: 471,
+    height: 381,
+    locked: false,
+    pinned: false,
+    settings: {
+      gameId: "gp3",
     },
   },
 ];

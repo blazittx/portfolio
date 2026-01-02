@@ -42,9 +42,8 @@ export default function GameImageWidget({ game }) {
       setCurrentIndex(0)
       return
     }
-    const defaultIndex =
-      mediaArray[0]?.type === 'video' && mediaArray.length > 1 ? 1 : 0
-    setCurrentIndex(defaultIndex)
+    const videoIndex = mediaArray.findIndex((item) => item.type === 'video')
+    setCurrentIndex(videoIndex >= 0 ? videoIndex : 0)
   }, [game?.id, mediaArray])
 
   return (

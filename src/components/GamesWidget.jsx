@@ -28,15 +28,12 @@ export default function GamesWidget({
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [videoPlayingByGame, setVideoPlayingByGame] = useState({});
   const autoPlayRef = useRef(null);
   const containerRef = useRef(null);
   const [sizeClass, setSizeClass] = useState("");
   const fetchedGameIdsRef = useRef(null); // Track which gameIds we've already fetched
   const [imageIndices, setImageIndices] = useState({}); // Track current image index for each game
   const [shouldSwitchImage, setShouldSwitchImage] = useState(true); // Track whether to switch image or game
-  const videoIframeRefs = useRef({}); // Track video iframes for each game
-  const videoKeyToGameIdRef = useRef({});
   const imageHoldMs = 3000;
   const videoHoldMs = 8000;
 
@@ -74,46 +71,6 @@ export default function GamesWidget({
 
   // Create a stable string key for the gameIds to fetch
   const gameIdsToFetchKey = gameIdsToFetch.join(",");
-
-  useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.origin !== "https://www.youtube.com") return;
-
-      let data;
-      try {
-        if (typeof event.data === "string") {
-          if (!event.data.startsWith("{")) return;
-          data = JSON.parse(event.data);
-        } else {
-          data = event.data;
-        }
-      } catch {
-        return;
-      }
-
-      if (data?.event !== "onStateChange") return;
-
-      const state = data.info !== undefined ? data.info : data;
-      const isPlaying = state === 1 || state === 3;
-
-      const srcWin = event.source;
-      const entries = Object.entries(videoIframeRefs.current);
-
-      const match = entries.find(
-        ([, iframe]) => iframe?.contentWindow === srcWin
-      );
-      if (!match) return;
-
-      const [iframeKey] = match;
-      const gameId = videoKeyToGameIdRef.current[iframeKey];
-      if (!gameId) return;
-
-      setVideoPlayingByGame((prev) => ({ ...prev, [gameId]: isPlaying }));
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
 
   // Fetch games from API - only when gameIdsToFetch actually changes
   useEffect(() => {
@@ -240,20 +197,6 @@ export default function GamesWidget({
   useEffect(() => {
     if (!isAutoPlaying || games.length === 0) return;
 
-    // Check if current game is showing a video - if so, stop auto-switching
-    const currentGame = games[currentIndex];
-    if (currentGame) {
-      const isVideoPlaying = !!videoPlayingByGame[currentGame.id];
-
-      if (isVideoPlaying) {
-        if (autoPlayRef.current) {
-          clearTimeout(autoPlayRef.current);
-          autoPlayRef.current = null;
-        }
-        return;
-      }
-    }
-
     const currentMedia = (() => {
       const currentGame = games[currentIndex];
       if (!currentGame) return null;
@@ -308,9 +251,10 @@ export default function GamesWidget({
       games.forEach((game) => {
         if (!(game.id in newIndices)) {
           const mediaArray = getMediaArray(game);
-          const defaultIndex =
-            mediaArray[0]?.type === "video" && mediaArray.length > 1 ? 1 : 0;
-          newIndices[game.id] = defaultIndex;
+          const videoIndex = mediaArray.findIndex(
+            (item) => item.type === "video"
+          );
+          newIndices[game.id] = videoIndex >= 0 ? videoIndex : 0;
           hasNew = true;
         }
       });
@@ -832,22 +776,6 @@ export default function GamesWidget({
                       }}
                       autoAdvance={false}
                       carouselId={`games-${game.id}`}
-                      videoEmbedOptions={{
-                        autoplay: 0,
-                        controls: 1,
-                        rel: 0,
-                        enablejsapi: 1,
-                        origin: window.location.origin,
-                      }}
-                      onVideoIframeRef={(key, iframe) => {
-                        if (iframe) {
-                          videoIframeRefs.current[key] = iframe;
-                          videoKeyToGameIdRef.current[key] = game.id;
-                        } else {
-                          delete videoIframeRefs.current[key];
-                          delete videoKeyToGameIdRef.current[key];
-                        }
-                      }}
                     />
                   </div>
                   <div

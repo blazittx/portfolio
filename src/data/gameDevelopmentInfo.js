@@ -103,7 +103,7 @@ export const gameTeamMembers = {
       name: "Doruk Sasmaz",
       role: "Solo Project",
       linkedin: "https://linkedin.com/in/doruk-sasmaz",
-    }
+    },
   ],
   bubbledome: [
     {
@@ -211,6 +211,61 @@ export const gameTeamMembers = {
       name: "Lal Koyuncu",
       role: "3D Artist",
       linkedin: "https://www.linkedin.com/in/lal-kync/",
+    },
+  ],
+  gp3: [
+    {
+      name: "Doruk Sasmaz",
+      role: "Game & Sound Programmer",
+      linkedin: "https://linkedin.com/in/doruk-sasmaz",
+    },
+    {
+      name: "Leon Cederberg",
+      role: "Product Owner and Designer",
+    },
+    {
+      name: "Alejandro Hernandez Cortina",
+      role: "Narrative and Level Designer",
+    },
+    {
+      name: "Simon Finér",
+      role: "Designer",
+    },
+    {
+      name: "Ghazaleh Shahabirad",
+      role: "Designer",
+    },
+    {
+      name: "Ilya Antoshkin",
+      role: "Environment Artist / Technical Artist",
+    },
+    {
+      name: "Evangelia Bakasi",
+      role: "Artist",
+    },
+    {
+      name: "Barry Chen",
+      role: "Art Director and Animator",
+    },
+    {
+      name: "Shengan Peng",
+      role: "Animation and Visual Effects",
+    },
+    {
+      name: "Eric Ivar Persson",
+      role: "VFX Artist",
+    },
+    {
+      name: "Brian-Lucas Morar",
+      role: "Programmer",
+    },
+    {
+      name: "Galina Syrodoeva",
+      role: "Programmer",
+    },
+    {
+      name: "Jamie Kofler",
+      role: "Programmer",
     },
   ],
 };

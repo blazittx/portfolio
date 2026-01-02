@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getYouTubeEmbedUrl,
   getYouTubeThumbnailUrl,
-  setYouTubeVolume,
   isYouTubeUrl,
 } from "../utils/youtube";
 import {
@@ -20,15 +19,29 @@ export default function MediaCarousel({
   onIndexChange,
   autoAdvance = false,
   pauseAutoAdvance = false,
-  imageIntervalMs = 3000,
-  videoIntervalMs = 8000,
+  isVideoPlaying = false,
+  imageIntervalMs = 5000,
+  videoIntervalMs = 10000,
   fadeDurationMs = 360,
   carouselId = "carousel",
   videoEmbedOptions,
   onVideoIframeRef,
 }) {
   const isControlled = typeof currentIndex === "number";
-  const [internalIndex, setInternalIndex] = useState(0);
+  const initialIndex = useMemo(() => {
+    if (!media.length) return 0;
+    const youtubeIndex = media.findIndex(
+      (item) => item.type === "video" && isYouTubeUrl(item.url)
+    );
+    return youtubeIndex >= 0 ? youtubeIndex : 0;
+  }, [media]);
+
+  const mediaSignature = useMemo(
+    () => media.map((item) => `${item.type}:${item.url}`).join("|"),
+    [media]
+  );
+
+  const [internalIndex, setInternalIndex] = useState(initialIndex);
   const activeIndex = isControlled ? currentIndex : internalIndex;
   const setIndex = (nextIndex) => {
     if (!media.length) return;
@@ -42,18 +55,43 @@ export default function MediaCarousel({
   };
 
   const [isHovered, setIsHovered] = useState(false);
+  const [isVideoInteracted, setIsVideoInteracted] = useState(false);
   const [previousMedia, setPreviousMedia] = useState(null);
   const lastIndexRef = useRef(0);
+  const hasSetInitialRef = useRef(false);
   const fadeTimeoutRef = useRef(null);
   const thumbnailContainerRef = useRef(null);
   const thumbnailRefs = useRef({});
   const containerRef = useRef(null);
   const [isTall, setIsTall] = useState(false);
 
-  const defaultIndex = useMemo(() => {
-    if (!media.length) return 0;
-    return media[0]?.type === "video" && media.length > 1 ? 1 : 0;
-  }, [media]);
+  const defaultIndex = initialIndex;
+
+  useEffect(() => {
+    hasSetInitialRef.current = false;
+  }, [mediaSignature]);
+
+  useEffect(() => {
+    if (!isControlled) return;
+    if (hasSetInitialRef.current) return;
+    if (typeof currentIndex !== "number" || currentIndex === initialIndex) {
+      hasSetInitialRef.current = true;
+      return;
+    }
+    if (onIndexChange) {
+      onIndexChange(initialIndex);
+    }
+    hasSetInitialRef.current = true;
+  }, [isControlled, currentIndex, initialIndex, onIndexChange]);
+
+  useEffect(() => {
+    if (isControlled) return;
+    if (!media.length) {
+      setInternalIndex(0);
+      return;
+    }
+    setInternalIndex(initialIndex);
+  }, [mediaSignature, initialIndex, isControlled, media.length]);
 
   useEffect(() => {
     if (!document.getElementById("media-carousel-keyframes")) {
@@ -169,12 +207,22 @@ export default function MediaCarousel({
   }, [activeIndex, effectiveLayout, media.length, isHovered]);
 
   useEffect(() => {
+    setIsVideoInteracted(false);
+  }, [activeIndex, mediaSignature]);
+
+  useEffect(() => {
     if (!autoAdvance || media.length <= 1) return;
-    if (pauseAutoAdvance || isHovered) return;
+    if (pauseAutoAdvance || isHovered || isVideoPlaying || isVideoInteracted)
+      return;
 
     const current = media[activeIndex];
-    const delay =
+    const baseDelay =
       current && current.type === "video" ? videoIntervalMs : imageIntervalMs;
+    const jitter = baseDelay * 0.2;
+    const delay = Math.max(
+      0,
+      Math.round(baseDelay + (Math.random() * 2 - 1) * jitter)
+    );
     const timer = setTimeout(() => {
       setIndex(activeIndex + 1);
     }, delay);
@@ -188,6 +236,8 @@ export default function MediaCarousel({
     activeIndex,
     imageIntervalMs,
     videoIntervalMs,
+    isVideoPlaying,
+    isVideoInteracted,
   ]);
 
   if (!media.length) {
@@ -213,11 +263,10 @@ export default function MediaCarousel({
       format: "webp",
       quality: 70,
     });
-    const optimizedSrcSet = buildOptimizedSrcSet(
-      url,
-      [600, 900, 1200, 1400],
-      { format: "webp", quality: 70 }
-    );
+    const optimizedSrcSet = buildOptimizedSrcSet(url, [600, 900, 1200, 1400], {
+      format: "webp",
+      quality: 70,
+    });
 
     return (
       <img
@@ -314,13 +363,9 @@ export default function MediaCarousel({
               }}
               allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              onMouseDown={(e) => e.stopPropagation()}
-              onLoad={(e) => {
-                if (e.currentTarget) {
-                  setTimeout(() => {
-                    setYouTubeVolume(e.currentTarget, 50);
-                  }, 100);
-                }
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setIsVideoInteracted(true);
               }}
             />
           ) : (
