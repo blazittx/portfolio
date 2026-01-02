@@ -12,8 +12,7 @@ import GridMask from './WidgetSystem/GridMask'
 import WidgetContainer from './WidgetSystem/WidgetContainer'
 import Toaster from './Toaster'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from '../utils/grid'
-import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, COOKIE_NAME_CV_DETAIL, COOKIE_NAME_DEFAULT_CV_DETAIL, COOKIE_NAME_DEFAULT_CV_DETAIL_MOBILE } from '../constants/grid'
-import { getCookie, setCookie } from '../utils/cookies'
+import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { isMobile } from '../utils/mobile'
 import BackButtonWidget from './GameDetailWidgets/BackButtonWidget'
 import ProfileWidget from './ProfileWidget'
@@ -94,100 +93,10 @@ export default function CVDetailView({ onBack }) {
   useEffect(() => {
     if (initializedRef.current) return
     
-    // Check if there's a saved layout for CV detail view
-    const savedLayout = getCookie(COOKIE_NAME_CV_DETAIL)
-    const mobile = isMobile()
-    const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_CV_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_CV_DETAIL
-    const defaultLayout = getCookie(defaultCookieName)
+    const layoutToUse = DEFAULT_CV_DETAIL_LAYOUT
     
-    if (savedLayout && Array.isArray(savedLayout) && savedLayout.length > 0) {
-      const restoredWidgets = savedLayout.map(widget => {
-        try {
-          let component = null
-          if (widget.id === 'back-button' || widget.type === 'back-button') {
-            component = () => <BackButtonWidget onBack={onBack} />
-          } else if (widget.id === 'profile' || widget.type === 'profile') {
-            component = ProfileWidget
-          } else if (widget.id === 'profile-picture' || widget.type === 'profile-picture') {
-            component = ProfilePictureWidget
-          } else if (widget.id === 'experience' || widget.type === 'experience') {
-            component = ExperienceWidget
-          } else if (widget.id === 'education' || widget.type === 'education') {
-            component = EducationWidget
-          } else if (widget.id === 'projects' || widget.type === 'projects') {
-            component = ProjectsWidget
-          } else if (widget.id === 'technical-skills' || widget.type === 'technical-skills') {
-            component = TechnicalSkillsWidget
-          } else if (widget.id === 'languages' || widget.type === 'languages') {
-            component = LanguagesWidget
-          } else if (widget.id === 'certifications' || widget.type === 'certifications') {
-            component = CertificationsWidget
-          }
-          
-          if (!component) {
-            console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
-            return null
-          }
-          
-          // Initialize settings for profile-picture if needed
-          let settings = widget.settings || {}
-          if (widget.type === 'profile-picture' && !settings.expandable) {
-            settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-          }
-          
-          return {
-            ...widget,
-            x: widget.x,
-            y: widget.y,
-            width: widget.width,
-            height: widget.height,
-            component: component,
-            locked: widget.locked || false,
-            pinned: widget.pinned || false,
-            settings: Object.keys(settings).length > 0 ? settings : undefined
-          }
-        } catch (error) {
-          console.error(`Error restoring widget ${widget.id}:`, error)
-          return null
-        }
-      }).filter(widget => widget !== null)
-      
-      // Ensure back button exists and is locked
-      const hasBackButton = restoredWidgets.some(w => w.id === 'back-button')
-      if (!hasBackButton) {
-        const backButtonWidth = snapSizeToGrid(120)
-        const backButtonHeight = snapSizeToGrid(60)
-        const backButtonX = snapToGrid(GRID_OFFSET_X + centerOffset.x, GRID_OFFSET_X)
-        const backButtonY = snapToGrid(GRID_OFFSET_Y + centerOffset.y, GRID_OFFSET_Y)
-        
-        restoredWidgets.unshift({
-          id: 'back-button',
-          type: 'back-button',
-          x: backButtonX,
-          y: backButtonY,
-          width: backButtonWidth,
-          height: backButtonHeight,
-          component: () => <BackButtonWidget onBack={onBack} />,
-          locked: true,
-          pinned: false
-        })
-      } else {
-        const backButton = restoredWidgets.find(w => w.id === 'back-button')
-        if (backButton) {
-          backButton.locked = true
-          backButton.component = () => <BackButtonWidget onBack={onBack} />
-        }
-      }
-      
-      setWidgets(restoredWidgets)
-      initializedRef.current = true
-      return
-    }
-    
-    // If no saved layout, try default layout
-    if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
-      // Restore from default layout - use exact positions without constraining
-      const restoredWidgets = defaultLayout.map(widget => {
+    if (layoutToUse && Array.isArray(layoutToUse) && layoutToUse.length > 0) {
+      const restoredWidgets = layoutToUse.map(widget => {
         try {
           let component = null
           if (widget.id === 'back-button' || widget.type === 'back-button') {
@@ -492,7 +401,7 @@ export default function CVDetailView({ onBack }) {
     closeContextMenu()
   }, [setWidgets, closeContextMenu, onBack, centerOffset])
 
-  const setAsDefault = useCallback(() => {
+  const copyLayout = useCallback(() => {
     const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned, settings }) => ({
       id,
       type,
@@ -504,17 +413,23 @@ export default function CVDetailView({ onBack }) {
       pinned: pinned || false,
       settings: settings || {}
     }))
-    const mobile = isMobile()
-    const cookieName = mobile ? COOKIE_NAME_DEFAULT_CV_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_CV_DETAIL
-    setCookie(cookieName, layoutToSave)
-    showToast(`Current layout saved as ${mobile ? 'mobile ' : ''}default!`)
+    const snippet = `export const DEFAULT_CV_DETAIL_LAYOUT = ${JSON.stringify(layoutToSave, null, 2)};`
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(snippet)
+        .then(() => showToast('Copied layout snippet!'))
+        .catch(() => {
+          console.log(snippet)
+          showToast('Clipboard blocked. Layout snippet logged to console.')
+        })
+    } else {
+      console.log(snippet)
+      showToast('Clipboard unavailable. Layout snippet logged to console.')
+    }
   }, [widgets, showToast])
 
   const revertToDefault = useCallback(() => {
-    // Try to load default layout from cookie (mobile or desktop)
-    const mobile = isMobile()
-    const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_CV_DETAIL_MOBILE : COOKIE_NAME_DEFAULT_CV_DETAIL
-    const defaultLayout = getCookie(defaultCookieName)
+    const defaultLayout = DEFAULT_CV_DETAIL_LAYOUT
     
     if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
       // Restore from default layout - use exact positions without constraining
@@ -606,7 +521,7 @@ export default function CVDetailView({ onBack }) {
       return
     }
     
-    // If no default layout cookie, use hardcoded default layout
+    // If no default layout, use hardcoded default layout
     if (DEFAULT_CV_DETAIL_LAYOUT && Array.isArray(DEFAULT_CV_DETAIL_LAYOUT) && DEFAULT_CV_DETAIL_LAYOUT.length > 0) {
       const restoredWidgets = DEFAULT_CV_DETAIL_LAYOUT.map(widget => {
         try {
@@ -782,7 +697,7 @@ export default function CVDetailView({ onBack }) {
         onRemoveWidget={removeWidget}
         onSort={autosortWidgets}
         onAddWidget={addWidget}
-        onSetAsDefault={setAsDefault}
+        onCopyLayout={copyLayout}
         onRevertToDefault={revertToDefault}
         onClose={closeContextMenu}
         componentMap={cvDetailComponentMap}

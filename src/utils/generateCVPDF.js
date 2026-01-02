@@ -1,22 +1,13 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { getCookie, setCookie } from "./cookies";
-import { COOKIE_NAME_CV_DETAIL } from "../constants/grid";
-import { DEFAULT_CV_DETAIL_LAYOUT } from "./setDefaultLayouts";
 import { getRawUsableAreaBounds, calculateCenterOffset } from "./grid";
 
 export const generateCVPDF = async () => {
   const currentPath = window.location.pathname;
   const isOnCVPage = currentPath === "/cv";
-  const savedLayout = isOnCVPage ? getCookie(COOKIE_NAME_CV_DETAIL) : null;
-
   let elementsToRestore = [];
-  let didSetDefaultLayout = false;
 
   try {
-    setCookie(COOKIE_NAME_CV_DETAIL, DEFAULT_CV_DETAIL_LAYOUT);
-    didSetDefaultLayout = true;
-
     if (isOnCVPage) {
       window.history.pushState(null, "", "/");
       window.dispatchEvent(new PopStateEvent("popstate"));
@@ -173,10 +164,5 @@ export const generateCVPDF = async () => {
       element.style.visibility = visibility;
     });
 
-    if (savedLayout) {
-      setCookie(COOKIE_NAME_CV_DETAIL, savedLayout);
-    } else if (didSetDefaultLayout) {
-      setCookie(COOKIE_NAME_CV_DETAIL, null);
-    }
   }
 };

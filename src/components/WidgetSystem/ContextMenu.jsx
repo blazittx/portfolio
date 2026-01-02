@@ -18,7 +18,7 @@ const LockIcon = ({ size = 16, color = 'currentColor' }) => (
   </svg>
 )
 
-export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onSetAsDefault, onRevertToDefault, onClose, componentMap }) {
+export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogglePin, onRemoveWidget, onSort, onAddWidget, onCopyLayout, onRevertToDefault, onClose, componentMap }) {
   const menuRef = useRef(null)
   const [adjustedPosition, setAdjustedPosition] = useState({ x: 0, y: 0 })
 
@@ -111,7 +111,8 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
         border: '1px solid color-mix(in hsl, canvasText, transparent 10%)',
         borderRadius: '4px',
         padding: '0.25rem 0',
-        minWidth: '120px',
+        width: 'max-content',
+        maxWidth: '220px',
         boxShadow: '0 4px 12px color-mix(in hsl, canvasText, transparent 95%)',
         backdropFilter: 'blur(10px)',
         left: `${adjustedPosition.x || contextMenu.x}px`,
@@ -137,7 +138,8 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
               fontFamily: 'inherit',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              whiteSpace: 'nowrap'
             }}
             onClick={() => {
               onTogglePin(contextMenu.widgetId)
@@ -167,7 +169,8 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
               fontFamily: 'inherit',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              whiteSpace: 'nowrap'
             }}
             onClick={() => {
               onToggleLock(contextMenu.widgetId)
@@ -246,11 +249,11 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
                 border: 'none',
                 color: 'canvasText',
                 fontSize: '0.875rem',
-                textAlign: 'left',
-                cursor: 'pointer',
-                transition: 'background 0.2s',
-                fontFamily: 'inherit'
-              }}
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              fontFamily: 'inherit'
+            }}
               onClick={() => {
                 onAddWidget(type, contextMenu.x, contextMenu.y)
                 onClose()
@@ -291,11 +294,12 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
           border: 'none',
           color: 'canvasText',
           fontSize: '0.875rem',
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'background 0.2s',
-          fontFamily: 'inherit'
-        }}
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              fontFamily: 'inherit',
+              whiteSpace: 'nowrap'
+            }}
         onClick={() => {
           onSort()
           onClose()
@@ -324,17 +328,18 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
           border: 'none',
           color: 'canvasText',
           fontSize: '0.875rem',
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'background 0.2s',
-          fontFamily: 'inherit',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              whiteSpace: 'nowrap'
+            }}
         onClick={() => {
-          if (onSetAsDefault) {
-            onSetAsDefault()
+          if (onCopyLayout) {
+            onCopyLayout()
           }
           onClose()
         }}
@@ -345,7 +350,7 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
           e.currentTarget.style.background = 'none'
         }}
       >
-        ⭐ Set as Default
+        Copy Layout
       </button>
       <button
         style={{
@@ -355,14 +360,15 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
           border: 'none',
           color: 'canvasText',
           fontSize: '0.875rem',
-          textAlign: 'left',
-          cursor: 'pointer',
-          transition: 'background 0.2s',
-          fontFamily: 'inherit',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              whiteSpace: 'nowrap'
+            }}
         onClick={() => {
           if (onRevertToDefault) {
             onRevertToDefault()
@@ -381,4 +387,3 @@ export default function ContextMenu({ contextMenu, widgets, onToggleLock, onTogg
     </div>
   )
 }
-

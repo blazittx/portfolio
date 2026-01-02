@@ -1,7 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react'
 import { fillScreenWithWidgets } from '../utils/screenFill'
-import { getCookie } from '../utils/cookies'
-import { COOKIE_NAME, COOKIE_NAME_DEFAULT } from '../constants/grid'
 
 /**
  * Hook to automatically adjust widget sizes to fill the screen
@@ -50,28 +48,7 @@ export const useScreenFill = (widgets, setWidgets, enabled = true) => {
   // BUT: Skip if widgets were loaded from saved storage to preserve user's custom sizes
   useEffect(() => {
     if (enabled && widgets && widgets.length > 0 && !hasInitializedRef.current) {
-      // Check if there's a saved layout or default layout - if so, widgets were loaded from storage
-      // and we should preserve their sizes instead of adjusting them
-      const savedLayout = getCookie(COOKIE_NAME)
-      const defaultLayout = getCookie(COOKIE_NAME_DEFAULT)
-      const hasSavedLayout = (savedLayout && Array.isArray(savedLayout) && savedLayout.length > 0) ||
-                             (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0)
-      
-      if (hasSavedLayout) {
-        // Widgets were loaded from saved storage (either current or default layout)
-        // Skip initial adjustment to preserve user's custom widget sizes
-        hasInitializedRef.current = true
-        return
-      }
-      
-      // No saved layout - this is a fresh load, so run screen fill adjustment
-      // Small delay to ensure viewport is ready
-      const timeout = setTimeout(() => {
-        adjustWidgetSizes()
-        hasInitializedRef.current = true
-      }, 300) // Slightly longer delay for initial load
-      
-      return () => clearTimeout(timeout)
+      hasInitializedRef.current = true
     }
   }, [enabled, adjustWidgetSizes]) // Only run when enabled changes
   
@@ -102,4 +79,3 @@ export const useScreenFill = (widgets, setWidgets, enabled = true) => {
   // }, [enabled, adjustWidgetSizes])
   
 }
-

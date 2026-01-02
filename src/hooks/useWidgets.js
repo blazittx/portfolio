@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react'
-import { getCookie, setCookie } from '../utils/cookies'
-import { COOKIE_NAME, COOKIE_NAME_GAME_DETAIL, COOKIE_NAME_CV_DETAIL, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_MOBILE } from '../constants/grid'
+import { useState } from 'react'
 import { GAME_IDS } from '../constants/games'
 import { snapToGrid, snapSizeToGrid, constrainToViewport } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
@@ -41,14 +39,9 @@ export const componentMap = {
 }
 
 export const useWidgets = (view = 'main') => {
-  // Determine which cookie to use based on view and mobile state
   const mobile = isMobile()
-  const cookieName = view === 'game-detail' ? COOKIE_NAME_GAME_DETAIL : (view === 'cv-detail' ? COOKIE_NAME_CV_DETAIL : COOKIE_NAME)
-  const defaultCookieName = mobile 
-    ? (view === 'game-detail' ? null : (view === 'cv-detail' ? null : COOKIE_NAME_DEFAULT_MOBILE)) // Game detail and CV detail mobile defaults handled in their respective views
-    : (view === 'game-detail' ? null : (view === 'cv-detail' ? null : COOKIE_NAME_DEFAULT))
   
-  // Initialize widget positions - load from cookie or use defaults
+  // Initialize widget positions from default layouts
   const [widgets, setWidgets] = useState(() => {
     // For game-detail and cv-detail views, return empty array - let their respective views handle initialization
     if (view === 'game-detail' || view === 'cv-detail') {
@@ -56,224 +49,8 @@ export const useWidgets = (view = 'main') => {
     }
     
     try {
-      // On mobile, always use default layout - ignore saved cookies
-      if (mobile) {
-        // Try to load default layout (mobile or desktop)
-        const defaultLayout = defaultCookieName ? getCookie(defaultCookieName) : null
-        if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
-          // Restore from default layout - use exact positions without constraining
-          const restoredWidgets = defaultLayout
-            .map(widget => {
-              try {
-                // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
-                const component = componentMap[widget.type]
-                
-                // Only include widgets with valid components
-                if (!component) {
-                  console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
-                  return null
-                }
-                
-                // Initialize default settings for widgets that need them
-                let settings = widget.settings || {}
-                if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
-                  settings = { gameId: GAME_IDS[0] }
-                }
-                // Initialize expandable settings
-                if (widget.type === 'profile-picture' && !settings.expandable) {
-                  settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-                }
-                
-                // Use EXACT saved sizes and positions from default layout - don't constrain or modify
-                const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
-                const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
-                
-                return {
-                  ...widget,
-                  x: widget.x,
-                  y: widget.y,
-                  width: finalWidth,
-                  height: finalHeight,
-                  component: component,
-                  locked: widget.locked || false,
-                  pinned: widget.pinned || false,
-                  settings: settings
-                }
-              } catch (error) {
-                console.error(`Error restoring widget ${widget.id}:`, error)
-                return null
-              }
-            })
-            .filter(widget => widget !== null)
-          
-          // Don't auto-add widgets - respect what the user has saved
-          return restoredWidgets
-        }
-        
-        // If no default layout, use hardcoded default - use exact positions without constraining
-        return DEFAULT_HOMEPAGE_LAYOUT_MOBILE
-          .map(widget => {
-            try {
-              // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
-              const component = componentMap[widget.type]
-              
-              // Only include widgets with valid components
-              if (!component) {
-                console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
-                return null
-              }
-              
-              // Initialize default settings for widgets that need them
-              let settings = widget.settings || {}
-              if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
-                settings = { gameId: GAME_IDS[0] }
-              }
-              // Initialize expandable settings
-              if (widget.type === 'profile-picture' && !settings.expandable) {
-                settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-              }
-              
-              // Use EXACT saved sizes and positions from default layout - don't constrain or modify
-              const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
-              const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
-              
-              return {
-                ...widget,
-                x: widget.x,
-                y: widget.y,
-                width: finalWidth,
-                height: finalHeight,
-                component: component,
-                locked: widget.locked || false,
-                pinned: widget.pinned || false,
-                settings: settings
-              }
-            } catch (error) {
-              console.error(`Error restoring widget ${widget.id}:`, error)
-              return null
-            }
-          })
-          .filter(widget => widget !== null)
-      }
-      
-      // Try to load from cookie (desktop only)
-      const savedLayout = getCookie(cookieName)
-      
-      if (savedLayout && Array.isArray(savedLayout) && savedLayout.length > 0) {
-        // Restore from cookie, ensuring components are mapped correctly and constrained to viewport
-        // Filter out widgets with missing components to prevent crashes
-        const restoredWidgets = savedLayout
-        .map(widget => {
-          try {
-            // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-            
-            // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
-            const component = componentMap[widget.type]
-            
-            // Only include widgets with valid components
-            if (!component) {
-              console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
-              return null
-            }
-            
-            // Initialize default settings for widgets that need them
-            let settings = widget.settings || {}
-            if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
-              settings = { gameId: GAME_IDS[0] }
-            }
-            // Initialize expandable settings
-            if (widget.type === 'profile-picture' && !settings.expandable) {
-              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-            }
-            
-            // Preserve EXACT saved sizes and positions - don't modify them at all
-            // Only ensure they're valid numbers
-            const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
-            const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
-            
-            return {
-              ...widget,
-              x: constrainedPos.x,
-              y: constrainedPos.y,
-              width: finalWidth,
-              height: finalHeight,
-              component: component,
-              locked: widget.locked || false,
-              pinned: widget.pinned || false,
-              settings: settings
-            }
-          } catch (error) {
-            console.error(`Error restoring widget ${widget.id}:`, error)
-            return null
-          }
-        })
-        .filter(widget => widget !== null)
-      
-        // Don't auto-add widgets - respect what the user has saved
-        return restoredWidgets
-      }
-      
-      // If no saved layout, try to load default layout (mobile or desktop)
-      const defaultLayout = defaultCookieName ? getCookie(defaultCookieName) : null
-      if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
-        // Restore from default layout
-        const restoredWidgets = defaultLayout
-        .map(widget => {
-          try {
-            // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
-            
-            // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
-            const component = componentMap[widget.type]
-            
-            // Only include widgets with valid components
-            if (!component) {
-              console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
-              return null
-            }
-            
-            // Initialize default settings for widgets that need them
-            let settings = widget.settings || {}
-            if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
-              settings = { gameId: GAME_IDS[0] }
-            }
-            // Initialize expandable settings
-            if (widget.type === 'profile-picture' && !settings.expandable) {
-              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-            }
-            
-            // Preserve EXACT saved sizes and positions - don't modify them at all
-            // Only ensure they're valid numbers
-            const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
-            const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
-            
-            return {
-              ...widget,
-              x: constrainedPos.x,
-              y: constrainedPos.y,
-              width: finalWidth,
-              height: finalHeight,
-              component: component,
-              locked: widget.locked || false,
-              pinned: widget.pinned || false,
-              settings: settings
-            }
-          } catch (error) {
-            console.error(`Error restoring widget ${widget.id}:`, error)
-            return null
-          }
-        })
-        .filter(widget => widget !== null)
-      
-        // Don't auto-add widgets - respect what the user has saved
-        return restoredWidgets
-      }
-      
-      // Use hardcoded default layout from user's current setup (desktop only)
-      // On mobile, if no mobile default is set, fall back to desktop default
-      // Map the default layout to include component references
-      return DEFAULT_HOMEPAGE_LAYOUT
+      const layoutToUse = mobile ? DEFAULT_HOMEPAGE_LAYOUT_MOBILE : DEFAULT_HOMEPAGE_LAYOUT
+      return layoutToUse
         .map(widget => {
           try {
             // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
@@ -343,29 +120,5 @@ export const useWidgets = (view = 'main') => {
     }
   })
 
-  // Save to cookie whenever widgets change
-  useEffect(() => {
-    // For game-detail and cv-detail views, don't save empty arrays (their respective views handle initialization)
-    // This prevents overwriting saved layout with empty array on initial mount
-    if ((view === 'game-detail' || view === 'cv-detail') && (!widgets || widgets.length === 0)) {
-      return
-    }
-    
-    // Only save position and size data, not component references
-    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned, settings }) => ({
-      id,
-      type,
-      x,
-      y,
-      width,
-      height,
-      locked: locked || false,
-      pinned: pinned || false,
-      settings: settings || {}
-    }))
-    setCookie(cookieName, layoutToSave)
-  }, [widgets, cookieName, view])
-
   return [widgets, setWidgets]
 }
-

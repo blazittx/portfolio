@@ -8,18 +8,6 @@ export const USABLE_GRID_WIDTH_MOBILE = 8; // Number of grid cells wide (mobile)
 export const USABLE_GRID_HEIGHT_MOBILE = 41; // Number of grid cells high (mobile - allows scrolling)
 export const USABLE_GRID_WIDTH_CV = 13; // Number of grid cells wide (CV - A4 aspect ratio)
 export const USABLE_GRID_HEIGHT_CV = 19; // Number of grid cells high (CV - A4 aspect ratio)
-export const COOKIE_NAME = "widgetLayout";
-export const COOKIE_NAME_GAME_DETAIL = "widgetLayoutGameDetail";
-export const COOKIE_NAME_DEFAULT = "widgetLayoutDefault";
-export const COOKIE_NAME_DEFAULT_GAME_DETAIL = "widgetLayoutDefaultGameDetail";
-export const COOKIE_NAME_DEFAULT_MOBILE = "widgetLayoutDefaultMobile";
-export const COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE =
-  "widgetLayoutDefaultGameDetailMobile";
-export const COOKIE_NAME_CV_DETAIL = "widgetLayoutCVDetail";
-export const COOKIE_NAME_DEFAULT_CV_DETAIL = "widgetLayoutDefaultCVDetail";
-export const COOKIE_NAME_DEFAULT_CV_DETAIL_MOBILE =
-  "widgetLayoutDefaultCVDetailMobile";
-
 // Mobile breakpoint - screens smaller than this are considered mobile
 export const MOBILE_BREAKPOINT = 768;
 
@@ -38,32 +26,32 @@ export const getWidgetMinSize = (widgetType) => {
   // Minimum sizes in grid units (width, height)
   // These are based on content needs: headers, text, lists, etc.
   const minSizesInGridUnits = {
-    profile: { width: 1, height: 1 },
-    about: { width: 1, height: 1 },
-    skills: { width: 1, height: 1 },
-    contact: { width: 1, height: 1 },
-    games: { width: 1, height: 1 },
-    visitors: { width: 1, height: 1 },
-    motd: { width: 1, height: 1 },
-    time: { width: 1, height: 1 },
-    github: { width: 1, height: 1 },
-    apikey: { width: 1, height: 1 },
-    "single-game": { width: 1, height: 1 },
-    "profile-picture": { width: 1, height: 1 },
-    "back-button": { width: 1, height: 1 },
-    "game-info": { width: 1, height: 1 },
-    "game-description": { width: 1, height: 1 },
-    "game-image": { width: 1, height: 1 },
-    "game-details": { width: 1, height: 1 },
-    "game-development-info": { width: 1, height: 1 },
-    heartbeat: { width: 1, height: 1 },
-    cv: { width: 1, height: 1 },
-    experience: { width: 1, height: 1 },
-    education: { width: 1, height: 1 },
-    projects: { width: 1, height: 1 },
-    "technical-skills": { width: 1, height: 1 },
-    languages: { width: 1, height: 1 },
-    certifications: { width: 1, height: 1 },
+    profile: { width: 2, height: 2 },
+    about: { width: 2, height: 2 },
+    skills: { width: 2, height: 2 },
+    contact: { width: 2, height: 2 },
+    games: { width: 2, height: 2 },
+    visitors: { width: 2, height: 2 },
+    motd: { width: 2, height: 2 },
+    time: { width: 2, height: 2 },
+    github: { width: 2, height: 2 },
+    apikey: { width: 2, height: 2 },
+    "single-game": { width: 2, height: 2 },
+    "profile-picture": { width: 2, height: 2 },
+    "back-button": { width: 2, height: 2 },
+    "game-info": { width: 2, height: 2 },
+    "game-description": { width: 2, height: 2 },
+    "game-image": { width: 2, height: 2 },
+    "game-details": { width: 2, height: 2 },
+    "game-development-info": { width: 2, height: 2 },
+    heartbeat: { width: 2, height: 2 },
+    cv: { width: 2, height: 2 },
+    experience: { width: 2, height: 2 },
+    education: { width: 2, height: 2 },
+    projects: { width: 2, height: 2 },
+    "technical-skills": { width: 2, height: 2 },
+    languages: { width: 2, height: 2 },
+    certifications: { width: 2, height: 2 },
   };
 
   const gridUnits = minSizesInGridUnits[widgetType] || { width: 2, height: 2 };

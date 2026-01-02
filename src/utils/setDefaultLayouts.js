@@ -1,14 +1,4 @@
-// Utility script to set default layouts from cookie values
-// Run this in the browser console or import and call setDefaultLayouts()
-
-import { setCookie } from "./cookies";
-import {
-  COOKIE_NAME_DEFAULT,
-  COOKIE_NAME_DEFAULT_GAME_DETAIL,
-  COOKIE_NAME_DEFAULT_MOBILE,
-  COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE,
-  COOKIE_NAME_DEFAULT_CV_DETAIL,
-} from "../constants/grid";
+// Utility helpers for working with default layouts.
 
 export const DEFAULT_HOMEPAGE_LAYOUT = [
   {
@@ -490,44 +480,21 @@ export const DEFAULT_CV_DETAIL_LAYOUT = [
  * Set the default layouts for both main page and game detail page
  * This function can be called from the browser console or imported
  */
-export const setDefaultLayouts = () => {
-  setCookie(COOKIE_NAME_DEFAULT, DEFAULT_HOMEPAGE_LAYOUT);
-  setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL, DEFAULT_GAME_DETAIL_LAYOUT);
-  setCookie(COOKIE_NAME_DEFAULT_CV_DETAIL, DEFAULT_CV_DETAIL_LAYOUT);
-  console.log("Default layouts set successfully!");
-  console.log("Homepage layout:", DEFAULT_HOMEPAGE_LAYOUT);
-  console.log("Game detail layout:", DEFAULT_GAME_DETAIL_LAYOUT);
-  console.log("CV detail layout:", DEFAULT_CV_DETAIL_LAYOUT);
-  return {
-    homepage: DEFAULT_HOMEPAGE_LAYOUT,
-    gameDetail: DEFAULT_GAME_DETAIL_LAYOUT,
-    cvDetail: DEFAULT_CV_DETAIL_LAYOUT,
-  };
+export const formatLayoutSnippet = (layout, exportName) => {
+  const formatted = JSON.stringify(layout, null, 2);
+  return `export const ${exportName} = ${formatted};`;
 };
 
-/**
- * Set the mobile default layouts for both main page and game detail page
- * This function can be called from the browser console or imported
- * User will provide the actual layout data via cookies
- */
-export const setDefaultLayoutsMobile = (homepageLayout, gameDetailLayout) => {
-  if (homepageLayout) {
-    setCookie(COOKIE_NAME_DEFAULT_MOBILE, homepageLayout);
+export const copyLayoutSnippet = async (layout, exportName) => {
+  const snippet = formatLayoutSnippet(layout, exportName);
+  if (typeof navigator !== "undefined" && navigator.clipboard) {
+    await navigator.clipboard.writeText(snippet);
   }
-  if (gameDetailLayout) {
-    setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL_MOBILE, gameDetailLayout);
-  }
-  console.log("Mobile default layouts set successfully!");
-  console.log("Mobile homepage layout:", homepageLayout);
-  console.log("Mobile game detail layout:", gameDetailLayout);
-  return {
-    homepage: homepageLayout,
-    gameDetail: gameDetailLayout,
-  };
+  return snippet;
 };
 
-// If running in browser console, expose the functions
+// If running in browser console, expose the helpers
 if (typeof window !== "undefined") {
-  window.setDefaultLayouts = setDefaultLayouts;
-  window.setDefaultLayoutsMobile = setDefaultLayoutsMobile;
+  window.formatLayoutSnippet = formatLayoutSnippet;
+  window.copyLayoutSnippet = copyLayoutSnippet;
 }

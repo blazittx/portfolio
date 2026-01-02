@@ -14,14 +14,13 @@ import WidgetContainer from './components/WidgetSystem/WidgetContainer'
 import GameDetailView from './components/GameDetailView'
 import CVDetailView from './components/CVDetailView'
 import Toaster from './components/Toaster'
-import { getWidgetMinSize, COOKIE_NAME_DEFAULT, COOKIE_NAME_DEFAULT_GAME_DETAIL, COOKIE_NAME_DEFAULT_MOBILE, GRID_SIZE, WIDGET_PADDING } from './constants/grid'
+import { getWidgetMinSize, GRID_SIZE, WIDGET_PADDING } from './constants/grid'
 import { GAME_IDS } from './constants/games'
 import { getUsableGridWidth, getUsableGridHeight } from './utils/grid'
 import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from './utils/grid'
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
-import { setCookie, getCookie } from './utils/cookies'
-import { DEFAULT_HOMEPAGE_LAYOUT, DEFAULT_GAME_DETAIL_LAYOUT, DEFAULT_HOMEPAGE_LAYOUT_MOBILE } from './utils/setDefaultLayouts'
+import { DEFAULT_HOMEPAGE_LAYOUT, DEFAULT_HOMEPAGE_LAYOUT_MOBILE } from './utils/setDefaultLayouts'
 import { isMobile } from './utils/mobile'
 import ProfileWidget from './components/ProfileWidget'
 import AboutWidget from './components/AboutWidget'
@@ -69,13 +68,10 @@ function App() {
         // Directly call the revertToDefault logic to ensure it works correctly
         // This ensures widgets are properly restored without getting mushed together
         const mobile = isMobile() // Re-check mobile state after delay
-        const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_MOBILE : COOKIE_NAME_DEFAULT
-        const defaultLayout = getCookie(defaultCookieName)
-        
-        if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
+        const layoutToUse = mobile ? DEFAULT_HOMEPAGE_LAYOUT_MOBILE : DEFAULT_HOMEPAGE_LAYOUT
+        if (layoutToUse && Array.isArray(layoutToUse) && layoutToUse.length > 0) {
           // Restore from default layout - use exact positions without constraining
-          // Default layouts are already positioned correctly for their screen size
-          const restoredWidgets = defaultLayout
+          const restoredWidgets = layoutToUse
             .map(widget => {
               try {
                 // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
@@ -127,65 +123,6 @@ function App() {
           setTimeout(() => {
             animateWidgetsIn()
           }, 50)
-        } else {
-          // If no default layout cookie, use hardcoded default for the current screen size
-          const layoutToUse = mobile ? DEFAULT_HOMEPAGE_LAYOUT_MOBILE : DEFAULT_HOMEPAGE_LAYOUT
-          
-          if (layoutToUse && Array.isArray(layoutToUse) && layoutToUse.length > 0) {
-            // Use exact positions from hardcoded default layout - don't constrain
-            const restoredWidgets = layoutToUse
-              .map(widget => {
-                try {
-                  // Always use widget.type to look up component
-                  const component = componentMap[widget.type]
-                  
-                  if (!component) {
-                    console.warn(`Widget component not found for type: ${widget.type}, id: ${widget.id}`)
-                    return null
-                  }
-                  
-                  // Initialize default settings for widgets that need them
-                  let settings = widget.settings || {}
-                  if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
-                    settings = { gameId: GAME_IDS[0] }
-                  }
-                  // Initialize expandable settings
-                  if (widget.type === 'profile-picture' && !settings.expandable) {
-                    settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-                  }
-                  
-                  // Use EXACT saved sizes and positions from default layout - don't constrain or modify
-                  const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
-                  const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
-                  
-                  return {
-                    ...widget,
-                    x: widget.x,
-                    y: widget.y,
-                    width: finalWidth,
-                    height: finalHeight,
-                    component: component,
-                    locked: widget.locked || false,
-                    pinned: widget.pinned || false,
-                    settings: settings
-                  }
-                } catch (error) {
-                  console.error(`Error creating widget ${widget.id}:`, error)
-                  return null
-                }
-              })
-              .filter(widget => widget !== null)
-            
-            // Use flushSync to ensure the state update happens synchronously
-            flushSync(() => {
-              setWidgets(restoredWidgets)
-            })
-            
-            // Animate widgets in immediately after state update
-            setTimeout(() => {
-              animateWidgetsIn()
-            }, 50)
-          }
         }
       }, 100) // Small delay to ensure viewport has updated
     } else {
@@ -547,8 +484,7 @@ function App() {
     })
   }, [setWidgets])
 
-  // Set current layout as default
-  const setAsDefault = useCallback(() => {
+  const copyLayout = useCallback(() => {
     const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned, settings }) => ({
       id,
       type,
@@ -560,17 +496,26 @@ function App() {
       pinned: pinned || false,
       settings: settings || {}
     }))
-    const cookieName = isMobile() ? COOKIE_NAME_DEFAULT_MOBILE : COOKIE_NAME_DEFAULT
-    setCookie(cookieName, layoutToSave)
-    showToast(`Current layout saved as ${isMobile() ? 'mobile ' : ''}default!`)
+    const exportName = isMobile() ? 'DEFAULT_HOMEPAGE_LAYOUT_MOBILE' : 'DEFAULT_HOMEPAGE_LAYOUT'
+    const snippet = `export const ${exportName} = ${JSON.stringify(layoutToSave, null, 2)};`
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(snippet)
+        .then(() => showToast(`Copied ${isMobile() ? 'mobile ' : ''}layout snippet!`))
+        .catch(() => {
+          console.log(snippet)
+          showToast('Clipboard blocked. Layout snippet logged to console.')
+        })
+    } else {
+      console.log(snippet)
+      showToast('Clipboard unavailable. Layout snippet logged to console.')
+    }
   }, [widgets, showToast])
 
   // Revert to default layout
   const revertToDefault = useCallback(() => {
-    // Try to load default layout from cookie (mobile or desktop)
     const mobile = isMobile()
-    const defaultCookieName = mobile ? COOKIE_NAME_DEFAULT_MOBILE : COOKIE_NAME_DEFAULT
-    const defaultLayout = getCookie(defaultCookieName)
+    const defaultLayout = mobile ? DEFAULT_HOMEPAGE_LAYOUT_MOBILE : DEFAULT_HOMEPAGE_LAYOUT
     if (defaultLayout && Array.isArray(defaultLayout) && defaultLayout.length > 0) {
       // Restore from default layout
       const restoredWidgets = defaultLayout
@@ -923,34 +868,6 @@ function App() {
     }
   }, [currentView, animateWidgetsIn])
 
-  // Initialize default cookies if they don't exist
-  useEffect(() => {
-    const mobile = isMobile()
-    
-    // Initialize desktop defaults
-    const defaultLayout = getCookie(COOKIE_NAME_DEFAULT)
-    if (!defaultLayout || !Array.isArray(defaultLayout) || defaultLayout.length === 0) {
-      // Set default homepage layout from single source of truth
-      setCookie(COOKIE_NAME_DEFAULT, DEFAULT_HOMEPAGE_LAYOUT)
-    }
-    
-    // Initialize mobile defaults (only if on mobile and not already set)
-    if (mobile) {
-      const mobileDefaultLayout = getCookie(COOKIE_NAME_DEFAULT_MOBILE)
-      if (!mobileDefaultLayout || !Array.isArray(mobileDefaultLayout) || mobileDefaultLayout.length === 0) {
-        // Set mobile default layout from single source of truth
-        setCookie(COOKIE_NAME_DEFAULT_MOBILE, DEFAULT_HOMEPAGE_LAYOUT_MOBILE)
-      }
-    }
-    
-    // Also check game detail default (desktop)
-    const gameDetailDefault = getCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL)
-    if (!gameDetailDefault || !Array.isArray(gameDetailDefault) || gameDetailDefault.length === 0) {
-      // Set default game detail layout from single source of truth
-      setCookie(COOKIE_NAME_DEFAULT_GAME_DETAIL, DEFAULT_GAME_DETAIL_LAYOUT)
-    }
-  }, [])
-
   // Initial animation on mount
   useEffect(() => {
     if (isInitialMountRef.current && widgets.length > 0) {
@@ -1023,7 +940,7 @@ function App() {
         onRemoveWidget={removeWidget}
         onSort={autosortWidgets}
         onAddWidget={addWidget}
-        onSetAsDefault={setAsDefault}
+        onCopyLayout={copyLayout}
         onRevertToDefault={revertToDefault}
         onClose={closeContextMenu}
       />
