@@ -92,6 +92,10 @@ export default function WidgetItem({
 }) {
   const widgetRef = useRef(null);
   const hasBeenAnimatedRef = useRef(false);
+  const handleRefs = useRef({});
+  const mouseRef = useRef({ x: 0, y: 0, has: false });
+  const rafRef = useRef(null);
+  const resetHandlesRef = useRef(null);
 
   // Add animation styles once
   useEffect(() => {
@@ -124,20 +128,6 @@ export default function WidgetItem({
         body.layout-mode [data-handle] {
           display: block !important;
         }
-        body.layout-mode .widget:hover [data-handle],
-        body.layout-mode .widget:focus-within [data-handle] {
-          opacity: 0.85;
-          transform: scale(1);
-        }
-        body.layout-mode [data-handle]:hover span {
-          transform: translate(-50%, -50%) scale(1.12);
-        }
-        body.layout-mode [data-handle="ne"]:hover span,
-        body.layout-mode [data-handle="nw"]:hover span,
-        body.layout-mode [data-handle="se"]:hover span,
-        body.layout-mode [data-handle="sw"]:hover span {
-          transform: translate(-50%, -50%) rotate(45deg) scale(1.12);
-        }
         /* Widgets start with initial transform for GSAP animations */
         [data-widget-id] {
           transform-origin: center center;
@@ -166,6 +156,103 @@ export default function WidgetItem({
       setTimeout(() => clearInterval(checkInterval), 2000);
     }
   }, []);
+
+  useEffect(() => {
+    const resetHandleVisibility = () => {
+      const handles = handleRefs.current;
+      Object.values(handles).forEach((handleEl) => {
+        if (!handleEl) {
+          return;
+        }
+        handleEl.style.opacity = "0";
+        handleEl.style.transform = "scale(0.6)";
+        handleEl.style.filter = "none";
+      });
+    };
+
+    resetHandlesRef.current = resetHandleVisibility;
+
+    const updateHandleVisibility = () => {
+      rafRef.current = null;
+      const widgetEl = widgetRef.current;
+      if (!widgetEl || widget.locked) {
+        return;
+      }
+
+      const isLayoutMode = document.body.classList.contains("layout-mode");
+      const rect = widgetEl.getBoundingClientRect();
+      const points = {
+        n: { x: rect.left + rect.width / 2, y: rect.top },
+        s: { x: rect.left + rect.width / 2, y: rect.bottom },
+        e: { x: rect.right, y: rect.top + rect.height / 2 },
+        w: { x: rect.left, y: rect.top + rect.height / 2 },
+        ne: { x: rect.right, y: rect.top },
+        nw: { x: rect.left, y: rect.top },
+        se: { x: rect.right, y: rect.bottom },
+        sw: { x: rect.left, y: rect.bottom },
+      };
+
+      const maxDistance = 170;
+      const { x, y, has } = mouseRef.current;
+
+      Object.entries(points).forEach(([direction, point]) => {
+        const handleEl = handleRefs.current[direction];
+        if (!handleEl) {
+          return;
+        }
+
+        if (!isLayoutMode || !has) {
+          handleEl.style.opacity = "0";
+          handleEl.style.transform = "scale(0.6)";
+          handleEl.style.filter = "none";
+          return;
+        }
+
+        const distance = Math.hypot(point.x - x, point.y - y);
+        const t = Math.max(0, Math.min(1, 1 - distance / maxDistance));
+        const eased = Math.pow(t, 0.7);
+        const opacity = (0.95 * eased).toFixed(3);
+        const scale = (0.7 + 0.3 * eased).toFixed(3);
+
+        handleEl.style.opacity = opacity;
+        handleEl.style.transform = `scale(${scale})`;
+        handleEl.style.filter =
+          eased > 0.15
+            ? "drop-shadow(0 4px 10px rgba(255, 255, 255, 0.25))"
+            : "none";
+      });
+    };
+
+    const handleMouseMove = (event) => {
+      mouseRef.current = { x: event.clientX, y: event.clientY, has: true };
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(updateHandleVisibility);
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", resetHandleVisibility);
+    window.addEventListener("pointerup", resetHandleVisibility);
+    window.addEventListener("touchend", resetHandleVisibility);
+    window.addEventListener("blur", resetHandleVisibility);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", resetHandleVisibility);
+      window.removeEventListener("pointerup", resetHandleVisibility);
+      window.removeEventListener("touchend", resetHandleVisibility);
+      window.removeEventListener("blur", resetHandleVisibility);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [widget.locked, isDragging, isResizing]);
+
+  useEffect(() => {
+    if (!isResizing && resetHandlesRef.current) {
+      resetHandlesRef.current();
+    }
+  }, [isResizing]);
 
   const getWidgetStyle = () => {
     const baseStyle = {
@@ -233,14 +320,14 @@ export default function WidgetItem({
       opacity: 0,
       transform: "scale(0.6)",
       transition:
-        "opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), filter 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        "opacity 0.1s ease-out, transform 0.1s ease-out, filter 0.1s ease-out",
       pointerEvents: "all",
       background: "transparent",
       cursor: "default",
       display: widget.locked || (isMobile() && !isDevMode()) ? "none" : "block",
     };
 
-    // Add white circle pseudo-element using a span
+    // Handle indicator rendered via span
     const handleStyles = {
       n: {
         ...baseHandleStyle,
@@ -250,7 +337,6 @@ export default function WidgetItem({
         height: "52px",
         width: "100%",
         cursor: "ns-resize",
-        transform: "scaleY(0.65)",
       },
       s: {
         ...baseHandleStyle,
@@ -260,7 +346,6 @@ export default function WidgetItem({
         height: "52px",
         width: "100%",
         cursor: "ns-resize",
-        transform: "scaleY(0.65)",
       },
       e: {
         ...baseHandleStyle,
@@ -270,7 +355,6 @@ export default function WidgetItem({
         width: "52px",
         height: "100%",
         cursor: "ew-resize",
-        transform: "scaleX(0.65)",
       },
       w: {
         ...baseHandleStyle,
@@ -280,7 +364,6 @@ export default function WidgetItem({
         width: "52px",
         height: "100%",
         cursor: "ew-resize",
-        transform: "scaleX(0.65)",
       },
       ne: {
         ...baseHandleStyle,
@@ -330,7 +413,7 @@ export default function WidgetItem({
       border: "1px solid rgba(255, 255, 255, 0.55)",
       boxShadow:
         "0 6px 18px rgba(0, 0, 0, 0.35), 0 0 12px rgba(255, 255, 255, 0.25)",
-      transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+      transition: "transform 0.1s ease-out",
       pointerEvents: "none",
     };
 
@@ -421,19 +504,6 @@ export default function WidgetItem({
       e.currentTarget.style.transform = "translateY(0)";
       e.currentTarget.style.boxShadow = "none";
     }
-  };
-
-  const handleResizeHandleEnter = (e) => {
-    e.currentTarget.style.opacity = "1";
-    e.currentTarget.style.transform = "scale(1)";
-    e.currentTarget.style.filter =
-      "drop-shadow(0 4px 8px rgba(255, 255, 255, 0.25))";
-  };
-
-  const handleResizeHandleLeave = (e) => {
-    e.currentTarget.style.opacity = "0";
-    e.currentTarget.style.transform = "scale(0.6)";
-    e.currentTarget.style.filter = "none";
   };
 
   const handleClick = (e) => {
@@ -604,8 +674,9 @@ export default function WidgetItem({
           key={direction}
           style={getResizeHandleStyle(direction)}
           data-handle={direction}
-          onMouseEnter={handleResizeHandleEnter}
-          onMouseLeave={handleResizeHandleLeave}
+          ref={(el) => {
+            handleRefs.current[direction] = el;
+          }}
         >
           <span style={getHandleIndicatorStyle(direction)}></span>
         </div>
