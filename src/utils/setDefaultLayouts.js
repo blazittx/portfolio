@@ -11,9 +11,6 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
     locked: false,
     pinned: true,
     settings: {
-      expandable: true,
-      expandScaleX: 1,
-      expandScaleY: 2,
     },
   },
   {
@@ -89,14 +86,6 @@ export const DEFAULT_HOMEPAGE_LAYOUT = [
     locked: false,
     pinned: false,
     settings: {
-      expandable: true,
-      expandScaleX: 2,
-      expandScaleY: 2,
-      expanded: false,
-      originalWidth: 111,
-      originalHeight: 111,
-      originalX: 28.2,
-      originalY: 26.4,
     },
   },
   {
@@ -212,9 +201,6 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
     locked: false,
     pinned: true,
     settings: {
-      expandable: true,
-      expandScaleX: 1,
-      expandScaleY: 2,
     },
   },
   {
@@ -290,14 +276,6 @@ export const DEFAULT_HOMEPAGE_LAYOUT_MOBILE = [
     locked: false,
     pinned: false,
     settings: {
-      expandable: true,
-      expandScaleX: 2,
-      expandScaleY: 2,
-      expanded: false,
-      originalWidth: 111,
-      originalHeight: 111,
-      originalX: 28.2,
-      originalY: 26.4,
     },
   },
   {
@@ -409,14 +387,6 @@ export const DEFAULT_CV_DETAIL_LAYOUT = [
     locked: false,
     pinned: true,
     settings: {
-      expandable: true,
-      expandScaleX: 2,
-      expandScaleY: 2,
-      expanded: false,
-      originalWidth: 111,
-      originalHeight: 111,
-      originalX: 28.2,
-      originalY: 71.4,
     },
   },
   {

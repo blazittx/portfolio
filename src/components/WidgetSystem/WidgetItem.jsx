@@ -68,8 +68,7 @@ export default function WidgetItem({
   wasLastInteractionDrag,
   onGameClick,
   onCVClick,
-  onUpdateWidgetSettings,
-  onToggleWidgetExpand
+  onUpdateWidgetSettings
 }) {
   const widgetRef = useRef(null)
   const hasBeenAnimatedRef = useRef(false)
@@ -330,8 +329,7 @@ export default function WidgetItem({
             onCVClick={onCVClick}
             widget={{
               ...widget,
-              onSettingsChange: onUpdateWidgetSettings ? (settings) => onUpdateWidgetSettings(widget.id, settings) : undefined,
-              onToggleExpand: (onToggleWidgetExpand && widget.settings?.expandable) ? () => onToggleWidgetExpand(widget.id) : undefined
+              onSettingsChange: onUpdateWidgetSettings ? (settings) => onUpdateWidgetSettings(widget.id, settings) : undefined
             }}
             allWidgets={allWidgets}
           />
@@ -363,4 +361,3 @@ export default function WidgetItem({
     </div>
   )
 }
-

@@ -20,11 +20,6 @@ import { snapToGrid, snapSizeToGrid, constrainToViewport, calculateCenterOffset 
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
 import { isMobile } from './utils/mobile'
-import ProfileWidget from './components/ProfileWidget'
-import AboutWidget from './components/AboutWidget'
-import SkillsWidget from './components/SkillsWidget'
-import ContactWidget from './components/ContactWidget'
-import GamesWidget from './components/GamesWidget'
 
 function App() {
   const { currentView, selectedGame, navigateToGameDetail: originalNavigateToGameDetail, navigateToMain: originalNavigateToMain, navigateToCV: originalNavigateToCV, isLoading } = useView()
@@ -412,7 +407,6 @@ function App() {
         onSort={autosortWidgets}
         onAddWidget={addWidget}
         onCopyLayout={copyLayout}
-        //onRevertToDefault={revertToDefault}
         onClose={closeContextMenu}
       />
       

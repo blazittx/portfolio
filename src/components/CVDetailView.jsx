@@ -124,11 +124,7 @@ export default function CVDetailView({ onBack }) {
             return null
           }
           
-          // Initialize settings for profile-picture if needed
           let settings = widget.settings || {}
-          if (widget.type === 'profile-picture' && !settings.expandable) {
-            settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-          }
           
           return {
             ...widget,
@@ -274,15 +270,11 @@ export default function CVDetailView({ onBack }) {
     }))
   }, [setWidgets])
 
-  // Toggle widget expand (for expandable widgets like profile-picture)
   const toggleWidgetExpand = useCallback((widgetId) => {
     setWidgets(prev => {
       const widget = prev.find(w => w.id === widgetId)
-      if (!widget || !widget.settings?.expandable) return prev
 
       const isExpanded = widget.settings?.expanded || false
-      const scaleX = widget.settings?.expandScaleX ?? 2
-      const scaleY = widget.settings?.expandScaleY ?? 2
 
       if (!isExpanded) {
         // EXPAND
@@ -353,7 +345,6 @@ export default function CVDetailView({ onBack }) {
       // Initialize settings based on widget type
       let settings = {}
       if (widgetType === 'profile-picture') {
-        settings = { expandable: true, expandScaleX: 2, expandScaleY: 2 }
       }
 
       let component = null
@@ -551,11 +542,7 @@ export default function CVDetailView({ onBack }) {
             return null
           }
           
-          // Initialize settings for profile-picture if needed
           let settings = widget.settings || {}
-          if (widget.type === 'profile-picture' && !settings.expandable) {
-            settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-          }
           
           return {
             ...widget,
@@ -717,7 +704,6 @@ export default function CVDetailView({ onBack }) {
         onMouseDown={handleMouseDownWithContext}
         centerOffset={centerOffset}
         onUpdateWidgetSettings={updateWidgetSettings}
-        onToggleWidgetExpand={toggleWidgetExpand}
       />
       <Toaster toasts={toasts} onRemove={removeToast} />
     </div>
