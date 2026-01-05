@@ -78,6 +78,33 @@ export default function GameDetailView({ game, onBack }) {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Control') {
+        document.body.classList.add('layout-mode')
+        setShowDebugOutline(true)
+      }
+    }
+    const handleKeyUp = (e) => {
+      if (e.key === 'Control') {
+        document.body.classList.remove('layout-mode')
+        setShowDebugOutline(false)
+      }
+    }
+    const handleBlur = () => {
+      document.body.classList.remove('layout-mode')
+      setShowDebugOutline(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleBlur)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleBlur)
+    }
+  }, [])
   
   const centerOffset = useMemo(() => {
     return calculateCenterOffset()

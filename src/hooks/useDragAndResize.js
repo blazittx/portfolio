@@ -40,6 +40,7 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
     
     // Disable all widget interactions on mobile (unless in dev mode)
     if (isMobile() && !isDevMode()) return
+    if (!e.ctrlKey) return
     
     const widget = widgets.find(w => w.id === id)
     if (!widget) return

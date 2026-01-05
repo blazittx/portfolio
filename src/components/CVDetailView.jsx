@@ -72,6 +72,33 @@ export default function CVDetailView({ onBack }) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Control') {
+        document.body.classList.add('layout-mode')
+        setShowDebugOutline(true)
+      }
+    }
+    const handleKeyUp = (e) => {
+      if (e.key === 'Control') {
+        document.body.classList.remove('layout-mode')
+        setShowDebugOutline(false)
+      }
+    }
+    const handleBlur = () => {
+      document.body.classList.remove('layout-mode')
+      setShowDebugOutline(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleBlur)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleBlur)
+    }
+  }, [])
   
   // Calculate center offset for CV grid (13x19 cells)
   const centerOffset = useMemo(() => {
