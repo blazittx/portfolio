@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import BaseWidget from '../BaseWidget'
-import { getTeamMembers } from '../../data/gameDevelopmentInfo'
+import { getTeamMembers } from '../../../data/gameDevelopmentInfo'
 
 /* eslint-disable react/prop-types */
 

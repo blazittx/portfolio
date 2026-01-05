@@ -40,7 +40,7 @@ export default function ProfilePictureWidget() {
           draggable="false"
           loading="lazy"
           decoding="async"
-          fetchpriority="low"
+          fetchPriority="low"
           style={getImageStyle()}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}

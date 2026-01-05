@@ -1,6 +1,6 @@
 import BaseWidget from './BaseWidget'
 import { useEffect, useRef, useState } from 'react'
-import { generateCVPDF } from '../utils/generateCVPDF'
+import { generateCVPDF } from '../../utils/generateCVPDF'
 
 /* eslint-disable react/prop-types */
 export default function CVWidget({ onCVClick, wasLastInteractionDrag, widgetId }) {

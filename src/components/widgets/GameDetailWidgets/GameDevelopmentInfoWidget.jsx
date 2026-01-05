@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import BaseWidget from '../BaseWidget'
-import { getDevelopmentInfo } from '../../data/gameDevelopmentInfo'
+import { getDevelopmentInfo } from '../../../data/gameDevelopmentInfo'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
@@ -72,7 +72,7 @@ function ContentImage({ src, alt }) {
         alt={alt || 'Development screenshot'}
         draggable="false"
         decoding="async"
-        fetchpriority="low"
+        fetchPriority="low"
         style={{
           width: '100%',
           height: 'auto',

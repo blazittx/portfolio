@@ -4,7 +4,7 @@ import { isMobile } from '../../utils/mobile'
 
 /* eslint-disable react/prop-types */
 export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebugOutline = false, view = 'main' }) {
-  const size = 45
+  const size = GRID_SIZE
   const line = 'rgba(255, 255, 255, 0.15)'
   const lineSecondary = 'rgba(128, 128, 128, 0.1)'
   const mobile = isMobile()

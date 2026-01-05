@@ -360,7 +360,7 @@ export default function GitHubActivityWidget() {
                 alt="Open GitHub Profile" 
                 loading="lazy"
                 decoding="async"
-                fetchpriority="low"
+                fetchPriority="low"
                 style={{ 
                   width: "100%", 
                   height: "100%",

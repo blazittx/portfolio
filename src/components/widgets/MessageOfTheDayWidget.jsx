@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import BaseWidget from './BaseWidget'
-import { GRID_SIZE } from '../constants/grid'
+import { GRID_SIZE } from '../../constants/grid'
 
 const MESSAGES = [
   "Today is a great day to build something amazing!",

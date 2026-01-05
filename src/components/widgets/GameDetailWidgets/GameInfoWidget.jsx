@@ -47,7 +47,6 @@ export default function GameInfoWidget({ game }) {
             draggable="false"
             loading="lazy"
             decoding="async"
-            fetchpriority="low"
             style={{
               width: '18px',
               height: '18px',

@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import BaseWidget from "./BaseWidget";
-import { isMobile } from "../utils/mobile";
-import { GAME_IDS, STEAM_URLS, YOUTUBE_URLS, getGameChips, getGameLinks } from "../constants/games";
-import { isYouTubeUrl } from "../utils/youtube";
+import { isMobile } from "../../utils/mobile";
+import { GAME_IDS, STEAM_URLS, YOUTUBE_URLS, getGameChips, getGameLinks } from "../../constants/games";
+import { isYouTubeUrl } from "../../utils/youtube";
 import MediaCarousel from "./MediaCarousel";
 import {
   buildOptimizedSrcSet,
   getOptimizedImageUrl,
-} from "../utils/images";
+} from "../../utils/images";
 
 // Use Netlify function to proxy API calls (works in both dev and production)
 const getApiUrl = (gameId) => {
@@ -810,7 +810,7 @@ export default function SingleGameWidget({
                     draggable="false"
                     loading="lazy"
                     decoding="async"
-                    fetchpriority="low"
+                    fetchPriority="low"
                     style={{
                       width: "16px",
                       height: "16px",

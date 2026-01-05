@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   getYouTubeEmbedUrl,
   getYouTubeThumbnailUrl,
   isYouTubeUrl,
-} from "../utils/youtube";
+} from "../../utils/youtube";
 import {
   buildOptimizedSrcSet,
   getOptimizedImageUrl,
   getOptimizedThumbnailUrl,
-} from "../utils/images";
+} from "../../utils/images";
 
 /* eslint-disable react/prop-types */
 export default function MediaCarousel({
@@ -43,16 +43,20 @@ export default function MediaCarousel({
 
   const [internalIndex, setInternalIndex] = useState(initialIndex);
   const activeIndex = isControlled ? currentIndex : internalIndex;
-  const setIndex = (nextIndex) => {
-    if (!media.length) return;
-    const clamped = ((nextIndex % media.length) + media.length) % media.length;
-    if (!isControlled) {
-      setInternalIndex(clamped);
-    }
-    if (onIndexChange) {
-      onIndexChange(clamped);
-    }
-  };
+  const setIndex = useCallback(
+    (nextIndex) => {
+      if (!media.length) return;
+      const clamped =
+        ((nextIndex % media.length) + media.length) % media.length;
+      if (!isControlled) {
+        setInternalIndex(clamped);
+      }
+      if (onIndexChange) {
+        onIndexChange(clamped);
+      }
+    },
+    [media, isControlled, onIndexChange]
+  );
 
   const [isHovered, setIsHovered] = useState(false);
   const [isVideoInteracted, setIsVideoInteracted] = useState(false);
@@ -238,6 +242,7 @@ export default function MediaCarousel({
     videoIntervalMs,
     isVideoPlaying,
     isVideoInteracted,
+    setIndex,
   ]);
 
   if (!media.length) {
@@ -277,7 +282,7 @@ export default function MediaCarousel({
         draggable="false"
         loading={priority ? "eager" : "lazy"}
         decoding="async"
-        fetchpriority={priority ? "high" : "low"}
+        fetchPriority={priority ? "high" : "low"}
         style={{
           width: "100%",
           height: "100%",
@@ -470,7 +475,7 @@ export default function MediaCarousel({
                 draggable="false"
                 loading="lazy"
                 decoding="async"
-                fetchpriority="low"
+                fetchPriority="low"
                 style={{
                   width: "100%",
                   height: "100%",

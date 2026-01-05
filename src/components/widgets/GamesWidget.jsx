@@ -5,10 +5,10 @@ import {
   YOUTUBE_URLS,
   getGameChips,
   getGameLinks,
-} from "../constants/games";
-import { isYouTubeUrl } from "../utils/youtube";
+} from "../../constants/games";
+import { isYouTubeUrl } from "../../utils/youtube";
 import MediaCarousel from "./MediaCarousel";
-import { isMobile } from "../utils/mobile";
+import { isMobile } from "../../utils/mobile";
 
 // Use Netlify function to proxy API calls (works in both dev and production)
 // In development, Vite proxy handles /api routes
@@ -727,7 +727,7 @@ export default function GamesWidget({
                             draggable="false"
                             loading="lazy"
                             decoding="async"
-                            fetchpriority="low"
+                            fetchPriority="low"
                             style={{
                               width: "16px",
                               height: "16px",

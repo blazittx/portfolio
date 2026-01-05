@@ -1,6 +1,6 @@
 import BaseWidget from './BaseWidget'
 import { useEffect, useRef, useState } from 'react'
-import { GRID_SIZE } from '../constants/grid'
+import { GRID_SIZE } from '../../constants/grid'
 
 /* eslint-disable react/prop-types */
 // SVG Icons

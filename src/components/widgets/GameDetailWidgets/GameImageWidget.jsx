@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
 import BaseWidget from '../BaseWidget'
-import { YOUTUBE_URLS } from '../../constants/games'
+import { YOUTUBE_URLS } from '../../../constants/games'
 import {
   isYouTubeUrl,
-} from '../../utils/youtube'
+} from '../../../utils/youtube'
 import MediaCarousel from '../MediaCarousel'
 
 /* eslint-disable react/prop-types */

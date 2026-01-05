@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import BaseWidget from './BaseWidget'
-import { GRID_SIZE } from '../constants/grid'
+import { GRID_SIZE } from '../../constants/grid'
 
 export default function VisitorsWidget() {
   const [visitorCount, setVisitorCount] = useState(0)
