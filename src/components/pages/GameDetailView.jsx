@@ -82,7 +82,7 @@ export default function GameDetailView({ game, onBack }) {
   const previousWidgetIdsRef = useRef([]);
 
   // Calculate center offset to center the layout horizontally and vertically
-  const [, setWindowSize] = useState({
+  const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
   });
@@ -125,7 +125,7 @@ export default function GameDetailView({ game, onBack }) {
 
   const centerOffset = useMemo(() => {
     return calculateCenterOffset();
-  }, []);
+  }, [windowSize.width, windowSize.height]);
 
   const {
     isDragging,

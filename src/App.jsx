@@ -56,7 +56,7 @@ function App() {
   );
 
   // Calculate center offset to center the layout horizontally and vertically
-  const [, setWindowSize] = useState({
+  const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
   });
@@ -115,7 +115,7 @@ function App() {
       return { x: 0, y: 0 };
     }
     return calculateCenterOffset();
-  }, [currentView]);
+  }, [currentView, windowSize.width, windowSize.height]);
   const {
     isDragging,
     isResizing,

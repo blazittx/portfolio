@@ -58,7 +58,7 @@ export default function CVDetailView({ onBack }) {
   const previousWidgetIdsRef = useRef([]);
 
   // Calculate center offset to center the CV grid (13x19 cells)
-  const [, setWindowSize] = useState({
+  const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
   });
@@ -111,7 +111,7 @@ export default function CVDetailView({ onBack }) {
   // Calculate center offset for CV grid (13x19 cells)
   const centerOffset = useMemo(() => {
     return calculateCenterOffset("cv-detail");
-  }, []);
+  }, [windowSize.width, windowSize.height]);
 
   const {
     isDragging,
