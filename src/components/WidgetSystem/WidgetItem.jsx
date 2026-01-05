@@ -420,7 +420,7 @@ export default function WidgetItem({
     if (direction === "n" || direction === "s") {
       return {
         ...baseIndicatorStyle,
-        width: "48px",
+        width: "33%",
         height: "6px",
         background: "rgba(255, 255, 255, 0.95)",
         border: "none",
@@ -433,7 +433,7 @@ export default function WidgetItem({
       return {
         ...baseIndicatorStyle,
         width: "6px",
-        height: "48px",
+        height: "33%",
         background: "rgba(255, 255, 255, 0.95)",
         border: "none",
         borderRadius: "999px",
