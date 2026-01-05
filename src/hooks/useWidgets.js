@@ -70,15 +70,6 @@ export const useWidgets = (view = 'main') => {
             if (widget.type === 'single-game' && (!settings.gameId || !GAME_IDS.includes(settings.gameId))) {
               settings = { gameId: GAME_IDS[0] }
             }
-            // Initialize expandable settings
-            if (widget.type === 'profile-picture' && !settings.expandable) {
-              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-            }
-            // Initialize expandable settings
-            if (widget.type === 'profile-picture' && !settings.expandable) {
-              settings = { ...settings, expandable: true, expandScaleX: 2, expandScaleY: 2 }
-            }
-            
             // Preserve EXACT saved sizes and positions - don't modify them at all
             // Only ensure they're valid numbers
             const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
