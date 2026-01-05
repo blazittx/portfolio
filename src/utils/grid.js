@@ -43,11 +43,13 @@ export const constrainToViewport = (x, y, width, height, centerOffset = { x: 0, 
     const minY = 0
     const maxX = window.innerWidth - width
     const maxY = window.innerHeight - height
-    
-    return {
-      x: Math.max(minX, Math.min(maxX, x)),
-      y: Math.max(minY, Math.min(maxY, y))
-    }
+
+    // On mobile, allow vertical overflow for scrolling layouts.
+    // Only clamp Y to the top so widgets can live below the fold.
+    const clampedX = Math.max(minX, Math.min(maxX, x))
+    const clampedY = isMobile() ? Math.max(minY, y) : Math.max(minY, Math.min(maxY, y))
+
+    return { x: clampedX, y: clampedY }
   }
   
   // Enforce usable area bounds (for drag/resize operations)
@@ -226,4 +228,3 @@ export const isWithinUsableArea = (x, y, width, height, centerOffset = { x: 0, y
     widgetBottom <= maxY
   )
 }
-
