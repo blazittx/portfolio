@@ -57,9 +57,11 @@ export const findCollidingWidget = (rect, widgets, excludeId) => {
 
 // Find the widget that contains a point (cursor position) - accounting for centerOffset
 export const findWidgetAtPoint = (pointX, pointY, widgets, excludeId, centerOffset = { x: 0, y: 0 }) => {
-  // Adjust point coordinates by centerOffset to match widget coordinates
-  const adjustedX = pointX - centerOffset.x
-  const adjustedY = pointY - centerOffset.y
+  // Adjust point coordinates by scroll and centerOffset to match widget coordinates
+  const scrollX = typeof window !== 'undefined' ? (window.scrollX || window.pageXOffset || 0) : 0
+  const scrollY = typeof window !== 'undefined' ? (window.scrollY || window.pageYOffset || 0) : 0
+  const adjustedX = pointX + scrollX - centerOffset.x
+  const adjustedY = pointY + scrollY - centerOffset.y
   
   for (const widget of widgets) {
     if (widget.id === excludeId) continue
@@ -178,4 +180,3 @@ export const findValidSize = (desiredX, desiredY, desiredWidth, desiredHeight, w
   // If no valid size found, revert to original
   return { width: originalWidth, height: originalHeight }
 }
-

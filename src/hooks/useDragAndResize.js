@@ -4,7 +4,7 @@ import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { isMobile } from '../utils/mobile'
 import { isDevMode } from '../utils/devMode'
-import { hasCollisionWithOthers, findNearestValidPosition, findValidSize, findWidgetAtPoint } from '../utils/collision'
+import { hasCollisionWithOthers, findNearestValidPosition, findValidSize, findWidgetAtPoint, findCollidingWidget } from '../utils/collision'
 
 export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 0 }, view = 'main') => {
   const [isDragging, setIsDragging] = useState(false)
@@ -238,8 +238,11 @@ export const useDragAndResize = (widgets, setWidgets, centerOffset = { x: 0, y: 
         let newX = widgetStartX + deltaX
         let newY = widgetStartY + deltaY
         
-        // Check which widget the cursor is over (based on cursor position, not widget bounding box)
-        const hoveredWidget = findWidgetAtPoint(e.clientX, e.clientY, prev, dragStateRef.current.activeId, centerOffset)
+        // Check which widget should be considered a swap target.
+        // On mobile, rely on actual widget overlap to avoid false hits from scroll/viewport offsets.
+        const hoveredWidget = isMobile()
+          ? findCollidingWidget({ x: newX, y: newY, width: activeWidget.width, height: activeWidget.height }, prev, dragStateRef.current.activeId)
+          : findWidgetAtPoint(e.clientX, e.clientY, prev, dragStateRef.current.activeId, centerOffset)
         
         // Clear existing timer
         if (swapTimerRef.current) {

@@ -1,4 +1,4 @@
-import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../../constants/grid'
+import { GRID_SIZE } from '../../constants/grid'
 import { getRawUsableAreaBounds, getUsableGridWidth, getUsableGridHeight } from '../../utils/grid'
 import { isMobile } from '../../utils/mobile'
 
@@ -20,8 +20,8 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
   const areaHeight = rawBounds.maxY - rawBounds.minY
   
   // On mobile, extend the grid background to cover the full scrollable area
-  const gridHeight = getUsableGridHeight(view)
-  const backgroundHeight = mobile ? `${gridHeight * GRID_SIZE}px` : '100vh'
+  const backgroundHeight = mobile ? `${rawBounds.maxY}px` : '100vh'
+  const overlayPosition = mobile ? 'absolute' : 'fixed'
   
   return (
     <>
@@ -29,7 +29,7 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
         style={{
           '--size': `${size}px`,
           '--line': line,
-          position: mobile ? 'absolute' : 'fixed',
+          position: overlayPosition,
           top: 0,
           left: 0,
           width: '100vw',
@@ -44,7 +44,7 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
         style={{
           '--size': `${size}px`,
           '--line': lineSecondary,
-          position: mobile ? 'absolute' : 'fixed',
+          position: overlayPosition,
           top: 0,
           left: 0,
           width: '100%',
@@ -59,7 +59,7 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
       {showDebugOutline && (
         <div
           style={{
-            position: 'fixed',
+            position: overlayPosition,
             left: `${rawBounds.minX}px`,
             top: `${rawBounds.minY}px`,
             width: `${areaWidth}px`,
@@ -86,11 +86,10 @@ export default function GridBackground({ centerOffset = { x: 0, y: 0 }, showDebu
               borderRadius: '2px'
             }}
           >
-            {getUsableGridWidth(view)}×{getUsableGridHeight(view)} usable area
+            {getUsableGridWidth(view)}x{getUsableGridHeight(view)} usable area
           </div>
         </div>
       )}
     </>
   )
 }
-

@@ -1,12 +1,17 @@
 import { useMemo } from 'react'
 import { WIDGET_PADDING, GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../../constants/grid'
 import { getRawUsableAreaBounds, getUsableGridWidth, getUsableGridHeight } from '../../utils/grid'
+import { isMobile } from '../../utils/mobile'
 
 /* eslint-disable react/prop-types */
 export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDragging = false, isResizing = false, dragStateRef, view = 'main' }) {
   const offsetX = centerOffset.x || 0
   const offsetY = centerOffset.y || 0
   const hasOffset = offsetX !== 0 || offsetY !== 0
+  const mobile = isMobile()
+  const rawBounds = getRawUsableAreaBounds(centerOffset, view)
+  const overlayPosition = mobile ? 'absolute' : 'fixed'
+  const overlayHeight = mobile ? `${rawBounds.maxY}px` : '100%'
   
   // Get the dragging widget ID if any
   const draggingWidgetId = dragStateRef?.current?.activeId || null
@@ -16,7 +21,6 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
     if (!isDragging) return null
     
     // Use raw bounds as the single source of truth for the usable area
-    const rawBounds = getRawUsableAreaBounds(centerOffset, view)
     const gridWidth = getUsableGridWidth(view)
     const gridHeight = getUsableGridHeight(view)
     const occupiedCells = new Set()
@@ -124,18 +128,18 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
       path: pathSegments.length > 0 ? pathSegments.join(' ') : null,
       cells: cellData
     }
-  }, [isDragging, widgets, draggingWidgetId, centerOffset])
+  }, [isDragging, widgets, draggingWidgetId, rawBounds, view])
   
   return (
     <>
       {/* Original widget masks (for non-dragging state) */}
       <div
         style={{
-          position: 'fixed',
+          position: overlayPosition,
           top: 0,
           left: 0,
           width: '100%',
-          height: '100%',
+          height: overlayHeight,
           pointerEvents: 'none',
           transform: hasOffset ? `translate(${offsetX}px, ${offsetY}px)` : 'none',
           transition: (isDragging || isResizing) ? 'none' : 'transform 0.3s ease-out',
@@ -176,11 +180,11 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
       {isDragging && availableAreaOutline && availableAreaOutline.path && (
         <div
           style={{
-            position: 'fixed',
+            position: overlayPosition,
             top: 0,
             left: 0,
             width: '100%',
-            height: '100%',
+            height: overlayHeight,
             pointerEvents: 'none',
             // No transform needed - cells are positioned using raw bounds directly
             zIndex: 1
@@ -240,4 +244,3 @@ export default function GridMask({ widgets, centerOffset = { x: 0, y: 0 }, isDra
     </>
   )
 }
-
