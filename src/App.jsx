@@ -1,6 +1,10 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { useWidgets, componentMap } from "./hooks/useWidgets";
+import {
+  useWidgets,
+  componentMap,
+  buildWidgetsFromLayout,
+} from "./hooks/useWidgets";
 import { useDragAndResize } from "./hooks/useDragAndResize";
 import { useAutosort } from "./hooks/useAutosort";
 import { useContextMenu } from "./hooks/useContextMenu";
@@ -16,6 +20,10 @@ import CVDetailView from "./components/pages/CVDetailView";
 import Toaster from "./components/Toaster";
 import { getWidgetMinSize, GRID_SIZE } from "./constants/grid";
 import { GAME_IDS } from "./constants/games";
+import {
+  DEFAULT_HOMEPAGE_LAYOUT,
+  DEFAULT_HOMEPAGE_LAYOUT_MOBILE,
+} from "./utils/setDefaultLayouts";
 import {
   snapToGrid,
   snapSizeToGrid,
@@ -48,15 +56,18 @@ function App() {
   );
 
   // Calculate center offset to center the layout horizontally and vertically
-  const [setWindowSize] = useState({
+  const [, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
   });
+  const [isMobileState, setIsMobileState] = useState(() => isMobile());
+  const previousMobileStateRef = useRef(isMobileState);
   const [showDebugOutline, setShowDebugOutline] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+      setIsMobileState(isMobile());
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -465,6 +476,31 @@ function App() {
       animateInitial();
     }
   }, [widgets, animateInitial]);
+
+  // Rebuild layout when switching between mobile and desktop
+  useEffect(() => {
+    const previousMobile = previousMobileStateRef.current;
+    if (previousMobile === isMobileState) {
+      return;
+    }
+
+    previousMobileStateRef.current = isMobileState;
+    const layoutToUse = isMobileState
+      ? DEFAULT_HOMEPAGE_LAYOUT_MOBILE
+      : DEFAULT_HOMEPAGE_LAYOUT;
+
+    if (layoutToUse && Array.isArray(layoutToUse) && layoutToUse.length > 0) {
+      const rebuiltWidgets = buildWidgetsFromLayout(layoutToUse, {
+        mobile: isMobileState,
+      });
+      flushSync(() => {
+        setWidgets(rebuiltWidgets);
+      });
+      setTimeout(() => {
+        animateWidgetsIn();
+      }, 50);
+    }
+  }, [isMobileState, setWidgets, animateWidgetsIn]);
 
   // Attach global mouse events
   useEffect(() => {

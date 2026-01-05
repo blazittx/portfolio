@@ -58,7 +58,7 @@ export default function CVDetailView({ onBack }) {
   const previousWidgetIdsRef = useRef([]);
 
   // Calculate center offset to center the CV grid (13x19 cells)
-  const [setWindowSize] = useState({
+  const [, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
   });
