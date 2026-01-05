@@ -111,6 +111,7 @@ export default function CVDetailView({ onBack }) {
   // Calculate center offset for CV grid (13x19 cells)
   const centerOffset = useMemo(() => {
     return calculateCenterOffset("cv-detail");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [windowSize.width, windowSize.height]);
 
   const {

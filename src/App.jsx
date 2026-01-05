@@ -115,6 +115,7 @@ function App() {
       return { x: 0, y: 0 };
     }
     return calculateCenterOffset();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, windowSize.width, windowSize.height]);
   const {
     isDragging,

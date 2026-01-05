@@ -125,6 +125,7 @@ export default function GameDetailView({ game, onBack }) {
 
   const centerOffset = useMemo(() => {
     return calculateCenterOffset();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [windowSize.width, windowSize.height]);
 
   const {
