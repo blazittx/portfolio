@@ -1,5 +1,5 @@
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { PDFDocument } from "pdf-lib";
 import { getRawUsableAreaBounds, calculateCenterOffset } from "./grid";
 
 export const generateCVPDF = async () => {
@@ -145,16 +145,26 @@ export const generateCVPDF = async () => {
       }
     }
 
-    const pdf = new jsPDF({
-      orientation: canvas.width > canvas.height ? "landscape" : "portrait",
-      unit: "px",
-      format: [canvas.width, canvas.height],
-      compress: true,
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const imgBytes = await (await fetch(imgData)).arrayBuffer();
+    const pdfDoc = await PDFDocument.create();
+    const jpgImage = await pdfDoc.embedJpg(imgBytes);
+    const page = pdfDoc.addPage([canvas.width, canvas.height]);
+    page.drawImage(jpgImage, {
+      x: 0,
+      y: 0,
+      width: canvas.width,
+      height: canvas.height,
     });
 
-    const imgData = canvas.toDataURL("image/jpeg", 0.95);
-    pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height);
-    pdf.save("Doruk_Sasmaz_Game_Programmer_CV.pdf");
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Doruk_Sasmaz_Game_Programmer_CV.pdf";
+    link.click();
+    URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Error generating PDF:", error);
     throw error;
