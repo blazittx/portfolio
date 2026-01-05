@@ -11,7 +11,7 @@ import GridBackground from './WidgetSystem/GridBackground'
 import GridMask from './WidgetSystem/GridMask'
 import WidgetContainer from './WidgetSystem/WidgetContainer'
 import Toaster from './Toaster'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from '../utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset, gridToPixels, pixelsToGrid } from '../utils/grid'
 import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { DEFAULT_GAME_DETAIL_LAYOUT, DEFAULT_GAME_DETAIL_LAYOUT_MOBILE } from '../utils/setDefaultLayouts'
 import { isMobile } from '../utils/mobile'
@@ -31,6 +31,26 @@ const gameDetailComponentMap = {
   'game-image': GameImageWidget,
   'game-details': GameDetailsWidget,
   'game-development-info': GameDevelopmentInfoWidget,
+}
+
+const normalizeLayoutWidget = (widget) => {
+  const hasGridUnits = typeof widget.col === 'number' && typeof widget.row === 'number'
+  const baseGrid = hasGridUnits
+    ? { col: widget.col, row: widget.row, w: widget.w, h: widget.h }
+    : pixelsToGrid({ x: widget.x, y: widget.y, width: widget.width, height: widget.height })
+  const basePixels = gridToPixels(baseGrid)
+
+  return {
+    ...widget,
+    x: basePixels.x,
+    y: basePixels.y,
+    width: basePixels.width,
+    height: basePixels.height,
+    col: baseGrid.col,
+    row: baseGrid.row,
+    w: baseGrid.w,
+    h: baseGrid.h
+  }
 }
 
 /* eslint-disable react/prop-types */
@@ -141,13 +161,9 @@ export default function GameDetailView({ game, onBack }) {
             return null
           }
           
-          // Use EXACT saved sizes and positions - don't constrain or modify
+          const normalized = normalizeLayoutWidget(widget)
           return {
-            ...widget,
-            x: widget.x,
-            y: widget.y,
-            width: widget.width,
-            height: widget.height,
+            ...normalized,
             component: component,
             locked: widget.locked || false,
             pinned: widget.pinned || false
@@ -214,13 +230,9 @@ export default function GameDetailView({ game, onBack }) {
           return null
         }
         
-        // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+        const normalized = normalizeLayoutWidget(widget)
         return {
-          ...widget,
-          x: widget.x,
-          y: widget.y,
-          width: widget.width,
-          height: widget.height,
+          ...normalized,
           component: component,
           locked: widget.locked || false,
           pinned: widget.pinned || false
@@ -277,13 +289,9 @@ export default function GameDetailView({ game, onBack }) {
               return null
             }
             
-            // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+            const normalized = normalizeLayoutWidget(widget)
             return {
-              ...widget,
-              x: widget.x,
-              y: widget.y,
-              width: widget.width,
-              height: widget.height,
+              ...normalized,
               component: component,
               locked: widget.locked || false,
               pinned: widget.pinned || false
@@ -358,13 +366,9 @@ export default function GameDetailView({ game, onBack }) {
                 return null
               }
               
-              // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+              const normalized = normalizeLayoutWidget(widget)
               return {
-                ...widget,
-                x: widget.x,
-                y: widget.y,
-                width: widget.width,
-                height: widget.height,
+                ...normalized,
                 component: component,
                 locked: widget.locked || false,
                 pinned: widget.pinned || false
@@ -556,19 +560,24 @@ export default function GameDetailView({ game, onBack }) {
   }, [setWidgets, closeContextMenu, game, onBack])
 
   const copyLayout = useCallback(() => {
-    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned }) => ({
-      id,
-      type,
-      x,
-      y,
-      width,
-      height,
-      locked: locked || false,
-      pinned: pinned || false
-    }))
+    const layoutToSave = widgets.map(({ id, type, x, y, width, height, col, row, w, h, locked, pinned }) => {
+      const grid = (typeof col === 'number' && typeof row === 'number')
+        ? { col, row, w, h }
+        : pixelsToGrid({ x, y, width, height })
+      return {
+        id,
+        type,
+        col: grid.col,
+        row: grid.row,
+        w: grid.w,
+        h: grid.h,
+        locked: locked || false,
+        pinned: pinned || false
+      }
+    })
     const exportName = isMobile()
-      ? 'DEFAULT_GAME_DETAIL_LAYOUT_MOBILE'
-      : 'DEFAULT_GAME_DETAIL_LAYOUT'
+      ? 'GAME_DETAIL_LAYOUT_MOBILE'
+      : 'GAME_DETAIL_LAYOUT'
     const snippet = `export const ${exportName} = ${JSON.stringify(layoutToSave, null, 2)};`
 
     if (navigator?.clipboard?.writeText) {
@@ -614,12 +623,9 @@ export default function GameDetailView({ game, onBack }) {
           }
           
           // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+          const normalized = normalizeLayoutWidget(widget)
           return {
-            ...widget,
-            x: widget.x,
-            y: widget.y,
-            width: widget.width,
-            height: widget.height,
+            ...normalized,
             component: component,
             locked: widget.locked || false,
             pinned: widget.pinned || false

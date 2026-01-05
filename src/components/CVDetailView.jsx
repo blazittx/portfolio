@@ -11,7 +11,7 @@ import GridBackground from './WidgetSystem/GridBackground'
 import GridMask from './WidgetSystem/GridMask'
 import WidgetContainer from './WidgetSystem/WidgetContainer'
 import Toaster from './Toaster'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset } from '../utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, constrainSizeToViewport, calculateCenterOffset, gridToPixels, pixelsToGrid } from '../utils/grid'
 import { GRID_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { isMobile } from '../utils/mobile'
 import BackButtonWidget from './GameDetailWidgets/BackButtonWidget'
@@ -125,13 +125,22 @@ export default function CVDetailView({ onBack }) {
           }
           
           let settings = widget.settings || {}
+          const hasGridUnits = typeof widget.col === 'number' && typeof widget.row === 'number'
+          const baseGrid = hasGridUnits
+            ? { col: widget.col, row: widget.row, w: widget.w, h: widget.h }
+            : pixelsToGrid({ x: widget.x, y: widget.y, width: widget.width, height: widget.height })
+          const basePixels = gridToPixels(baseGrid)
           
           return {
             ...widget,
-            x: widget.x,
-            y: widget.y,
-            width: widget.width,
-            height: widget.height,
+            x: basePixels.x,
+            y: basePixels.y,
+            width: basePixels.width,
+            height: basePixels.height,
+            col: baseGrid.col,
+            row: baseGrid.row,
+            w: baseGrid.w,
+            h: baseGrid.h,
             component: component,
             locked: widget.locked || false,
             pinned: widget.pinned || false,
@@ -270,52 +279,6 @@ export default function CVDetailView({ onBack }) {
     }))
   }, [setWidgets])
 
-  const toggleWidgetExpand = useCallback((widgetId) => {
-    setWidgets(prev => {
-      const widget = prev.find(w => w.id === widgetId)
-
-      const isExpanded = widget.settings?.expanded || false
-
-      if (!isExpanded) {
-        // EXPAND
-        const { width: originalWidth, height: originalHeight, x: originalX, y: originalY } = widget
-        
-        let expandedWidth = snapSizeToGrid(originalWidth * scaleX)
-        let expandedHeight = snapSizeToGrid(originalHeight * scaleY)
-        let expandedX = originalX - (expandedWidth - originalWidth) / 2
-        let expandedY = originalY - (expandedHeight - originalHeight) / 2
-
-        const constrainedPos = constrainToViewport(expandedX, expandedY, expandedWidth, expandedHeight, centerOffset, true, 'cv-detail')
-        const constrainedSize = constrainSizeToViewport(constrainedPos.x, constrainedPos.y, expandedWidth, expandedHeight, getWidgetMinSize(widget.type).width, getWidgetMinSize(widget.type).height, centerOffset, 'cv-detail')
-        
-        return prev.map(w => {
-          if (w.id === widgetId) {
-            return {
-              ...w,
-              x: constrainedPos.x,
-              y: constrainedPos.y,
-              width: constrainedSize.width,
-              height: constrainedSize.height,
-              settings: { ...(w.settings || {}), expanded: true, originalWidth, originalHeight, originalX, originalY }
-            }
-          }
-          return w
-        })
-      } else {
-        // COLLAPSE
-        const { originalWidth, originalHeight, originalX, originalY } = widget.settings || {}
-        const restore = { x: originalX || widget.x, y: originalY || widget.y, width: originalWidth || widget.width, height: originalHeight || widget.height }
-
-        return prev.map(w => {
-          if (w.id === widgetId) {
-            return { ...w, ...restore, settings: { ...(w.settings || {}), expanded: false } }
-          }
-          return w
-        })
-      }
-    })
-  }, [setWidgets, centerOffset])
-
   const addWidget = useCallback((widgetType, x, y) => {
     const Component = cvDetailComponentMap[widgetType]
     if (!Component) {
@@ -393,18 +356,23 @@ export default function CVDetailView({ onBack }) {
   }, [setWidgets, closeContextMenu, onBack, centerOffset])
 
   const copyLayout = useCallback(() => {
-    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned, settings }) => ({
-      id,
-      type,
-      x,
-      y,
-      width,
-      height,
-      locked: locked || false,
-      pinned: pinned || false,
-      settings: settings || {}
-    }))
-    const snippet = `export const DEFAULT_CV_DETAIL_LAYOUT = ${JSON.stringify(layoutToSave, null, 2)};`
+    const layoutToSave = widgets.map(({ id, type, x, y, width, height, col, row, w, h, locked, pinned, settings }) => {
+      const grid = (typeof col === 'number' && typeof row === 'number')
+        ? { col, row, w, h }
+        : pixelsToGrid({ x, y, width, height })
+      return {
+        id,
+        type,
+        col: grid.col,
+        row: grid.row,
+        w: grid.w,
+        h: grid.h,
+        locked: locked || false,
+        pinned: pinned || false,
+        settings: settings || {}
+      }
+    })
+    const snippet = `export const CV_DETAIL_LAYOUT = ${JSON.stringify(layoutToSave, null, 2)};`
 
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(snippet)
@@ -453,13 +421,22 @@ export default function CVDetailView({ onBack }) {
             return null
           }
           
-          // Use EXACT saved sizes and positions from default layout - don't constrain or modify
+          const hasGridUnits = typeof widget.col === 'number' && typeof widget.row === 'number'
+          const baseGrid = hasGridUnits
+            ? { col: widget.col, row: widget.row, w: widget.w, h: widget.h }
+            : pixelsToGrid({ x: widget.x, y: widget.y, width: widget.width, height: widget.height })
+          const basePixels = gridToPixels(baseGrid)
+
           return {
             ...widget,
-            x: widget.x,
-            y: widget.y,
-            width: widget.width,
-            height: widget.height,
+            x: basePixels.x,
+            y: basePixels.y,
+            width: basePixels.width,
+            height: basePixels.height,
+            col: baseGrid.col,
+            row: baseGrid.row,
+            w: baseGrid.w,
+            h: baseGrid.h,
             component: component,
             locked: widget.locked || false,
             pinned: widget.pinned || false,
@@ -543,13 +520,22 @@ export default function CVDetailView({ onBack }) {
           }
           
           let settings = widget.settings || {}
+          const hasGridUnits = typeof widget.col === 'number' && typeof widget.row === 'number'
+          const baseGrid = hasGridUnits
+            ? { col: widget.col, row: widget.row, w: widget.w, h: widget.h }
+            : pixelsToGrid({ x: widget.x, y: widget.y, width: widget.width, height: widget.height })
+          const basePixels = gridToPixels(baseGrid)
           
           return {
             ...widget,
-            x: widget.x,
-            y: widget.y,
-            width: widget.width,
-            height: widget.height,
+            x: basePixels.x,
+            y: basePixels.y,
+            width: basePixels.width,
+            height: basePixels.height,
+            col: baseGrid.col,
+            row: baseGrid.row,
+            w: baseGrid.w,
+            h: baseGrid.h,
             component: component,
             locked: widget.locked || false,
             pinned: widget.pinned || false,

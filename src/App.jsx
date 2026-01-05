@@ -16,7 +16,7 @@ import CVDetailView from './components/CVDetailView'
 import Toaster from './components/Toaster'
 import { getWidgetMinSize, GRID_SIZE } from './constants/grid'
 import { GAME_IDS } from './constants/games'
-import { snapToGrid, snapSizeToGrid, constrainToViewport, calculateCenterOffset } from './utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, calculateCenterOffset, pixelsToGrid } from './utils/grid'
 import { findNearestValidPosition } from './utils/collision'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from './constants/grid'
 import { isMobile } from './utils/mobile'
@@ -121,18 +121,23 @@ function App() {
   }, [setWidgets])
 
   const copyLayout = useCallback(() => {
-    const layoutToSave = widgets.map(({ id, type, x, y, width, height, locked, pinned, settings }) => ({
-      id,
-      type,
-      x,
-      y,
-      width,
-      height,
-      locked: locked || false,
-      pinned: pinned || false,
-      settings: settings || {}
-    }))
-    const exportName = isMobile() ? 'DEFAULT_HOMEPAGE_LAYOUT_MOBILE' : 'DEFAULT_HOMEPAGE_LAYOUT'
+    const layoutToSave = widgets.map(({ id, type, x, y, width, height, col, row, w, h, locked, pinned, settings }) => {
+      const grid = (typeof col === 'number' && typeof row === 'number')
+        ? { col, row, w, h }
+        : pixelsToGrid({ x, y, width, height })
+      return {
+        id,
+        type,
+        col: grid.col,
+        row: grid.row,
+        w: grid.w,
+        h: grid.h,
+        locked: locked || false,
+        pinned: pinned || false,
+        settings: settings || {}
+      }
+    })
+    const exportName = isMobile() ? 'HOMEPAGE_LAYOUT_MOBILE' : 'HOMEPAGE_LAYOUT'
     const snippet = `export const ${exportName} = ${JSON.stringify(layoutToSave, null, 2)};`
 
     if (navigator?.clipboard?.writeText) {

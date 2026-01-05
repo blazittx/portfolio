@@ -31,6 +31,22 @@ export const snapSizeToGrid = (size) => {
   return (gridUnits * GRID_SIZE) - (WIDGET_PADDING * 2)
 }
 
+// Convert grid-based layout units to pixel positioning for rendering.
+export const gridToPixels = ({ col, row, w, h }) => ({
+  x: GRID_OFFSET_X + WIDGET_PADDING + col * GRID_SIZE,
+  y: GRID_OFFSET_Y + WIDGET_PADDING + row * GRID_SIZE,
+  width: (w * GRID_SIZE) - (WIDGET_PADDING * 2),
+  height: (h * GRID_SIZE) - (WIDGET_PADDING * 2)
+})
+
+// Convert pixel positioning to grid-based layout units.
+export const pixelsToGrid = ({ x, y, width, height }) => ({
+  col: Math.round((x - GRID_OFFSET_X - WIDGET_PADDING) / GRID_SIZE),
+  row: Math.round((y - GRID_OFFSET_Y - WIDGET_PADDING) / GRID_SIZE),
+  w: Math.round((width + WIDGET_PADDING * 2) / GRID_SIZE),
+  h: Math.round((height + WIDGET_PADDING * 2) / GRID_SIZE)
+})
+
 // Constrain widget position to usable grid area boundaries
 // centerOffset is optional - kept for API compatibility but not used (widgets are relative to base grid)
 // enforceBounds: if false, only ensures widget doesn't go completely outside viewport (for loading saved layouts)

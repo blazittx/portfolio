@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { GAME_IDS } from '../constants/games'
-import { snapToGrid, snapSizeToGrid, constrainToViewport } from '../utils/grid'
+import { snapToGrid, snapSizeToGrid, constrainToViewport, gridToPixels, pixelsToGrid } from '../utils/grid'
 import { getWidgetMinSize } from '../constants/grid'
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants/grid'
 import { DEFAULT_HOMEPAGE_LAYOUT, DEFAULT_HOMEPAGE_LAYOUT_MOBILE } from '../utils/setDefaultLayouts'
@@ -53,8 +53,13 @@ export const useWidgets = (view = 'main') => {
       return layoutToUse
         .map(widget => {
           try {
+            const hasGridUnits = typeof widget.col === 'number' && typeof widget.row === 'number'
+            const baseGrid = hasGridUnits
+              ? { col: widget.col, row: widget.row, w: widget.w, h: widget.h }
+              : pixelsToGrid({ x: widget.x, y: widget.y, width: widget.width, height: widget.height })
+            const basePixels = gridToPixels(baseGrid)
             // Don't enforce usable area bounds when loading saved layouts - just ensure visibility
-            const constrainedPos = constrainToViewport(widget.x, widget.y, widget.width, widget.height, { x: 0, y: 0 }, false)
+            const constrainedPos = constrainToViewport(basePixels.x, basePixels.y, basePixels.width, basePixels.height, { x: 0, y: 0 }, false)
             
             // Always use widget.type to look up component (not widget.id, which may have suffixes like -1, -2)
             const component = componentMap[widget.type]
@@ -72,8 +77,8 @@ export const useWidgets = (view = 'main') => {
             }
             // Preserve EXACT saved sizes and positions - don't modify them at all
             // Only ensure they're valid numbers
-            const finalWidth = typeof widget.width === 'number' && widget.width > 0 ? widget.width : getWidgetMinSize(widget.type).width
-            const finalHeight = typeof widget.height === 'number' && widget.height > 0 ? widget.height : getWidgetMinSize(widget.type).height
+            const finalWidth = typeof basePixels.width === 'number' && basePixels.width > 0 ? basePixels.width : getWidgetMinSize(widget.type).width
+            const finalHeight = typeof basePixels.height === 'number' && basePixels.height > 0 ? basePixels.height : getWidgetMinSize(widget.type).height
             
             return {
               ...widget,
@@ -81,6 +86,10 @@ export const useWidgets = (view = 'main') => {
               y: constrainedPos.y,
               width: finalWidth,
               height: finalHeight,
+              col: baseGrid.col,
+              row: baseGrid.row,
+              w: baseGrid.w,
+              h: baseGrid.h,
               component: component,
               locked: widget.locked || false,
               pinned: widget.pinned || false,
