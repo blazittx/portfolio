@@ -1,5 +1,5 @@
 import { componentMap as defaultComponentMap } from "../../hooks/useWidgets";
-import { WIDGET_INFO } from "../../utils/widgets";
+import { getWidgetMeta } from "../../utils/widgets";
 import { useEffect, useRef, useState } from "react";
 
 /* eslint-disable react/prop-types */
@@ -125,11 +125,14 @@ export default function ContextMenu({
       if (type === "back-button") return false;
       return allowsMultipleInstances(type) || !existingWidgetTypes.has(type);
     })
-    .map((type) => ({
-      type,
-      name: WIDGET_INFO[type]?.name || type,
-      icon: WIDGET_INFO[type]?.icon || "📦",
-    }));
+    .map((type) => {
+      const meta = getWidgetMeta(type, activeComponentMap[type]);
+      return {
+        type,
+        name: meta.name,
+        icon: meta.icon,
+      };
+    });
 
   return (
     <div
