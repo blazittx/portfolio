@@ -212,6 +212,14 @@ export const gameTeamMembers = {
       role: "3D Artist",
       linkedin: "https://www.linkedin.com/in/lal-kync/",
     },
+    {
+      name: "Doğukan Şahin",
+      role: "Sound Designer",
+    },
+    {
+      name: "Alp Tamer",
+      role: "Technical Artist",
+    },
   ],
   gp3: [
     {
@@ -287,6 +295,7 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
+      filename: "carControllerPullbackRacers.cs",
       content: getCodeSample("carControllerPullbackRacers.cs"),
     },
     { type: "heading", level: 3, content: "Key Features" },
@@ -313,6 +322,7 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
+      filename: "GameController.cs",
       content: `
         public class GameController : MonoBehaviour
         {
@@ -360,6 +370,7 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
+      filename: "GameController.cs",
       content:
         "public class GameController : MonoBehaviour\n{\n    void Start()\n    {\n        // Placeholder code\n    }\n    \n    void Update()\n    {\n        // Placeholder code\n    }\n}",
     },
@@ -386,6 +397,7 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
+      filename: "GameController.cs",
       content: `
     public class GameController : MonoBehaviour
     {
@@ -423,6 +435,7 @@ export const gameDevelopmentInfo = {
     {
       type: "code",
       language: "csharp",
+      filename: "GameController.cs",
       content: `
     public class GameController : MonoBehaviour
     {
@@ -445,35 +458,41 @@ export const gameDevelopmentInfo = {
   ],
 
   GFOS1992: [
-    { type: "heading", level: 2, content: "Retro Aesthetic" },
+    { type: "heading", level: 1, content: "Technical Details" },
+    { type: "heading", level: 2, content: "Key Features and Implementation" },
+
+    { type: "heading", level: 3, content: "Astronaut Character" },
     {
       type: "text",
       content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+        "The astronaut character was implemented as a fully physics-driven system where interaction quality was prioritized over animation-based solutions. Each hand is controlled independently, making movement and interaction deliberate and physically grounded in a zero-gravity environment.",
     },
-    { type: "heading", level: 3, content: "Audio Design" },
     {
       type: "text",
       content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+        "The system supports independent thumbstick control for each hand, physical grabbing of objects, and momentum-based movement. Players can pull, push, and fling themselves through the station by interacting with the environment rather than relying on traditional locomotion.",
+    },
+    {
+      type: "text",
+      content:
+        "The player controller handles input routing, movement constraints, and force application, while a separate hand controller manages grabbing, releasing, collision handling, and interaction forces. This separation allowed faster iteration and clearer responsibility between systems.",
     },
     {
       type: "code",
       language: "csharp",
-      content: `
-    public class GameController : MonoBehaviour
-    {
-        void Start()
-        {
-        }
-    
-        void Update()
-        {
-        }
-    }
-    `,
+      filename: "gfosPlayerController.cs",
+      content: getCodeSample("gfosPlayerController.cs"),
     },
-    { type: "heading", level: 3, content: "Gameplay Mechanics" },
+    {
+      type: "code",
+      language: "csharp",
+      filename: "gfosHandController.cs",
+      content: getCodeSample("gfosHandController.cs"),
+    },
+  ],
+
+  gp3: [
+    { type: "heading", level: 2, content: "Project Overview" },
     {
       type: "text",
       content:
