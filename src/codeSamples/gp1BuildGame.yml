@@ -1,0 +1,135 @@
+name: Build project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  buildForAllSupportedPlatforms:
+    name: Build for ${{ matrix.targetPlatform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - StandaloneWindows64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-${{ matrix.targetPlatform }}-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectSettings.asset') }}
+          restore-keys: |
+            Library-${{ matrix.targetPlatform }}-
+            Library-
+      
+      - name: Free disk space
+        run: |
+          sudo docker rmi $(docker image ls -aq) >/dev/null 2>&1 || true
+          sudo rm -rf \
+            /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/powershell /usr/share/swift /usr/local/.ghcup \
+            /usr/lib/jvm || true
+          echo "some directories deleted"
+          sudo apt install aptitude -y >/dev/null 2>&1
+          sudo aptitude purge aria2 ansible azure-cli shellcheck rpm xorriso zsync \
+            esl-erlang firefox gfortran-8 gfortran-9 google-chrome-stable \
+            google-cloud-sdk imagemagick \
+            libmagickcore-dev libmagickwand-dev libmagic-dev ant ant-optional kubectl \
+            mercurial apt-transport-https mono-complete libmysqlclient \
+            unixodbc-dev yarn chrpath libssl-dev libxft-dev \
+            libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev \
+            snmp pollinate libpq-dev postgresql-client powershell ruby-full \
+            sphinxsearch subversion mongodb-org azure-cli microsoft-edge-stable \
+            -y -f >/dev/null 2>&1
+          sudo aptitude purge google-cloud-sdk -f -y >/dev/null 2>&1
+          sudo aptitude purge microsoft-edge-stable -f -y >/dev/null 2>&1 || true
+          sudo apt purge microsoft-edge-stable -f -y >/dev/null 2>&1 || true
+          sudo aptitude purge '~n ^mysql' -f -y >/dev/null 2>&1
+          sudo aptitude purge '~n ^php' -f -y >/dev/null 2>&1
+          sudo aptitude purge '~n ^dotnet' -f -y >/dev/null 2>&1
+          sudo apt-get autoremove -y >/dev/null 2>&1
+          sudo apt-get autoclean -y >/dev/null 2>&1
+          echo "some packages purged"
+
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: ${{ matrix.targetPlatform }}
+
+      - name: Calculate new version and create tag
+        id: calculate_new_version
+        run: |
+          echo "Fetching tags..."
+          git fetch --tags
+          # Find the last version tag
+          LAST_TAG=$(git tag | sort -V | tail -n1)
+          if [[ -z "$LAST_TAG" ]]; then LAST_TAG="0.0.0"; fi
+          echo "Last version: $LAST_TAG"
+          # Get commit message
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MESSAGE"
+          # Extract version numbers
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$LAST_TAG"
+          # Determine version increment
+          if echo "$COMMIT_MESSAGE" | grep -iq "major"; then
+            echo "Incrementing major version"
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif echo "$COMMIT_MESSAGE" | grep -iq "minor"; then
+            echo "Incrementing minor version"
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            echo "Incrementing patch version"
+            PATCH=$((PATCH + 1))
+          fi
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+          # Create new tag
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag $NEW_VERSION
+          # Set environment variable for the new version
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          tag_name: ${{ env.NEW_VERSION }}
+          release_name: Release ${{ env.NEW_VERSION }}
+          draft: false
+          prerelease: false
+
+      - name: Zip build
+        run: |
+          cd ./build/${{ matrix.targetPlatform }}
+          zip -r ../../Build-${{ matrix.targetPlatform }}.zip .
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/Build-${{ matrix.targetPlatform }}.zip
+          asset_name: Build-${{ matrix.targetPlatform }}.zip
+          asset_content_type: application/zip
+
+      - name: Upload Build to OCI Bucket
+        run: |
+          curl -X PUT -T ${{ github.workspace }}/Build-${{ matrix.targetPlatform }}.zip "https://objectstorage.eu-frankfurt-1.oraclecloud.com/p/**************************************-**************/n/**************/b/DiabolicalGamesStorage/o/GP1/Versions/Build-${{ matrix.targetPlatform }}-${{ env.NEW_VERSION }}.zip"

@@ -71,6 +71,15 @@ const toCssWidth = (value) => {
   return value
 }
 
+const getYouTubeId = (input) => {
+  if (!input) return ''
+  if (/^[a-zA-Z0-9_-]{6,}$/.test(input)) return input
+  const match = input.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/
+  )
+  return match ? match[1] : ''
+}
+
 const renderInline = (text) => {
   const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g
   const elements = []
@@ -667,6 +676,43 @@ const renderDirective = (block, key) => {
         })
       : []
     return <MarkdownCarousel key={key} items={items} />
+  }
+
+  if (name === 'youtube') {
+    const videoId = getYouTubeId(attrs.id || attrs.url || attrs.link)
+    if (!videoId) return null
+    const title = attrs.title || 'YouTube video'
+    return (
+      <div
+        key={key}
+        style={{
+          width: toCssWidth(attrs.width) || '100%',
+          margin: '0.75rem 0'
+        }}
+      >
+        <div style={{
+          position: 'relative',
+          paddingTop: '56.25%',
+          borderRadius: '6px',
+          overflow: 'hidden',
+          background: 'color-mix(in hsl, canvasText, transparent 95%)'
+        }}>
+          <iframe
+            title={title}
+            src={`https://www.youtube.com/embed/${videoId}`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              border: 0
+            }}
+          />
+        </div>
+      </div>
+    )
   }
 
   if (name === 'block') {
