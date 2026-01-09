@@ -561,6 +561,23 @@ function App() {
       }}
       onContextMenu={handleContextMenu}
     >
+      <nav
+        aria-label="Game pages"
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: "-9999px",
+        }}
+      >
+        <a href="/cv" tabIndex={-1}>
+          CV
+        </a>
+        {GAME_IDS.map((gameId) => (
+          <a key={gameId} href={`/${gameId}`} tabIndex={-1}>
+            {gameId}
+          </a>
+        ))}
+      </nav>
       <ContextMenu
         contextMenu={contextMenu}
         widgets={validWidgets}
