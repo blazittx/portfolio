@@ -17,6 +17,7 @@ export const STEAM_URLS = {
     "https://store.steampowered.com/app/3892270/Gamble_With_Your_Friends",
   pullbackracers: "https://store.steampowered.com/app/3720110/PULLBACK_RACERS",
   Forgekeepers: "https://store.steampowered.com/app/3254140/Forgekeepers",
+  bubbledome: "https://store.steampowered.com/app/3511970/Bubble_Dome_Pop_to_the_Top/",
 };
 
 // Manual YouTube URL mapping for games
@@ -46,7 +47,7 @@ export const GAME_LINKS = {
   pullbackracers: [
     { type: "steam", url: STEAM_URLS.pullbackracers, label: "Steam" },
   ],
-  bubbledome: [],
+  bubbledome: [{ type: "steam", url: STEAM_URLS.bubbledome, label: "Steam" }],
   gamblelite: [{ type: "steam", url: STEAM_URLS.gamblelite, label: "Steam" }],
   gp1: [],
   Forgekeepers: [
