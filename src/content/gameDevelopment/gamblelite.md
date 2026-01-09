@@ -1,28 +1,13 @@
-## Project Overview
+# Gamble With Your Friends
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+Gamble With Your Friends is an ongoing multiplayer party game built with **Mirror Networking** and **Steamworks (FizzySteamworks relay)**.
 
-### Architecture
+---
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+The project has surpassed **125,000 wishlists on Steam** and is approaching release.
 
-```csharp
-public class GameController : MonoBehaviour
-{
-    void Start()
-    {
-    }
+---
 
-    void Update()
-    {
-    }
-}
-```
+Due to the project being active, source code cannot be shared publicly, but implementation details and systems can be demonstrated privately upon request.
 
-![Technical Stack](previewPortfolio.png)
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
-
-### Development Challenges
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+The game focuses on fast-paced, social gambling mechanics designed for friends and stream-friendly play.
