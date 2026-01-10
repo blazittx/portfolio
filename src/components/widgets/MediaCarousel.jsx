@@ -102,13 +102,25 @@ export default function MediaCarousel({
       const style = document.createElement("style");
       style.id = "media-carousel-keyframes";
       style.textContent = `
-        @keyframes mediaFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        @keyframes mediaSlideIn {
+          from { 
+            opacity: 0;
+            transform: translateX(30px) scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: translateX(0) scale(1);
+          }
         }
-        @keyframes mediaFadeOut {
-          from { opacity: 1; }
-          to { opacity: 0; }
+        @keyframes mediaSlideOut {
+          from { 
+            opacity: 1;
+            transform: translateX(0) scale(1);
+          }
+          to { 
+            opacity: 0;
+            transform: translateX(-20px) scale(0.98);
+          }
         }
       `;
       document.head.appendChild(style);
@@ -256,7 +268,7 @@ export default function MediaCarousel({
     height: "100%",
     position: "absolute",
     inset: 0,
-    willChange: "opacity",
+    willChange: "opacity, transform",
   };
 
   const shouldPrioritize =
@@ -329,7 +341,7 @@ export default function MediaCarousel({
             style={{
               ...mediaWrapperStyle,
               zIndex: 1,
-              animation: `mediaFadeOut ${fadeDurationMs}ms ease`,
+              animation: `mediaSlideOut ${fadeDurationMs}ms cubic-bezier(0.4, 0, 0.2, 1)`,
               pointerEvents: "none",
             }}
           >
@@ -341,7 +353,7 @@ export default function MediaCarousel({
           style={{
             ...mediaWrapperStyle,
             zIndex: 2,
-            animation: `mediaFadeIn ${fadeDurationMs}ms ease`,
+            animation: `mediaSlideIn ${fadeDurationMs}ms cubic-bezier(0.4, 0, 0.2, 1)`,
           }}
         >
           {currentMedia.type === "video" && isYouTubeUrl(currentMedia.url) ? (
