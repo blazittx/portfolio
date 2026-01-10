@@ -9,6 +9,11 @@ import {
   getOptimizedImageUrl,
   getOptimizedThumbnailUrl,
 } from "../../utils/images";
+import {
+  getStaggeredDelay,
+  scheduleSwitch,
+  clearScheduledSwitch,
+} from "../../utils/carouselCoordinator";
 
 /* eslint-disable react/prop-types */
 export default function MediaCarousel({
@@ -176,8 +181,10 @@ export default function MediaCarousel({
       if (fadeTimeoutRef.current) {
         clearTimeout(fadeTimeoutRef.current);
       }
+      // Clear scheduled switch on unmount
+      clearScheduledSwitch(carouselId);
     };
-  }, []);
+  }, [carouselId]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -228,22 +235,32 @@ export default function MediaCarousel({
 
   useEffect(() => {
     if (!autoAdvance || media.length <= 1) return;
-    if (pauseAutoAdvance || isHovered || isVideoPlaying || isVideoInteracted)
+    if (pauseAutoAdvance || isHovered || isVideoPlaying || isVideoInteracted) {
+      // Clear scheduled switch when paused
+      clearScheduledSwitch(carouselId);
       return;
+    }
 
     const current = media[activeIndex];
     const baseDelay =
       current && current.type === "video" ? videoIntervalMs : imageIntervalMs;
-    const jitter = baseDelay * 0.2;
-    const delay = Math.max(
-      0,
-      Math.round(baseDelay + (Math.random() * 2 - 1) * jitter)
-    );
+    
+    // Get staggered delay to avoid conflicts with other carousels
+    const staggeredDelay = getStaggeredDelay(carouselId, baseDelay);
+    
+    // Schedule the switch and get the final delay (may be adjusted to avoid conflicts)
+    const delay = Math.round(scheduleSwitch(carouselId, staggeredDelay));
+    
     const timer = setTimeout(() => {
+      // Clear the scheduled switch before executing
+      clearScheduledSwitch(carouselId);
       setIndex(activeIndex + 1);
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearScheduledSwitch(carouselId);
+    };
   }, [
     autoAdvance,
     pauseAutoAdvance,
@@ -255,6 +272,7 @@ export default function MediaCarousel({
     isVideoPlaying,
     isVideoInteracted,
     setIndex,
+    carouselId,
   ]);
 
   if (!media.length) {
