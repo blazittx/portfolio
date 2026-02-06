@@ -63,6 +63,15 @@ export const useView = () => {
     const path = window.location.pathname;
     const pathSegment = path.slice(1); // Remove leading '/'
 
+    // Handle external redirects
+    if (pathSegment === "linkedin") {
+      window.location.href = "https://www.linkedin.com/in/doruksasmaz/";
+      return;
+    } else if (pathSegment === "github") {
+      window.location.href = "https://github.com/blazittx";
+      return;
+    }
+
     // Check if it's CV view
     if (pathSegment === "cv") {
       if (currentView !== "cv-detail") {
@@ -105,6 +114,15 @@ export const useView = () => {
     const handlePopState = () => {
       const path = window.location.pathname;
       const pathSegment = path.slice(1);
+
+      // Handle external redirects
+      if (pathSegment === "linkedin") {
+        window.location.href = "https://www.linkedin.com/in/doruksasmaz/";
+        return;
+      } else if (pathSegment === "github") {
+        window.location.href = "https://github.com/blazittx";
+        return;
+      }
 
       if (pathSegment === "cv") {
         setCurrentView("cv-detail");
