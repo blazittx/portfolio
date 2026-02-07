@@ -52,6 +52,8 @@ export const getWidgetMinSize = (widgetType) => {
     "technical-skills": { width: 3, height: 3 },
     languages: { width: 3, height: 3 },
     certifications: { width: 3, height: 3 },
+    "cv-pdf-viewer": { width: 10, height: 15 },
+    "cv-download-button": { width: 3, height: 2 },
   };
 
   const gridUnits = minSizesInGridUnits[widgetType] || { width: 2, height: 2 };

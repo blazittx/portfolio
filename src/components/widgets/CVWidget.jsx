@@ -1,6 +1,5 @@
 import BaseWidget from './BaseWidget'
 import { useEffect, useRef, useState } from 'react'
-import { generateCVPDF } from '../../utils/generateCVPDF'
 
 /* eslint-disable react/prop-types */
 export default function CVWidget({ onCVClick, wasLastInteractionDrag, widgetId }) {
@@ -28,26 +27,17 @@ export default function CVWidget({ onCVClick, wasLastInteractionDrag, widgetId }
     return () => resizeObserver.disconnect()
   }, [])
 
-  const handleClick = async (e) => {
-    // Only download PDF if it wasn't a drag
+  const handleClick = (e) => {
     if (e.button === 0) {
-      setTimeout(async () => {
+      setTimeout(() => {
         const wasDrag =
           wasLastInteractionDrag &&
           typeof wasLastInteractionDrag === 'function'
             ? wasLastInteractionDrag(widgetId)
             : false
 
-        if (!wasDrag) {
-          try {
-            await generateCVPDF()
-          } catch (error) {
-            console.error('Failed to generate PDF:', error)
-            // Fallback to navigation if PDF generation fails
-            if (onCVClick) {
-              onCVClick()
-            }
-          }
+        if (!wasDrag && onCVClick) {
+          onCVClick()
         }
       }, 10)
     }

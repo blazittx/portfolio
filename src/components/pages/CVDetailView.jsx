@@ -23,28 +23,16 @@ import {
 import { GRID_OFFSET_X, GRID_OFFSET_Y } from "../../constants/grid";
 import { isMobile } from "../../utils/mobile";
 import BackButtonWidget from "../widgets/GameDetailWidgets/BackButtonWidget";
-import ProfileWidget from "../widgets/ProfileWidget";
-import ProfilePictureWidget from "../widgets/ProfilePictureWidget";
-import ExperienceWidget from "../widgets/CVWidgets/ExperienceWidget";
-import EducationWidget from "../widgets/CVWidgets/EducationWidget";
-import ProjectsWidget from "../widgets/CVWidgets/ProjectsWidget";
-import TechnicalSkillsWidget from "../widgets/CVWidgets/TechnicalSkillsWidget";
-import LanguagesWidget from "../widgets/CVWidgets/LanguagesWidget";
-import CertificationsWidget from "../widgets/CVWidgets/CertificationsWidget";
+import CVPDFViewerWidget from "../widgets/CVWidgets/CVPDFViewerWidget";
+import CVDownloadButtonWidget from "../widgets/CVWidgets/CVDownloadButtonWidget";
 import { getWidgetMinSize } from "../../constants/grid";
 import { DEFAULT_CV_DETAIL_LAYOUT } from "../../utils/setDefaultLayouts";
 
 // Component map for CV detail widgets
 const cvDetailComponentMap = {
   "back-button": BackButtonWidget,
-  profile: ProfileWidget,
-  "profile-picture": ProfilePictureWidget,
-  experience: ExperienceWidget,
-  education: EducationWidget,
-  projects: ProjectsWidget,
-  "technical-skills": TechnicalSkillsWidget,
-  languages: LanguagesWidget,
-  certifications: CertificationsWidget,
+  "cv-pdf-viewer": CVPDFViewerWidget,
+  "cv-download-button": CVDownloadButtonWidget,
 };
 
 /* eslint-disable react/prop-types */
@@ -138,40 +126,16 @@ export default function CVDetailView({ onBack }) {
             let component = null;
             if (widget.id === "back-button" || widget.type === "back-button") {
               component = () => <BackButtonWidget onBack={onBack} />;
-            } else if (widget.id === "profile" || widget.type === "profile") {
-              component = ProfileWidget;
             } else if (
-              widget.id === "profile-picture" ||
-              widget.type === "profile-picture"
+              widget.id === "cv-pdf-viewer" ||
+              widget.type === "cv-pdf-viewer"
             ) {
-              component = ProfilePictureWidget;
+              component = CVPDFViewerWidget;
             } else if (
-              widget.id === "experience" ||
-              widget.type === "experience"
+              widget.id === "cv-download-button" ||
+              widget.type === "cv-download-button"
             ) {
-              component = ExperienceWidget;
-            } else if (
-              widget.id === "education" ||
-              widget.type === "education"
-            ) {
-              component = EducationWidget;
-            } else if (widget.id === "projects" || widget.type === "projects") {
-              component = ProjectsWidget;
-            } else if (
-              widget.id === "technical-skills" ||
-              widget.type === "technical-skills"
-            ) {
-              component = TechnicalSkillsWidget;
-            } else if (
-              widget.id === "languages" ||
-              widget.type === "languages"
-            ) {
-              component = LanguagesWidget;
-            } else if (
-              widget.id === "certifications" ||
-              widget.type === "certifications"
-            ) {
-              component = CertificationsWidget;
+              component = CVDownloadButtonWidget;
             }
 
             if (!component) {
@@ -181,7 +145,6 @@ export default function CVDetailView({ onBack }) {
               return null;
             }
 
-            let settings = widget.settings || {};
             const hasGridUnits =
               typeof widget.col === "number" && typeof widget.row === "number";
             const baseGrid = hasGridUnits
@@ -207,7 +170,7 @@ export default function CVDetailView({ onBack }) {
               component: component,
               locked: widget.locked || false,
               pinned: widget.pinned || false,
-              settings: Object.keys(settings).length > 0 ? settings : undefined,
+              settings: widget.settings || {},
             };
           } catch (error) {
             console.error(`Error restoring widget ${widget.id}:`, error);
@@ -216,45 +179,12 @@ export default function CVDetailView({ onBack }) {
         })
         .filter((widget) => widget !== null);
 
-      // Ensure back button exists and is locked
-      const hasBackButton = restoredWidgets.some((w) => w.id === "back-button");
-      if (!hasBackButton) {
-        const backButtonWidth = snapSizeToGrid(120);
-        const backButtonHeight = snapSizeToGrid(60);
-        const backButtonX = snapToGrid(
-          GRID_OFFSET_X + centerOffset.x,
-          GRID_OFFSET_X
-        );
-        const backButtonY = snapToGrid(
-          GRID_OFFSET_Y + centerOffset.y,
-          GRID_OFFSET_Y
-        );
-
-        restoredWidgets.unshift({
-          id: "back-button",
-          type: "back-button",
-          x: backButtonX,
-          y: backButtonY,
-          width: backButtonWidth,
-          height: backButtonHeight,
-          component: () => <BackButtonWidget onBack={onBack} />,
-          locked: true,
-          pinned: false,
-        });
-      } else {
-        const backButton = restoredWidgets.find((w) => w.id === "back-button");
-        if (backButton) {
-          backButton.locked = true;
-          backButton.component = () => <BackButtonWidget onBack={onBack} />;
-        }
-      }
-
       setWidgets(restoredWidgets);
       initializedRef.current = true;
       return;
     }
 
-    // Default layout: just back button (hardcoded fallback)
+    // Fallback: just back button
     const backButtonWidth = snapSizeToGrid(120);
     const backButtonHeight = snapSizeToGrid(60);
     const backButtonX = snapToGrid(
@@ -442,31 +372,13 @@ export default function CVDetailView({ onBack }) {
           "cv-detail"
         );
 
-        // Initialize settings based on widget type
-        let settings = {};
-        if (widgetType === "profile-picture") {
-          /* empty */
-        }
-
         let component = null;
         if (widgetType === "back-button") {
           component = () => <BackButtonWidget onBack={onBack} />;
-        } else if (widgetType === "profile") {
-          component = ProfileWidget;
-        } else if (widgetType === "profile-picture") {
-          component = ProfilePictureWidget;
-        } else if (widgetType === "experience") {
-          component = ExperienceWidget;
-        } else if (widgetType === "education") {
-          component = EducationWidget;
-        } else if (widgetType === "projects") {
-          component = ProjectsWidget;
-        } else if (widgetType === "technical-skills") {
-          component = TechnicalSkillsWidget;
-        } else if (widgetType === "languages") {
-          component = LanguagesWidget;
-        } else if (widgetType === "certifications") {
-          component = CertificationsWidget;
+        } else if (widgetType === "cv-pdf-viewer") {
+          component = CVPDFViewerWidget;
+        } else if (widgetType === "cv-download-button") {
+          component = CVDownloadButtonWidget;
         }
 
         if (!component) {
@@ -484,7 +396,6 @@ export default function CVDetailView({ onBack }) {
           component: component,
           locked: widgetType === "back-button",
           pinned: false,
-          settings: Object.keys(settings).length > 0 ? settings : undefined,
         };
 
         return [...prev, newWidget];
@@ -557,48 +468,22 @@ export default function CVDetailView({ onBack }) {
       Array.isArray(defaultLayout) &&
       defaultLayout.length > 0
     ) {
-      // Restore from default layout - use exact positions without constraining
       const restoredWidgets = defaultLayout
         .map((widget) => {
           try {
-            // Map widget types to components
             let component = null;
             if (widget.id === "back-button" || widget.type === "back-button") {
               component = () => <BackButtonWidget onBack={onBack} />;
-            } else if (widget.id === "profile" || widget.type === "profile") {
-              component = ProfileWidget;
             } else if (
-              widget.id === "profile-picture" ||
-              widget.type === "profile-picture"
+              widget.id === "cv-pdf-viewer" ||
+              widget.type === "cv-pdf-viewer"
             ) {
-              component = ProfilePictureWidget;
+              component = CVPDFViewerWidget;
             } else if (
-              widget.id === "experience" ||
-              widget.type === "experience"
+              widget.id === "cv-download-button" ||
+              widget.type === "cv-download-button"
             ) {
-              component = ExperienceWidget;
-            } else if (
-              widget.id === "education" ||
-              widget.type === "education"
-            ) {
-              component = EducationWidget;
-            } else if (widget.id === "projects" || widget.type === "projects") {
-              component = ProjectsWidget;
-            } else if (
-              widget.id === "technical-skills" ||
-              widget.type === "technical-skills"
-            ) {
-              component = TechnicalSkillsWidget;
-            } else if (
-              widget.id === "languages" ||
-              widget.type === "languages"
-            ) {
-              component = LanguagesWidget;
-            } else if (
-              widget.id === "certifications" ||
-              widget.type === "certifications"
-            ) {
-              component = CertificationsWidget;
+              component = CVDownloadButtonWidget;
             }
 
             if (!component) {
@@ -642,168 +527,6 @@ export default function CVDetailView({ onBack }) {
         })
         .filter((widget) => widget !== null);
 
-      // Ensure back button exists and is locked
-      const hasBackButton = restoredWidgets.some((w) => w.id === "back-button");
-      if (!hasBackButton) {
-        const backButtonWidth = snapSizeToGrid(120);
-        const backButtonHeight = snapSizeToGrid(60);
-        const backButtonX = snapToGrid(
-          GRID_OFFSET_X + centerOffset.x,
-          GRID_OFFSET_X
-        );
-        const backButtonY = snapToGrid(
-          GRID_OFFSET_Y + centerOffset.y,
-          GRID_OFFSET_Y
-        );
-
-        restoredWidgets.unshift({
-          id: "back-button",
-          type: "back-button",
-          x: backButtonX,
-          y: backButtonY,
-          width: backButtonWidth,
-          height: backButtonHeight,
-          component: () => <BackButtonWidget onBack={onBack} />,
-          locked: true,
-          pinned: false,
-        });
-      } else {
-        const backButton = restoredWidgets.find((w) => w.id === "back-button");
-        if (backButton) {
-          backButton.locked = true;
-          backButton.component = () => <BackButtonWidget onBack={onBack} />;
-        }
-      }
-
-      // Use flushSync to ensure the state update happens synchronously
-      flushSync(() => {
-        setWidgets(restoredWidgets);
-      });
-
-      // Animate widgets in immediately after state update
-      setTimeout(() => {
-        animateWidgetsIn();
-      }, 50);
-
-      showToast("Layout reverted to default!");
-      return;
-    }
-
-    // If no default layout, use hardcoded default layout
-    if (
-      DEFAULT_CV_DETAIL_LAYOUT &&
-      Array.isArray(DEFAULT_CV_DETAIL_LAYOUT) &&
-      DEFAULT_CV_DETAIL_LAYOUT.length > 0
-    ) {
-      const restoredWidgets = DEFAULT_CV_DETAIL_LAYOUT.map((widget) => {
-        try {
-          let component = null;
-          if (widget.id === "back-button" || widget.type === "back-button") {
-            component = () => <BackButtonWidget onBack={onBack} />;
-          } else if (widget.id === "profile" || widget.type === "profile") {
-            component = ProfileWidget;
-          } else if (
-            widget.id === "profile-picture" ||
-            widget.type === "profile-picture"
-          ) {
-            component = ProfilePictureWidget;
-          } else if (
-            widget.id === "experience" ||
-            widget.type === "experience"
-          ) {
-            component = ExperienceWidget;
-          } else if (widget.id === "education" || widget.type === "education") {
-            component = EducationWidget;
-          } else if (widget.id === "projects" || widget.type === "projects") {
-            component = ProjectsWidget;
-          } else if (
-            widget.id === "technical-skills" ||
-            widget.type === "technical-skills"
-          ) {
-            component = TechnicalSkillsWidget;
-          } else if (widget.id === "languages" || widget.type === "languages") {
-            component = LanguagesWidget;
-          } else if (
-            widget.id === "certifications" ||
-            widget.type === "certifications"
-          ) {
-            component = CertificationsWidget;
-          }
-
-          if (!component) {
-            console.warn(
-              `Widget component not found for type: ${widget.type}, id: ${widget.id}`
-            );
-            return null;
-          }
-
-          let settings = widget.settings || {};
-          const hasGridUnits =
-            typeof widget.col === "number" && typeof widget.row === "number";
-          const baseGrid = hasGridUnits
-            ? { col: widget.col, row: widget.row, w: widget.w, h: widget.h }
-            : pixelsToGrid({
-                x: widget.x,
-                y: widget.y,
-                width: widget.width,
-                height: widget.height,
-              });
-          const basePixels = gridToPixels(baseGrid);
-
-          return {
-            ...widget,
-            x: basePixels.x,
-            y: basePixels.y,
-            width: basePixels.width,
-            height: basePixels.height,
-            col: baseGrid.col,
-            row: baseGrid.row,
-            w: baseGrid.w,
-            h: baseGrid.h,
-            component: component,
-            locked: widget.locked || false,
-            pinned: widget.pinned || false,
-            settings: Object.keys(settings).length > 0 ? settings : undefined,
-          };
-        } catch (error) {
-          console.error(`Error restoring widget ${widget.id}:`, error);
-          return null;
-        }
-      }).filter((widget) => widget !== null);
-
-      // Ensure back button exists and is locked
-      const hasBackButton = restoredWidgets.some((w) => w.id === "back-button");
-      if (!hasBackButton) {
-        const backButtonWidth = snapSizeToGrid(120);
-        const backButtonHeight = snapSizeToGrid(60);
-        const backButtonX = snapToGrid(
-          GRID_OFFSET_X + centerOffset.x,
-          GRID_OFFSET_X
-        );
-        const backButtonY = snapToGrid(
-          GRID_OFFSET_Y + centerOffset.y,
-          GRID_OFFSET_Y
-        );
-
-        restoredWidgets.unshift({
-          id: "back-button",
-          type: "back-button",
-          x: backButtonX,
-          y: backButtonY,
-          width: backButtonWidth,
-          height: backButtonHeight,
-          component: () => <BackButtonWidget onBack={onBack} />,
-          locked: true,
-          pinned: false,
-        });
-      } else {
-        const backButton = restoredWidgets.find((w) => w.id === "back-button");
-        if (backButton) {
-          backButton.locked = true;
-          backButton.component = () => <BackButtonWidget onBack={onBack} />;
-        }
-      }
-
       flushSync(() => {
         setWidgets(restoredWidgets);
       });
@@ -816,41 +539,7 @@ export default function CVDetailView({ onBack }) {
       return;
     }
 
-    // Final fallback: just back button
-    const backButtonWidth = snapSizeToGrid(120);
-    const backButtonHeight = snapSizeToGrid(60);
-    const backButtonX = snapToGrid(
-      GRID_OFFSET_X + centerOffset.x,
-      GRID_OFFSET_X
-    );
-    const backButtonY = snapToGrid(
-      GRID_OFFSET_Y + centerOffset.y,
-      GRID_OFFSET_Y
-    );
-
-    const defaultWidgets = [
-      {
-        id: "back-button",
-        type: "back-button",
-        x: backButtonX,
-        y: backButtonY,
-        width: backButtonWidth,
-        height: backButtonHeight,
-        component: () => <BackButtonWidget onBack={onBack} />,
-        locked: true,
-        pinned: false,
-      },
-    ];
-
-    flushSync(() => {
-      setWidgets(defaultWidgets);
-    });
-
-    setTimeout(() => {
-      animateWidgetsIn();
-    }, 50);
-
-    showToast("Layout reverted to default!");
+    showToast("No default layout found!");
   }, [setWidgets, showToast, onBack, animateWidgetsIn, centerOffset]);
 
   const handleMouseDownWithContext = (e, id) => {
