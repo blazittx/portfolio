@@ -49,11 +49,18 @@ export const GAME_LINKS = {
   ],
   bubbledome: [{ type: "steam", url: STEAM_URLS.bubbledome, label: "Steam" }],
   gamblelite: [{ type: "steam", url: STEAM_URLS.gamblelite, label: "Steam" }],
-  gp1: [],
+  gp1: [
+    { type: "itch", url: "https://futuregames.itch.io/pals-and-fjader", label: "itch.io" },
+  ],
   Forgekeepers: [
     { type: "steam", url: STEAM_URLS.Forgekeepers, label: "Steam" },
   ],
-  GFOS1992: [],
+  GFOS1992: [
+    { type: "itch", url: "https://lalik.itch.io/gfos-1992", label: "itch.io" },
+  ],
+  gp3: [
+    { type: "itch", url: "https://futuregames.itch.io/thornbound", label: "itch.io" },
+  ],
 };
 
 // Helper functions to get chips and links for a game
