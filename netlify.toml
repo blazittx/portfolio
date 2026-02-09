@@ -2,14 +2,17 @@
   command = "npm run build"
   publish = "dist"
 
+# Edge functions - must be defined before redirects
+# Edge functions run before redirects, so /api/games/* will be handled here
+[[edge_functions]]
+  function = "games"
+  path = "/api/games/*"
+
 # SPA fallback - redirect all routes to index.html so React Router can handle them
 # This allows direct access to routes like /Forgekeepers without 404 errors
+# Note: Edge functions run before redirects, so /api/* paths are handled by edge functions first
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[[edge_functions]]
-  function = "games"
-  path = "/api/games/*"
 

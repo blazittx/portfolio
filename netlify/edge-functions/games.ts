@@ -33,15 +33,26 @@ export default async (request: Request) => {
     // Extract game ID from URL path
     // Path format: /api/games/{gameId}
     const url = new URL(request.url)
-    const pathParts = url.pathname.split('/').filter(part => part !== '')
+    const pathname = url.pathname
     
-    // Find the gameId (should be after 'games' in the path)
-    const gamesIndex = pathParts.indexOf('games')
-    const gameId = gamesIndex !== -1 && gamesIndex < pathParts.length - 1 
-      ? pathParts[gamesIndex + 1] 
-      : pathParts[pathParts.length - 1]
+    // Match /api/games/{gameId} pattern
+    const match = pathname.match(/^\/api\/games\/([^\/]+)$/)
+    if (!match) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid path format. Expected /api/games/{gameId}' }),
+        {
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    }
+    
+    const gameId = match[1]
 
-    if (!gameId || gameId === 'games') {
+    if (!gameId || gameId.trim() === '') {
       return new Response(
         JSON.stringify({ error: 'Game ID is required' }),
         {
@@ -94,10 +105,15 @@ export default async (request: Request) => {
     )
   } catch (error) {
     console.error('Error in games edge function:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: errorMessage,
+        stack: errorStack,
+        url: request.url
       }),
       {
         status: 500,
