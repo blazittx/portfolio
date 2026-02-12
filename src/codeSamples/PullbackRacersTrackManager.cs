@@ -106,7 +106,6 @@ public class TrackManager : NetworkBehaviour
             }
             else if (NewGameManager.Instance.CurrentPhase == NewGameManager.GamePhase.ApplyingModifications)
             {
-                // Switch camera back to driving view after track generation
                 NewGameManager.Instance.SetPhase(NewGameManager.GamePhase.StartingNextRace);
             }
         }

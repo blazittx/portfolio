@@ -8,7 +8,7 @@ public class StaticBubbleTurret : MonoBehaviour
     public float spawnInterval = 2f;
     public float finalBubbleSize = 1f;
     public float growthSpeed = 1f;
-    public float rotationSpeed = 45f; // Degrees per second
+    public float rotationSpeed = 45f;
     public Transform bubbleSpawnPoint;
 
     [Header("FMOD Events")]
@@ -23,7 +23,6 @@ public class StaticBubbleTurret : MonoBehaviour
 
     private void Update()
     {
-        // Rotate like a sprinkler
         transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
 
         if (Time.time >= nextSpawnTime && currentBubble == null)

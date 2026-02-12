@@ -61,7 +61,6 @@ public class PlayerBubbleController : MonoBehaviour
             currentBubble.GetComponent<Bubble>().owner = transform;
             isGrowing = true;
 
-            // Start sound effect with 3D attributes
             bubbleSoundInstance = RuntimeManager.CreateInstance(bubbleSoundEvent);
             bubbleSoundInstance.set3DAttributes(RuntimeUtils.To3DAttributes(transform.position));
             bubbleSoundInstance.start();
@@ -95,7 +94,6 @@ public class PlayerBubbleController : MonoBehaviour
             onBubbleRelease?.Invoke(0);
         }
 
-        // Stop sound effect
         bubbleSoundInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
         bubbleSoundInstance.release();
     }

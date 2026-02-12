@@ -11,11 +11,11 @@ public class ForceHandling : MonoBehaviour
     public float meleeOwnerForceFactor = 0.3f;
 
     [Header("Slow Motion Settings")]
-    public AnimationCurve slowMotionCurve; // Curve for mapping impact size to slow motion effect
-    public float maxSlowMotionDuration = 1f; // Cap for max duration of slow motion
-    public float minSlowMotionFactor = 0.15f; // Minimum time scale during slow motion
-    public float minSlowMotionThreshold = 5f; // Minimum force required for slow motion to trigger
-    
+    public AnimationCurve slowMotionCurve;
+    public float maxSlowMotionDuration = 1f;
+    public float minSlowMotionFactor = 0.15f;
+    public float minSlowMotionThreshold = 5f;
+
     [Header("Cooldown Settings")]
     public float minImpactSizeForRagdoll = 1.5f;
     public float baseCooldownDuration = 1f;
@@ -38,12 +38,11 @@ public class ForceHandling : MonoBehaviour
     {
         body = GetComponent<Rigidbody>();
     }
-    
+
     public void ApplyKnockback(Transform impactObject, bool isMelee = false)
     {
         if (bIsSpawnInvincible || bIsInvincible) return;
 
-        // Calculate knockback direction and force
         Vector3 direction = transform.position - impactObject.position;
         direction = direction.normalized;
 
@@ -53,11 +52,9 @@ public class ForceHandling : MonoBehaviour
             totalForce *= meleeOwnerForceFactor;
         }
 
-        // Apply the force
         Debug.Log("Applying knockback force: " + totalForce);
         body.AddForce((direction + Vector3.up) * totalForce, ForceMode.Impulse);
 
-        // Apply slow motion based on impact size if force is above threshold
         if (totalForce >= minSlowMotionThreshold)
         {
             Debug.Log("Slow motion force applied: " + totalForce);
@@ -83,15 +80,13 @@ public class ForceHandling : MonoBehaviour
     {
         float slowMotionFactor = Mathf.Clamp(slowMotionCurve.Evaluate(impactSize), minSlowMotionFactor, 1f);
         float slowMotionDuration = Mathf.Clamp(slowMotionCurve.Evaluate(impactSize) * maxSlowMotionDuration, 0.1f, maxSlowMotionDuration);
-        float restoreTime = slowMotionDuration * 2f; // Gradual return to normal
+        float restoreTime = slowMotionDuration * 2f;
 
-        // Smoothly slow down Time.timeScale
         DOTween.To(() => Time.timeScale, x => Time.timeScale = x, slowMotionFactor, 0.1f)
             .SetEase(Ease.OutQuint)
             .OnUpdate(() => Time.fixedDeltaTime = Mathf.Lerp(0.02f, 0.0005f, 1 - Time.timeScale))
             .OnComplete(() =>
             {
-                // Restore Time.timeScale smoothly
                 DOTween.To(() => Time.timeScale, x => Time.timeScale = x, 1f, restoreTime)
                     .SetEase(Ease.InOutCubic)
                     .OnUpdate(() => Time.fixedDeltaTime = Mathf.Lerp(0.0005f, 0.02f, Time.timeScale));
@@ -135,7 +130,7 @@ public class ForceHandling : MonoBehaviour
         Debug.Log("Player is immune");
         yield return new WaitForSeconds(spawnInvincibilityTime);
         bIsSpawnInvincible = false;
-        
+
         PlayerEvents playerCoopHandler = GetComponent<PlayerEvents>();
         playerCoopHandler.eventOnInvincibilityEnd?.Invoke();
 

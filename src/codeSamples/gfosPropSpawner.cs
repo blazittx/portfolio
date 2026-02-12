@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 public class PropSpawner : MonoBehaviour
 {
-    public List<GameObject> propPrefabs; // List of prop prefabs to spawn
-    public List<BoxCollider> spawnAreas; // List of BoxColliders defining the spawn areas
-    public int numberOfPropsToSpawn = 10; // Number of props to spawn
+    public List<GameObject> propPrefabs; 
+    public List<BoxCollider> spawnAreas; 
+    public int numberOfPropsToSpawn = 10;
     public float minForce = 1f;
     public float maxForce = 5f;
     public float minTorque = 1f;
@@ -27,18 +27,13 @@ public class PropSpawner : MonoBehaviour
 
     private void SpawnRandomProp()
     {
-        // Choose a random prop prefab
         GameObject propToSpawn = propPrefabs[Random.Range(0, propPrefabs.Count)];
-        // Choose a random spawn area
         BoxCollider selectedArea = spawnAreas[Random.Range(0, spawnAreas.Count)];
 
-        // Generate a random position within the selected BoxCollider's bounds
         Vector3 spawnPoint = GetRandomPointInCollider(selectedArea);
 
-        // Instantiate the prop at the random position
         GameObject spawnedProp = Instantiate(propToSpawn, spawnPoint, Random.rotation);
 
-        // Apply a random force and torque if the prop has a Rigidbody
         Rigidbody propRb = spawnedProp.GetComponent<Rigidbody>();
         if (propRb != null)
         {

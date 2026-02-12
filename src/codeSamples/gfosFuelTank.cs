@@ -1,10 +1,9 @@
 using UnityEngine;
-using FMODUnity; // Make sure to include the FMODUnity namespace
+using FMODUnity;
 
 public class FuelTank : MonoBehaviour
 {
-    // Variables
-    public bool IsFilling = false; // Boolean to check if the fuel tank is being filled
+    public bool IsFilling = false;
     public float fillPercentage = 0f;
     public GameObject smokeCircle;
     public GameObject CubeScaler;
@@ -18,7 +17,7 @@ public class FuelTank : MonoBehaviour
 
     private void Update()
     {
-        // Code logic
+
         if (IsFilling && fillPercentage < 100f)
         {
             fillPercentage += Time.deltaTime * 15;
@@ -47,7 +46,7 @@ public class FuelTank : MonoBehaviour
         smokeCircle.SetActive(false);
         if (instantiatedDeathZone != null)
         {
-            Destroy(instantiatedDeathZone); // Destroy the instantiated DeathZone object
+            Destroy(instantiatedDeathZone);
         }
         alarmSoundInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
         alarm = false;

@@ -45,7 +45,6 @@ public class PlayerManager : MonoBehaviour
 
     public void FindSpawnPoints()
     {
-        // Find all spawn points with the name "PlayerSpawner"
         GameObject[] spawnerObjects = GameObject.FindGameObjectsWithTag("PlayerSpawner");
         spawnPoints = new List<Transform>();
         foreach (var spawner in spawnerObjects)
@@ -85,7 +84,6 @@ public class PlayerManager : MonoBehaviour
 
     private HashSet<Transform> currentlySpawningPlayers = new HashSet<Transform>();
 
-    // DOTween Respawn Logic
     public void SpawnPlayerRoundRobin(Transform player)
     {
         if (spawnPoints == null || spawnPoints.Count == 0 || currentlySpawningPlayers.Contains(player))
@@ -146,14 +144,12 @@ public class PlayerManager : MonoBehaviour
 
     private void SettupTagsAndColors(Transform player, PlayerCoopHandler coopHandler, PlayerInput playerInput)
     {
-        // Setup colors
         int pIndex = playerInput.playerIndex;
         int colorPicked = Random.Range(0, playerColor.Count);
 
         coopHandler.Initialize(pIndex, playerColor[colorPicked]);
         playerColor.Remove(playerColor[colorPicked]);
 
-        // Spawn player tag
         GameObject tagOBJ = Instantiate(playerTag, playerTagCanvas.transform);
         ScreenToWorldSpace tagPositioner = tagOBJ.GetComponent<ScreenToWorldSpace>();
         tagPositioner.InitializeTag(player.transform, playerInput);
@@ -162,7 +158,6 @@ public class PlayerManager : MonoBehaviour
 
         coopHandler.SetPlayerTag(tagOBJ);
 
-        // Set to correct input index
         TextMeshProUGUI textMeshProUGUI =
             tagOBJ.transform.GetChild(1).GetChild(2).transform.GetComponent<TextMeshProUGUI>();
         textMeshProUGUI.text = $"P{playerInput.playerIndex + 1}";

@@ -7,7 +7,7 @@ public class Bubble : MonoBehaviour
     [Header("Growth Settings")]
     public float growthRate = 0.1f;
     public float maxSizeSpeedCap = 2f;
-    public float scaleChangeTimeout = 1.75f; // Time to wait before forced growth
+    public float scaleChangeTimeout = 1.75f;
     public float growthPerStaticTick = 0.2f;
     public float maxRadiusHardCap = 75;
 
@@ -17,8 +17,8 @@ public class Bubble : MonoBehaviour
 
     [Header("Launch Boost Settings")]
     public AnimationCurve launchSpeedMultiplier = new AnimationCurve(
-        new Keyframe(0f, 2f),  // Start at 2x speed
-        new Keyframe(0.5f, 1f) // Transition to normal speed over 0.5 seconds
+        new Keyframe(0f, 2f),
+        new Keyframe(0.5f, 1f)
     );
     private float launchTime;
 
@@ -50,7 +50,6 @@ public class Bubble : MonoBehaviour
 
     private void Awake()
     {
-        //invoke in a while to pop after 30 seconds
         Invoke("HandleBubblePop", 30f);
         if (collisionManager == null)
         {
@@ -137,7 +136,6 @@ public class Bubble : MonoBehaviour
 
         foreach (Collider col in objectsInRange)
         {
-            //Debug.Log(col.transform.name);
             Rigidbody rb = col.GetComponent<Rigidbody>();
             if (rb != null)
             {
@@ -211,7 +209,6 @@ public class Bubble : MonoBehaviour
             }
         }
 
-        // Check for scale changes from any source
         if (transform.localScale != lastScale)
         {
             lastScale = transform.localScale;

@@ -18,7 +18,6 @@ public class PhysicsSettings : ScriptableObject
 
     public static event System.Action<PhysicsSettings> SettingsChanged;
 
-    /// <summary>Raise the change event manually.</summary>
     public void NotifyChanged() => SettingsChanged?.Invoke(this);
 
 #if UNITY_EDITOR
