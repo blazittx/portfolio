@@ -27,8 +27,7 @@ import ApiKeyWidget from "../components/widgets/ApiKeyWidget";
 import SingleGameWidget from "../components/widgets/SingleGameWidget";
 import ProfilePictureWidget from "../components/widgets/ProfilePictureWidget";
 import HeartbeatWidget from "../components/widgets/HeartbeatWidget";
-import CVWidget from "../components/widgets/CVWidget";
-
+import EditModeWidget from "../components/widgets/EditModeWidget";
 // Component mapping - exported for use in other components
 export const componentMap = {
   profile: ProfileWidget,
@@ -44,7 +43,7 @@ export const componentMap = {
   "single-game": SingleGameWidget,
   "profile-picture": ProfilePictureWidget,
   heartbeat: HeartbeatWidget,
-  cv: CVWidget,
+  "edit-mode": EditModeWidget,
 };
 
 export const buildWidgetsFromLayout = (layout, { mobile = isMobile() } = {}) =>

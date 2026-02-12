@@ -89,6 +89,8 @@ export default function WidgetItem({
   onGameClick,
   onCVClick,
   onUpdateWidgetSettings,
+  editModeOn,
+  onEditModeToggle,
 }) {
   const widgetRef = useRef(null);
   const hasBeenAnimatedRef = useRef(false);
@@ -506,8 +508,10 @@ export default function WidgetItem({
     }
   };
 
+  const isEditMode = editModeOn || false;
   const handleClick = (e) => {
-    if (e.ctrlKey) {
+    const isInteractive = e.target.closest('a, button, input, select, textarea, [role="button"]');
+    if ((e.ctrlKey || isEditMode) && !isInteractive) {
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -569,24 +573,25 @@ export default function WidgetItem({
       data-locked={widget.locked ? "true" : "false"}
       data-widget-id={widget.id}
       onMouseDownCapture={(e) => {
-        if (e.ctrlKey && !widget.locked) {
+        const isInteractive = e.target.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"], img');
+        if ((e.ctrlKey || isEditMode) && !widget.locked && !isInteractive) {
           onMouseDown(e, widget.id);
           e.currentTarget.style.cursor = "grabbing";
         }
       }}
       onClickCapture={(e) => {
-        if (e.ctrlKey) {
+        const isInteractive = e.target.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"], img');
+        if ((e.ctrlKey || isEditMode) && !isInteractive) {
           e.preventDefault();
           e.stopPropagation();
         }
       }}
       onMouseDown={(e) => {
-        // Don't start dragging if clicking on interactive elements or images
         const isInteractiveElement = e.target.closest(
           'input, textarea, select, button, a, [role="button"], [contenteditable="true"], img'
         );
-        if (e.ctrlKey) {
-          if (!widget.locked) {
+        if (e.ctrlKey || isEditMode) {
+          if (!widget.locked && !isInteractiveElement) {
             onMouseDown(e, widget.id);
           }
           return;
@@ -658,6 +663,8 @@ export default function WidgetItem({
             wasLastInteractionDrag={wasLastInteractionDrag}
             onGameClick={onGameClick}
             onCVClick={onCVClick}
+            editModeOn={editModeOn}
+            onEditModeToggle={onEditModeToggle}
             widget={{
               ...widget,
               onSettingsChange: onUpdateWidgetSettings

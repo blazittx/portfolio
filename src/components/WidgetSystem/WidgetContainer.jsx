@@ -14,7 +14,9 @@ export default function WidgetContainer({
   onGameClick,
   onCVClick,
   centerOffset = { x: 0, y: 0 },
-  onUpdateWidgetSettings
+  onUpdateWidgetSettings,
+  editModeOn,
+  onEditModeToggle,
 }) {
   // Ensure widgets is an array and filter out invalid widgets
   const validWidgets = Array.isArray(widgets) 
@@ -59,6 +61,8 @@ export default function WidgetContainer({
               onGameClick={onGameClick}
               onCVClick={onCVClick}
               onUpdateWidgetSettings={onUpdateWidgetSettings}
+              editModeOn={editModeOn}
+              onEditModeToggle={onEditModeToggle}
             />
           )
         } catch (error) {

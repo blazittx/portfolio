@@ -63,6 +63,8 @@ function App() {
   const [isMobileState, setIsMobileState] = useState(() => isMobile());
   const previousMobileStateRef = useRef(isMobileState);
   const [showDebugOutline, setShowDebugOutline] = useState(false);
+  const [editModeOn, setEditModeOn] = useState(false);
+  const [ctrlKeyPressed, setCtrlKeyPressed] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -88,18 +90,12 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Control") {
-        document.body.classList.add("layout-mode");
-      }
+      if (e.key === "Control") setCtrlKeyPressed(true);
     };
     const handleKeyUp = (e) => {
-      if (e.key === "Control") {
-        document.body.classList.remove("layout-mode");
-      }
+      if (e.key === "Control") setCtrlKeyPressed(false);
     };
-    const handleBlur = () => {
-      document.body.classList.remove("layout-mode");
-    };
+    const handleBlur = () => setCtrlKeyPressed(false);
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("blur", handleBlur);
@@ -109,6 +105,14 @@ function App() {
       window.removeEventListener("blur", handleBlur);
     };
   }, []);
+
+  useEffect(() => {
+    if (ctrlKeyPressed || editModeOn) {
+      document.body.classList.add("layout-mode");
+    } else {
+      document.body.classList.remove("layout-mode");
+    }
+  }, [ctrlKeyPressed, editModeOn]);
 
   const centerOffset = useMemo(() => {
     if (currentView !== "main") {
@@ -128,7 +132,7 @@ function App() {
     handleMouseMove,
     handleMouseUp,
     wasLastInteractionDrag,
-  } = useDragAndResize(widgets, setWidgets, centerOffset);
+  } = useDragAndResize(widgets, setWidgets, centerOffset, undefined, editModeOn);
 
   const autosortWidgets = useAutosort(widgets, setWidgets, centerOffset);
   const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu();
@@ -205,25 +209,8 @@ function App() {
 
   const copyLayout = useCallback(() => {
     const layoutToSave = widgets.map(
-      ({
-        id,
-        type,
-        x,
-        y,
-        width,
-        height,
-        col,
-        row,
-        w,
-        h,
-        locked,
-        pinned,
-        settings,
-      }) => {
-        const grid =
-          typeof col === "number" && typeof row === "number"
-            ? { col, row, w, h }
-            : pixelsToGrid({ x, y, width, height });
+      ({ id, type, x, y, width, height, locked, pinned, settings }) => {
+        const grid = pixelsToGrid({ x, y, width, height });
         return {
           id,
           type,
@@ -617,6 +604,8 @@ function App() {
         onCVClick={navigateToCV}
         centerOffset={centerOffset}
         onUpdateWidgetSettings={updateWidgetSettings}
+        editModeOn={editModeOn}
+        onEditModeToggle={() => setEditModeOn((prev) => !prev)}
       />
       <Toaster toasts={toasts} onRemove={removeToast} />
     </div>

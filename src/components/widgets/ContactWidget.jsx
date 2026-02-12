@@ -25,7 +25,7 @@ const LinkedInIcon = ({ size = 24, color = 'currentColor' }) => (
   </svg>
 )
 
-export default function ContactWidget() {
+export default function ContactWidget({ onCVClick }) {
   const containerRef = useRef(null)
   const [widgetHeight, setWidgetHeight] = useState(0)
 
@@ -92,21 +92,10 @@ export default function ContactWidget() {
   }
 
   const contacts = [
-    { 
-      label: 'Email', 
-      href: 'mailto:info@doruksasmaz.com',
-      icon: (props) => <EmailIcon {...props} />
-    },
-    { 
-      label: 'GitHub', 
-      href: 'https://github.com/blazittx',
-      icon: (props) => <GitHubIcon {...props} />
-    },
-    { 
-      label: 'LinkedIn', 
-      href: 'https://www.linkedin.com/in/doruksasmaz/',
-      icon: (props) => <LinkedInIcon {...props} />
-    },
+    { label: 'Email', href: 'mailto:info@doruksasmaz.com', icon: (props) => <EmailIcon {...props} /> },
+    { label: 'GitHub', href: 'https://github.com/blazittx', icon: (props) => <GitHubIcon {...props} /> },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/doruksasmaz/', icon: (props) => <LinkedInIcon {...props} /> },
+    { label: 'CV', action: 'cv' },
   ]
 
   return (
@@ -116,6 +105,28 @@ export default function ContactWidget() {
         <div style={linksContainerStyle}>
           {contacts.map((contact, index) => {
             const IconComponent = contact.icon
+            const hover = (e, enter) => {
+              const t = e.currentTarget
+              t.style.opacity = enter ? '1' : '0.7'
+              t.style.transform = enter ? 'scale(1.1)' : 'scale(1)'
+              t.style.background = enter ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'
+              t.style.borderColor = enter ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'
+            }
+            if (contact.action === 'cv') {
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  style={buttonStyle}
+                  title={contact.label}
+                  onClick={() => onCVClick?.()}
+                  onMouseEnter={(e) => hover(e, true)}
+                  onMouseLeave={(e) => hover(e, false)}
+                >
+                  <span style={{ fontWeight: 700 }}>CV</span>
+                </button>
+              )
+            }
             return (
               <a
                 key={index}
@@ -124,18 +135,8 @@ export default function ContactWidget() {
                 rel="noopener noreferrer"
                 style={buttonStyle}
                 title={contact.label}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = '1'
-                  e.currentTarget.style.transform = 'scale(1.1)'
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '0.7'
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
-                }}
+                onMouseEnter={(e) => hover(e, true)}
+                onMouseLeave={(e) => hover(e, false)}
               >
                 <IconComponent size={24} />
               </a>
