@@ -1,4 +1,4 @@
-export const GRID_SIZE = 40;
+export const GRID_SIZE = 43;
 export const GRID_OFFSET_X = GRID_SIZE * 0.36; // 16.2px
 export const GRID_OFFSET_Y = GRID_SIZE * 0.32; // 14.4px
 export const WIDGET_PADDING = 12; // Padding from grid lines - increase this value for more distance
